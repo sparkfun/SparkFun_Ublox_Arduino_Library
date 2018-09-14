@@ -455,7 +455,7 @@ void SFE_UBLOX_GPS::calcChecksum(ubxPacket *msg)
 //=-=-=-=-=-=-=-= Specific commands =-=-=-=-=-=-=-=
 
 //Poll the module until and ack is received
-boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime = 250)
+boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
 {
   commandAck = false; //Reset flag
   packetCfg.valid = false; //This will go true when we receive a response to the packet we sent
@@ -476,7 +476,7 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime = 250)
 
 
 //Get the current TimeMode3 settings - these contain survey in statuses
-boolean SFE_UBLOX_GPS::getSurveyMode(uint16_t maxWait = 250)
+boolean SFE_UBLOX_GPS::getSurveyMode(uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_TMODE3;
@@ -594,7 +594,7 @@ boolean SFE_UBLOX_GPS::disableRTCMmessage(uint8_t messageNumber, uint8_t portID,
 
 //Enable/Disable RTCM3 (both input and output) for a given port
 //Use to enable RTCM3 on I2C port (ID 0)
-boolean SFE_UBLOX_GPS::setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t maxWait = 250)
+boolean SFE_UBLOX_GPS::setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t maxWait)
 {
   //Get the current config values for this port ID
   getPortSettings(portID);
@@ -611,7 +611,7 @@ boolean SFE_UBLOX_GPS::setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t
 }
 
 //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
-boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait = 250)
+boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
