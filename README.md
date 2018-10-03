@@ -22,6 +22,7 @@ Documentation
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 * **[Product Repository](https://github.com/sparkfunX/Qwiic_GPS-RTK)** - Main repository (including hardware files)
+* **[Hookup Guide](https://learn.sparkfun.com/tutorials/gps-rtk-hookup-guide)** - Basic hookup guide for the SparkFun Ublox GPS-RTK.
 
 Products That Use This Library 
 ---------------------------------
