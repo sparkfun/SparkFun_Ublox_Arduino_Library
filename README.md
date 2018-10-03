@@ -25,8 +25,8 @@ Documentation
 
 Products That Use This Library 
 ---------------------------------
-* [GPS-15005](https://www.sparkfun.com/products/15005)- SparkFun Red
-* [SPX-14980](https://www.sparkfun.com/products/14980)- SparkX Black
+* [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun Red
+* [SPX-14980](https://www.sparkfun.com/products/14980) - SparkX Black
 
 License Information
 -------------------
