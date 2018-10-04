@@ -9,6 +9,8 @@ The NEO-M8P-2 module is the top-of-the-line module for high accuracy GNSS and GP
 
 This library allows the reading of NMEA data over I2C as well as sending binary UBX configuration commands over I2C. This is helpful for configuring advanced modules like the NEO-M8P-2.
 
+Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
+
 Repository Contents
 -------------------
 
