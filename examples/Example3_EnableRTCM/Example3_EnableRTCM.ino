@@ -59,8 +59,8 @@ void setup()
     while(1); //Freeze
   }
 
-  //This will pipe the RTCM sentences out the serial port so we can see them
-  myGPS.setRTCMOutputPort(Serial);
+  //RTCM is now enabled but we haven't done a 'survey-in'
+  //See example 4 for the full Base RTK setup
 }
 
 void loop()
@@ -69,4 +69,3 @@ void loop()
 
   delay(250); //Don't pound too hard on the I2C bus
 }
-
