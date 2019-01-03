@@ -174,8 +174,10 @@ class SFE_UBLOX_GPS
 	
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 	
-	uint32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	uint32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getAltitude(uint16_t maxWait = 250); //Returns the current altitude in mm above mean sea level (most common output of GPS receivers).
+	int32_t getAltitudeEllipsoid(uint16_t maxWait = 250); //Returns the current altitude in mm, ellipsoid model.
 
 	struct svinStructure {
 		boolean active;

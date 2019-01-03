@@ -32,7 +32,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("Ublox high precision accuracy example");
+  Serial.println("Reading Lat/Long Example");
 
   Wire.begin();
 
@@ -44,7 +44,6 @@ void setup()
   }
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
-
 }
 
 void loop()
@@ -56,14 +55,24 @@ void loop()
   //Every other second print the current 3D position accuracy
   if(millis() - lastTime > 1000)
   {
-    long lat = myGPS.getLatitude();
+    long latitude = myGPS.getLatitude();
     Serial.print("Lat: ");
-    Serial.print(lat);
+    Serial.print(latitude);
 
     long longitude = myGPS.getLongitude();
     Serial.print(" Long: ");
     Serial.print(longitude);
     Serial.println(" (degrees * 10^-7)");
+
+    long altitude = myGPS.getAltitude();
+    Serial.print(" Alt (above mean sea level): ");
+    Serial.print(altitude);
+    Serial.println(" (mm)");
+
+    long altitudeEllipsoid = myGPS.getAltitudeEllipsoid();
+    Serial.print(" AltMSL (above Ellipsoid model surface of earth): ");
+    Serial.print(altitudeEllipsoid);
+    Serial.println(" (mm)");
   }
 
 }

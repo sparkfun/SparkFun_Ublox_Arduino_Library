@@ -649,7 +649,7 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 }
 //Get the current latitude in degrees
 //Returns a long representing the number of degrees *10^-7
-uint32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
+int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 {
 	//Query the module for the latest lat/long
 	packetCfg.cls = UBX_CLASS_NAV;
@@ -671,7 +671,7 @@ uint32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 
 //Get the current longitude in degrees
 //Returns a long representing the number of degrees *10^-7
-uint32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
+int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 {
 	//Query the module for the latest lat/long
 	packetCfg.cls = UBX_CLASS_NAV;
@@ -689,4 +689,50 @@ uint32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 	pos |= payloadCfg[7] << 8*3;
 
 	return(pos);
+}
+
+//Get the current altitude in mm according to the Ellipsoid model. 
+//Ellipsoid model: https://www.esri.com/news/arcuser/0703/geoid1of3.html
+//Difference between Ellipsoid Model and Mean Sea Level: https://eos-gnss.com/elevation-for-beginners/
+int32_t SFE_UBLOX_GPS::getAltitudeEllipsoid(uint16_t maxWait)
+{
+	//Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
+	packetCfg.cls = UBX_CLASS_NAV;
+	packetCfg.id = UBX_NAV_POSLLH;
+	packetCfg.len = 0;
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(0); //If command send fails then bail
+
+	//We got a response, now parse the byte fields
+	uint32_t alt = 0;
+	alt |= payloadCfg[12] << 8*0;
+	alt |= payloadCfg[13] << 8*1;
+	alt |= payloadCfg[14] << 8*2;
+	alt |= payloadCfg[15] << 8*3;
+
+	return(alt);
+}
+
+//Get the current altitude in mm according to mean sea level
+//Ellipsoid model: https://www.esri.com/news/arcuser/0703/geoid1of3.html
+//Difference between Ellipsoid Model and Mean Sea Level: https://eos-gnss.com/elevation-for-beginners/
+int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
+{
+	//Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
+	packetCfg.cls = UBX_CLASS_NAV;
+	packetCfg.id = UBX_NAV_POSLLH;
+	packetCfg.len = 0;
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(0); //If command send fails then bail
+
+	//We got a response, now parse the byte fields
+	uint32_t alt = 0;
+	alt |= payloadCfg[16] << 8*0;
+	alt |= payloadCfg[17] << 8*1;
+	alt |= payloadCfg[18] << 8*2;
+	alt |= payloadCfg[19] << 8*3;
+
+	return(alt);
 }
