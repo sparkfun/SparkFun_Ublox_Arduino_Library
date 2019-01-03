@@ -11,7 +11,10 @@
   These commands are only accepted by the NEO-M8P module.
  
   Feel like supporting open source hardware?
-  Buy a board from SparkFun! https://www.sparkfun.com/products/14980
+  Buy a board from SparkFun!
+  ZED-F9P RTK2: https://www.sparkfun.com/products/15136
+  NEO-M8P RTK: https://www.sparkfun.com/products/15005
+  SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a BlackBoard
@@ -29,6 +32,8 @@ void setup()
   Serial.begin(115200);
   while(!Serial); //Wait for user to open terminal
   Serial.println("Ublox RTCM Enable Example");
+
+  Wire.begin();
 
   myGPS.begin(Wire); //Connect to the Ublox module using Wire port
   if (myGPS.isConnected() == false)

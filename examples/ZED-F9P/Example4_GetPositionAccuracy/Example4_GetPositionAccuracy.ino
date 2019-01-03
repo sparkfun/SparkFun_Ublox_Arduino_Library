@@ -13,7 +13,10 @@
     Begin outputting RTCM bytes
 
   Feel like supporting open source hardware?
-  Buy a board from SparkFun! https://www.sparkfun.com/products/14980
+  Buy a board from SparkFun!
+  ZED-F9P RTK2: https://www.sparkfun.com/products/15136
+  NEO-M8P RTK: https://www.sparkfun.com/products/15005
+  SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a BlackBoard
@@ -34,6 +37,8 @@ void setup()
   while (!Serial); //Wait for user to open terminal
   Serial.println("Ublox high precision accuracy example");
 
+  Wire.begin();
+
   myGPS.begin(); //Connect to the Ublox module using Wire port
   if (myGPS.isConnected() == false)
   {
@@ -42,7 +47,6 @@ void setup()
   }
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
-
 }
 
 void loop()
