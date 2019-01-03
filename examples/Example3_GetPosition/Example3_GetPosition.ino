@@ -1,13 +1,13 @@
 /*
-  Read NMEA sentences over I2C using Ublox module SAM-M8Q, NEO-M8P, ZED-F9P, etc
+  Reading lat and long via UBX binary commands - no more NMEA parsing!
   By: Nathan Seidle
   SparkFun Electronics
-  Date: August 22nd, 2018
+  Date: January 3rd, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example reads the NMEA setences from the Ublox module over I2c and outputs
-  them to the serial port
+  This example shows how to query a Ublox module for its lat/long/altitude. Leave NMEA
+  parsing behind. Now you can simply ask the module for the datums you want!
   
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -23,17 +23,18 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
+
+long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
 
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("Ublox GPS I2C Test");
+  while (!Serial); //Wait for user to open terminal
+  Serial.println("Ublox high precision accuracy example");
 
-  Wire.begin();
-
-  myGPS.begin();
+  myGPS.begin(); //Connect to the Ublox module using Wire port
   if (myGPS.isConnected() == false)
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
@@ -42,8 +43,6 @@ void setup()
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  //This will pipe all NMEA sentences to the serial port so we can see them
-  myGPS.setNMEAOutputPort(Serial);
 }
 
 void loop()
@@ -51,4 +50,14 @@ void loop()
   myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
   delay(250); //Don't pound too hard on the I2C bus
+
+  //Every other second print the current 3D position accuracy
+  if(millis() - lastTime > 1000)
+  {
+    long accuracy = myGPS.getPositionAccuracy();
+    Serial.print("3D Positional Accuracy: ");
+    Serial.print(accuracy);
+    Serial.println("mm");
+  }
+
 }

@@ -10,7 +10,10 @@
   This example will output your current long/lat and satellites in view
  
   Feel like supporting open source hardware?
-  Buy a board from SparkFun! https://www.sparkfun.com/products/14980
+  Buy a board from SparkFun!
+  ZED-F9P RTK2: https://www.sparkfun.com/products/15136
+  NEO-M8P RTK: https://www.sparkfun.com/products/15005
+  SAM-M8Q: https://www.sparkfun.com/products/15106
 
   For more MicroNMEA info see https://github.com/stevemarple/MicroNMEA
 
@@ -35,7 +38,9 @@ void setup()
   Serial.begin(115200);
   Serial.println("Ublox GPS I2C Test");
 
-  myGPS.begin(Wire);
+  Wire.begin();
+
+  myGPS.begin();
   if (myGPS.isConnected() == false)
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
