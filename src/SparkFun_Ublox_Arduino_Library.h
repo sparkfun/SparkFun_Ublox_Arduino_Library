@@ -92,6 +92,9 @@ const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
 const uint8_t SVIN_MODE_DISABLE = 0x00;
 const uint8_t SVIN_MODE_ENABLE = 0x01;
 
+const uint8_t UBX_NAV_POSLLH = 0x02; //Used for obtaining lat/long/alt in low precision
+const uint8_t UBX_NAV_HPPOSLLH = 0x14; //Used for obtaining lat/long/alt in high precision
+
 const uint8_t UBX_NAV_SVIN = 0x3B; //Used for checking Survey In status
 const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high precision)
 
@@ -169,7 +172,10 @@ class SFE_UBLOX_GPS
 
 	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250); //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
 	
-	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix
+	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
+	
+	uint32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	uint32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
 
 	struct svinStructure {
 		boolean active;

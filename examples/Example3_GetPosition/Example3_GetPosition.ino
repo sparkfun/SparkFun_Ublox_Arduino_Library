@@ -34,6 +34,8 @@ void setup()
   while (!Serial); //Wait for user to open terminal
   Serial.println("Ublox high precision accuracy example");
 
+  Wire.begin();
+
   myGPS.begin(); //Connect to the Ublox module using Wire port
   if (myGPS.isConnected() == false)
   {
@@ -54,10 +56,14 @@ void loop()
   //Every other second print the current 3D position accuracy
   if(millis() - lastTime > 1000)
   {
-    long accuracy = myGPS.getPositionAccuracy();
-    Serial.print("3D Positional Accuracy: ");
-    Serial.print(accuracy);
-    Serial.println("mm");
+    long lat = myGPS.getLatitude();
+    Serial.print("Lat: ");
+    Serial.print(lat);
+
+    long longitude = myGPS.getLongitude();
+    Serial.print(" Long: ");
+    Serial.print(longitude);
+    Serial.println(" (degrees * 10^-7)");
   }
 
 }

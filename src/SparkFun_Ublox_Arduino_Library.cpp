@@ -478,31 +478,6 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
   return (false);
 }
 
-
-//Get the current 3D high precision positional accuracy - a fun thing to watch
-//Returns a float representing the 3D accuracy in millimeters
-uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
-{
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_HPPOSECEF;
-  packetCfg.len = 0;
-
-  if(sendCommand(packetCfg, maxWait) == false)
-    return(0); //If command send fails then bail
-
-  //We got a response, now parse the bits into the float variable
-  uint32_t tempAccuracy = 0;
-  tempAccuracy |= payloadCfg[24] << 8*0;
-  tempAccuracy |= payloadCfg[25] << 8*1;
-  tempAccuracy |= payloadCfg[26] << 8*2;
-  tempAccuracy |= payloadCfg[27] << 8*3;
-
-  if(tempAccuracy % 10) >= 5) tempAccuracy += 5; //Round fraction of mm up to next mm if .5 or above
-  tempAccuracy /= 10; //Convert 0.1mm units to mm
-
-  return(tempAccuracy);
-}
-
 //Get the current TimeMode3 settings - these contain survey in statuses
 boolean SFE_UBLOX_GPS::getSurveyMode(uint16_t maxWait)
 {
@@ -647,4 +622,71 @@ boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
   payloadCfg[0] = portID;
 
   return ( sendCommand(packetCfg, maxWait) );
+}
+
+//Get the current 3D high precision positional accuracy - a fun thing to watch
+//Returns a float representing the 3D accuracy in millimeters
+uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_HPPOSECEF;
+  packetCfg.len = 0;
+
+  if(sendCommand(packetCfg, maxWait) == false)
+    return(0); //If command send fails then bail
+
+  //We got a response, now parse the byte fields into our variable
+  uint32_t tempAccuracy = 0;
+  tempAccuracy |= payloadCfg[24] << 8*0;
+  tempAccuracy |= payloadCfg[25] << 8*1;
+  tempAccuracy |= payloadCfg[26] << 8*2;
+  tempAccuracy |= payloadCfg[27] << 8*3;
+
+  if( (tempAccuracy % 10) >= 5) tempAccuracy += 5; //Round fraction of mm up to next mm if .5 or above
+  tempAccuracy /= 10; //Convert 0.1mm units to mm
+
+  return(tempAccuracy);
+}
+//Get the current latitude in degrees
+//Returns a long representing the number of degrees *10^-7
+uint32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
+{
+	//Query the module for the latest lat/long
+	packetCfg.cls = UBX_CLASS_NAV;
+	packetCfg.id = UBX_NAV_POSLLH;
+	packetCfg.len = 0;
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(0); //If command send fails then bail
+
+	//We got a response, now parse the byte fields
+	uint32_t pos = 0;
+	pos |= payloadCfg[8] << 8*0;
+	pos |= payloadCfg[9] << 8*1;
+	pos |= payloadCfg[10] << 8*2;
+	pos |= payloadCfg[11] << 8*3;
+
+	return(pos);
+}
+
+//Get the current longitude in degrees
+//Returns a long representing the number of degrees *10^-7
+uint32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
+{
+	//Query the module for the latest lat/long
+	packetCfg.cls = UBX_CLASS_NAV;
+	packetCfg.id = UBX_NAV_POSLLH;
+	packetCfg.len = 0;
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(0); //If command send fails then bail
+
+	//We got a response, now parse the byte fields
+	uint32_t pos = 0;
+	pos |= payloadCfg[4] << 8*0;
+	pos |= payloadCfg[5] << 8*1;
+	pos |= payloadCfg[6] << 8*2;
+	pos |= payloadCfg[7] << 8*3;
+
+	return(pos);
 }
