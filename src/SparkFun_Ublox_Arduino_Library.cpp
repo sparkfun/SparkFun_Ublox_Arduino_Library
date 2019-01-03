@@ -41,7 +41,11 @@ void SFE_UBLOX_GPS::begin(TwoWire &wirePort)
 
 	//We expect caller to begin their I2C port, with the speed of their choice external to the library
 	//But if they forget, we start the hardware here.
-	_i2cPort->begin();
+	
+	//We're moving away from the practice of starting Wire hardware in a library. This is to avoid cross platform issues. 
+	//ie, there are some platforms that don't handle multiple starts to the wire hardware. Also, every time you start the wire
+	//hardware the clock speed reverts back to 100kHz regardless of previous Wire.setClocks().
+	//_i2cPort->begin();
 
 	setI2CReadAddress(0x42); //By default, use 0x42
 }
@@ -474,6 +478,30 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
   return (false);
 }
 
+
+//Get the current 3D high precision positional accuracy - a fun thing to watch
+//Returns a float representing the 3D accuracy in millimeters
+uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_HPPOSECEF;
+  packetCfg.len = 0;
+
+  if(sendCommand(packetCfg, maxWait) == false)
+    return(0); //If command send fails then bail
+
+  //We got a response, now parse the bits into the float variable
+  uint32_t tempAccuracy = 0;
+  tempAccuracy |= payloadCfg[24] << 8*0;
+  tempAccuracy |= payloadCfg[25] << 8*1;
+  tempAccuracy |= payloadCfg[26] << 8*2;
+  tempAccuracy |= payloadCfg[27] << 8*3;
+
+  if(tempAccuracy % 10) >= 5) tempAccuracy += 5; //Round fraction of mm up to next mm if .5 or above
+  tempAccuracy /= 10; //Convert 0.1mm units to mm
+
+  return(tempAccuracy);
+}
 
 //Get the current TimeMode3 settings - these contain survey in statuses
 boolean SFE_UBLOX_GPS::getSurveyMode(uint16_t maxWait)

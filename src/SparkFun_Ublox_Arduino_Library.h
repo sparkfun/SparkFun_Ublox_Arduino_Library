@@ -85,14 +85,15 @@ const uint8_t UBX_CLASS_LOG = 0x21;
 const uint8_t UBX_CLASS_SEC = 0x27;
 const uint8_t UBX_CLASS_HNR = 0x28;
 
-const uint8_t UBX_CFG_PRT = 0x00;
-const uint8_t UBX_CFG_RATE = 0x08;
+const uint8_t UBX_CFG_PRT = 0x00; //Used to configure port specifics
+const uint8_t UBX_CFG_RATE = 0x08; //Used to set port baud rates
 
 const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
 const uint8_t SVIN_MODE_DISABLE = 0x00;
 const uint8_t SVIN_MODE_ENABLE = 0x01;
 
 const uint8_t UBX_NAV_SVIN = 0x3B; //Used for checking Survey In status
+const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high precision)
 
 //The following are used to enable RTCM messages
 const uint8_t UBX_CFG_MSG = 0x01;
@@ -132,7 +133,7 @@ class SFE_UBLOX_GPS
     SFE_UBLOX_GPS(void);
 
     //By default use the default I2C address, and use Wire port
-    void begin(TwoWire &wirePort);
+    void begin(TwoWire &wirePort = Wire);
 
 	boolean isConnected(); //Returns turn if device answers on _gpsI2Caddress address
 
@@ -167,6 +168,8 @@ class SFE_UBLOX_GPS
 	boolean setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t maxWait = 250); //Enable/Disable RTCM3 (both input and output) for a given port
 
 	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250); //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
+	
+	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix
 
 	struct svinStructure {
 		boolean active;
@@ -176,7 +179,7 @@ class SFE_UBLOX_GPS
 	} svin;
 
 	uint16_t rtcmFrameCounter = 0;
-
+	
   private:
 
 	//Depending on the sentence type the processor will load characters into different arrays
