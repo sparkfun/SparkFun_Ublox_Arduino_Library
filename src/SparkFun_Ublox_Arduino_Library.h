@@ -129,8 +129,9 @@ typedef struct
 {
 	uint8_t cls;
 	uint8_t id;
-	uint16_t len;
-	uint8_t counter; //Should really be 16 bit but no commands are larger than 255 currently
+	uint16_t len; //Length of the payload. Does not include cls, id, or checksum bytes
+	uint16_t counter; //Keeps track of number of overall bytes received
+	uint16_t startingSpot; //The counter value needed to go past before we begin recording into payload array
 	uint8_t *payload;
 	uint8_t checksumA;
 	uint8_t checksumB;
@@ -238,8 +239,8 @@ class SFE_UBLOX_GPS
 	uint8_t payloadCfg[MAX_PAYLOAD_SIZE];
 
 	//Init the packet structures and init them with pointers to the payloadAck and payloadCfg arrays
-	ubxPacket packetAck = {0, 0, 0, 0, payloadAck, 0, 0, false};
-	ubxPacket packetCfg = {0, 0, 0, 0, payloadCfg, 0, 0, false};
+	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, false};
+	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, false};
 
 	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
 	unsigned long lastCheck = 0;
