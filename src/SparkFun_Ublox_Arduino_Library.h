@@ -130,10 +130,10 @@ typedef struct
 	uint8_t cls;
 	uint8_t id;
 	uint16_t len; //Length of the payload. Does not include cls, id, or checksum bytes
-	uint16_t counter; //Keeps track of number of overall bytes received
+	uint16_t counter; //Keeps track of number of overall bytes received. Some responses are larger than 255 bytes.
 	uint16_t startingSpot; //The counter value needed to go past before we begin recording into payload array
 	uint8_t *payload;
-	uint8_t checksumA;
+	uint8_t checksumA; //Given to us from module. Checked against the rolling calculated A/B checksums.
 	uint8_t checksumB;
 	boolean valid; //Goes true when both checksums pass
 } ubxPacket;
@@ -246,6 +246,10 @@ class SFE_UBLOX_GPS
 	unsigned long lastCheck = 0;
 	boolean commandAck = false; //This goes true after we send a command and it's ack'd
 	uint8_t ubxFrameCounter;
+
+	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
+	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
+	void addToChecksum(uint8_t incoming); //Given an incoming byte, adjust rollingChecksumA/B 
 
 	uint16_t rtcmLen = 0;
 };

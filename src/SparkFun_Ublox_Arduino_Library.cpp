@@ -145,6 +145,10 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
       //This is the start of a binary sentence. Reset flags.
       //We still don't know the response class
       ubxFrameCounter = 0;
+
+	  rollingChecksumA = 0; //Reset our rolling checksums
+	  rollingChecksumB = 0;
+
       currentSentence = UBX;
     }
     else if (incoming == '$')
@@ -284,6 +288,11 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 //interim bytes. 
 void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 {
+	//Add all incoming bytes to the rolling checksum
+	//Stop at len+4 as this is the checksum bytes to that should not be added to the rolling checksum
+	if(incomingUBX->counter < incomingUBX->len + 4)
+		addToChecksum(incoming);
+
 	if (incomingUBX->counter == 0)
 	{
 		incomingUBX->cls = incoming;
@@ -306,19 +315,15 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 	}
 	else if (incomingUBX->counter == incomingUBX->len + 5) //ChecksumB
 	{
-		//Validate this sentence
-
-		uint8_t tempA = incomingUBX->checksumA;
-		uint8_t tempB = incoming;
-
-		calcChecksum(incomingUBX); //Calc checksum across this message. Results stored in message.
-
+		incomingUBX->checksumB = incoming;
+		
 		currentSentence = NONE; //We're done! Reset the sentence to being looking for a new start char
 
-		if (incomingUBX->checksumA == tempA && incomingUBX->checksumB == tempB)
+		//Validate this sentence
+		if (incomingUBX->checksumA == rollingChecksumA && incomingUBX->checksumB == rollingChecksumB)
 		{
 #ifdef DEBUG
-			debug.print("Checksum/Frame Good: ");
+			debug.println("Checksum/Frame Good");
 			//printFrame(incomingUBX);
 #endif
 			incomingUBX->valid = true;
@@ -333,11 +338,11 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 	else //Load this byte into the payload array
 	{
 		//Begin recording if counter goes past startingSpot
-		if( (incomingUBX->counter - 4) > incomingUBX->startingSpot)
+		if( (incomingUBX->counter - 4) >= incomingUBX->startingSpot)
 		{
 			//Check to see if we have room for this byte
-			if( (incomingUBX->counter - 4) < MAX_PAYLOAD_SIZE)
-				incomingUBX->payload[incomingUBX->counter - 4 + incomingUBX->startingSpot] = incoming; //Store this byte into payload array
+			if( ((incomingUBX->counter - 4) - incomingUBX->startingSpot) < MAX_PAYLOAD_SIZE) //If counter = 208, starting spot = 200, we're good to record.
+				incomingUBX->payload[incomingUBX->counter - 4 - incomingUBX->startingSpot] = incoming; //Store this byte into payload array
 		}
 	}
 
@@ -449,7 +454,8 @@ boolean SFE_UBLOX_GPS::isConnected()
   return (true);
 }
 
-//Given a message, calc and store the two byte "8-Bit Fletcher" checksum
+//Given a message, calc and store the two byte "8-Bit Fletcher" checksum over the entirety of the message
+//This is called before we send a command message
 void SFE_UBLOX_GPS::calcChecksum(ubxPacket *msg)
 {
   msg->checksumA = 0;
@@ -473,6 +479,15 @@ void SFE_UBLOX_GPS::calcChecksum(ubxPacket *msg)
     msg->checksumB += msg->checksumA;
   }
 }
+
+//Given a message and a byte, add to rolling "8-Bit Fletcher" checksum
+//This is used when receiving messages from module
+void SFE_UBLOX_GPS::addToChecksum(uint8_t incoming)
+{
+	rollingChecksumA += incoming;
+	rollingChecksumB += rollingChecksumA;
+}
+
 
 //=-=-=-=-=-=-=-= Specific commands =-=-=-=-=-=-=-=
 
@@ -794,27 +809,38 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 	packetCfg.id = UBX_MON_VER;
 	packetCfg.len = 0;
 
+	packetCfg.startingSpot = 0; //Get software version
+	
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(0); //If command send fails then bail
+	
+	Serial.print("Software version: ");
+	for(int location = 0 ; location < 64 ; location++)
+	{
+		Serial.write(payloadCfg[location]);
+		if(payloadCfg[location] == '\0') break;
+	}
+	Serial.println();
+	
+	//while(1);
+
 	//We will send the command repeatedly, increasing the startingSpot as we go
 	//Then we look at each extension field of 30 bytes
-	for(uint8_t extensionNumber = 0 ; extensionNumber < 1 ; extensionNumber++)
+	for(uint8_t extensionNumber = 0 ; extensionNumber < 4 ; extensionNumber++)
 	{
-		//packetCfg.startingSpot = 40 + (30*extensionNumber);
-		packetCfg.startingSpot = 0;
+		packetCfg.startingSpot = 40 + (30*extensionNumber);
 		
 		if(sendCommand(packetCfg, maxWait) == false)
 			return(0); //If command send fails then bail
 		
 		//Now we need to start looking for "PROTVER" in the incoming byte stream
 		Serial.print("Extension: ");
-		for(int location ; location < 64 ; location++)
+		for(int location = 0 ; location < 64 ; location++)
 		{
-			Serial.write(packetCfg.payload[location]);
-			if(packetCfg.payload[location] == '\0') break;
+			Serial.write(payloadCfg[location]);
+			if(payloadCfg[location] == '\0') break;
 		}
 		Serial.println();
-
-		while(1);
-		
 	}
 
 	return(0);
