@@ -8,7 +8,7 @@
 
   This example shows how to query a Ublox module for its lat/long/altitude. Leave NMEA
   parsing behind. Now you can simply ask the module for the datums you want!
-  
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
@@ -43,7 +43,15 @@ void setup()
     while (1);
   }
 
-  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+  //Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+
+  //long pos = myGPS.getPositionAccuracy(2000);
+  //Serial.print("pos: ");
+  //Serial.println(pos);
+
+  byte version = myGPS.getProtocolVersionHigh(2000);
+  
+  while (1);
 }
 
 void loop()
@@ -53,21 +61,23 @@ void loop()
   delay(250); //Don't pound too hard on the I2C bus
 
   //Every other second print the current 3D position accuracy
-  if(millis() - lastTime > 1000)
+  if (millis() - lastTime > 1000)
   {
     long latitude = myGPS.getLatitude();
     Serial.print("Lat: ");
     Serial.print(latitude);
 
+    while (1);
+
     long longitude = myGPS.getLongitude();
     Serial.print(" Long: ");
     Serial.print(longitude);
-    Serial.println(" (degrees * 10^-7)");
+    Serial.print(" (degrees * 10^-7)");
 
     long altitude = myGPS.getAltitude();
     Serial.print(" Alt (above mean sea level): ");
     Serial.print(altitude);
-    Serial.println(" (mm)");
+    Serial.print(" (mm)");
 
     long altitudeEllipsoid = myGPS.getAltitudeEllipsoid();
     Serial.print(" AltMSL (above Ellipsoid model surface of earth): ");

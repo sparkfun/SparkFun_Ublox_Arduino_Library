@@ -194,17 +194,6 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
       processUBX(incoming, &packetAck);
     else if (ubxFrameClass == CLASS_NOT_AN_ACK)
       processUBX(incoming, &packetCfg);
-    else
-	{
-#ifdef DEBUG
-	//Print this character
-	debug.print(F("No frame class set: "));
-	debug.write(incoming);
-	debug.print(" 0x");
-	debug.print(incoming, HEX);
-	debug.println();
-#endif
-	}
   }
   else if (currentSentence == NMEA)
   {
@@ -329,18 +318,22 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 		if (incomingUBX->checksumA == tempA && incomingUBX->checksumB == tempB)
 		{
 #ifdef DEBUG
-			debug.print("Frame cleared: ");
+			debug.print("Checksum/Frame Good: ");
 			//printFrame(incomingUBX);
 #endif
-
 			incomingUBX->valid = true;
 			processUBXpacket(incomingUBX); //We've got a valid packet, now do something with it
 		}
+#ifdef DEBUG
+		else 
+			debug.println("Checksum failed. Response too big?");
+#endif
+		
 	}
 	else //Load this byte into the payload array
 	{
 		//Begin recording if counter goes past startingSpot
-		if(incomingUBX->counter > incomingUBX->startingSpot)
+		if( (incomingUBX->counter - 4) > incomingUBX->startingSpot)
 		{
 			//Check to see if we have room for this byte
 			if( (incomingUBX->counter - 4) < MAX_PAYLOAD_SIZE)
@@ -394,53 +387,46 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 
   //Write header bytes
   _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
-  _i2cPort->write(UBX_SYNCH_1);
-  _i2cPort->write(UBX_SYNCH_2);
+  _i2cPort->write(UBX_SYNCH_1); //μ - oh ublox, you're funny. I will call you micro-blox from now on.
+  _i2cPort->write(UBX_SYNCH_2); //b
   _i2cPort->write(outgoingUBX.cls);
   _i2cPort->write(outgoingUBX.id);
   _i2cPort->write(outgoingUBX.len & 0xFF); //LSB
   _i2cPort->write(outgoingUBX.len >> 8); //MSB
-  
-  //Normally we would endTransmission() here but instead, we check if there are more bytes to transmit.
+  if (_i2cPort->endTransmission(false) != 0) //Do not release bus
+	  return (false); //Sensor did not ACK
 
-  //If we are sending just a command, there are no bytes to send so skip sending anything.
-  if(outgoingUBX.len > 0)
+  //Write payload. Limit the sends into 32 byte chunks
+  //This code based on ublox: https://forum.u-blox.com/index.php/20528/how-to-use-i2c-to-get-the-nmea-frames
+  uint16_t bytesToSend = outgoingUBX.len;
+
+  //"The number of data bytes must be at least 2 to properly distinguish
+  //from the write access to set the address counter in random read accesses."
+  uint16_t startSpot = 0;
+  while (bytesToSend > 1)
   {
-      if (_i2cPort->endTransmission(false) != 0) //Do not release bus
-		  return (false); //Sensor did not ACK
+	uint8_t len = bytesToSend;
+	if (len > I2C_BUFFER_LENGTH) len = I2C_BUFFER_LENGTH;
 
-	  //Write payload. Limit the sends into 32 byte chunks
-	  //This code based on ublox: https://forum.u-blox.com/index.php/20528/how-to-use-i2c-to-get-the-nmea-frames
-	  uint16_t bytesToSend = outgoingUBX.len;
+	_i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
+	//_i2cPort->write(outgoingUBX.payload, len); //Write a portion of the payload to the bus
 
-	  //"The number of data bytes must be at least 2 to properly distinguish
-	  //from the write access to set the address counter in random read accesses."
-	  uint16_t startSpot = 0;
-	  while (bytesToSend > 1)
-	  {
-		uint8_t len = bytesToSend;
-		if (len > I2C_BUFFER_LENGTH) len = I2C_BUFFER_LENGTH;
+	for (uint16_t x = 0 ; x < len ; x++)
+	  _i2cPort->write(outgoingUBX.payload[startSpot + x]); //Write a portion of the payload to the bus
 
-		_i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-		//_i2cPort->write(outgoingUBX.payload, len); //Write a portion of the payload to the bus
+	if (_i2cPort->endTransmission(false) != 0) //Don't release bus
+	  return (false); //Sensor did not ACK
 
-		for (uint16_t x = 0 ; x < len ; x++)
-		  _i2cPort->write(outgoingUBX.payload[startSpot + x]); //Write a portion of the payload to the bus
-
-		if (_i2cPort->endTransmission(false) != 0) //Don't release bus
-		  return (false); //Sensor did not ACK
-
-		//*outgoingUBX.payload += len; //Move the pointer forward
-		startSpot += len; //Move the pointer forward
-		bytesToSend -= len;
-	  }
-
-	  //Write checksum
-	  _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-	  if (bytesToSend == 1) _i2cPort->write(outgoingUBX.payload, 1);
-	  _i2cPort->write(outgoingUBX.checksumA);
-	  _i2cPort->write(outgoingUBX.checksumB);
+	//*outgoingUBX.payload += len; //Move the pointer forward
+	startSpot += len; //Move the pointer forward
+	bytesToSend -= len;
   }
+
+  //Write checksum
+  _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
+  if (bytesToSend == 1) _i2cPort->write(outgoingUBX.payload, 1);
+  _i2cPort->write(outgoingUBX.checksumA);
+  _i2cPort->write(outgoingUBX.checksumB);
 	
   //All done transmitting bytes. Release bus.
   if (_i2cPort->endTransmission() != 0)
@@ -694,8 +680,14 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
   tempAccuracy |= payloadCfg[26] << 8*2;
   tempAccuracy |= payloadCfg[27] << 8*3;
 
+  Serial.print("temp: ");
+  Serial.println(tempAccuracy, HEX);
+  
   if( (tempAccuracy % 10) >= 5) tempAccuracy += 5; //Round fraction of mm up to next mm if .5 or above
   tempAccuracy /= 10; //Convert 0.1mm units to mm
+
+  Serial.print("temp: ");
+  Serial.println(tempAccuracy, HEX);
 
   return(tempAccuracy);
 }
@@ -709,8 +701,7 @@ int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 	packetCfg.len = 0;
 	packetCfg.startingSpot = 0;
 
-//	if(sendCommand(packetCfg, maxWait) == false)
-	if(sendCommand(packetCfg, 1500) == false)
+	if(sendCommand(packetCfg, maxWait) == false)
 		return(0); //If command send fails then bail
 
 	//We got a response, now parse the byte fields
@@ -807,12 +798,11 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 	//Then we look at each extension field of 30 bytes
 	for(uint8_t extensionNumber = 0 ; extensionNumber < 1 ; extensionNumber++)
 	{
-		packetCfg.startingSpot = 40 + (30*extensionNumber);
+		//packetCfg.startingSpot = 40 + (30*extensionNumber);
+		packetCfg.startingSpot = 0;
 		
 		if(sendCommand(packetCfg, maxWait) == false)
 			return(0); //If command send fails then bail
-		
-		while(1);
 		
 		//Now we need to start looking for "PROTVER" in the incoming byte stream
 		Serial.print("Extension: ");
@@ -822,6 +812,9 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 			if(packetCfg.payload[location] == '\0') break;
 		}
 		Serial.println();
+
+		while(1);
+		
 	}
 
 	return(0);
