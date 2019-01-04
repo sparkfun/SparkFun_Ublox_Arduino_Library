@@ -37,6 +37,13 @@
 
 #include <Wire.h>
 
+//Uncomment the following line to enable a variety of debug statements
+//This will increase the codeword and RAM footprint of the library
+#define DEBUG
+
+#ifdef DEBUG
+#define debug Serial //Point debug statements to print to Serial port
+#endif
 
 //Platform specific configurations
 
@@ -94,9 +101,10 @@ const uint8_t SVIN_MODE_ENABLE = 0x01;
 
 const uint8_t UBX_NAV_POSLLH = 0x02; //Used for obtaining lat/long/alt in low precision
 const uint8_t UBX_NAV_HPPOSLLH = 0x14; //Used for obtaining lat/long/alt in high precision
-
 const uint8_t UBX_NAV_SVIN = 0x3B; //Used for checking Survey In status
 const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high precision)
+
+const uint8_t UBX_MON_VER = 0x04; //Used for obtaining Protocol Version
 
 //The following are used to enable RTCM messages
 const uint8_t UBX_CFG_MSG = 0x01;
@@ -179,6 +187,10 @@ class SFE_UBLOX_GPS
 	int32_t getAltitude(uint16_t maxWait = 250); //Returns the current altitude in mm above mean sea level (most common output of GPS receivers).
 	int32_t getAltitudeEllipsoid(uint16_t maxWait = 250); //Returns the current altitude in mm, ellipsoid model.
 
+	uint8_t getProtocolVersionHigh(uint16_t maxWait = 250); //Returns the PROTVER XX.00 from UBX-MON-VER register
+	//uint8_t getProtocolVersionLow(uint16_t maxWait = 250); //Returns the PROTVER 00.XX from UBX-MON-VER register
+	//float getProtocolVersion(uint16_t maxWait = 250); //Returns the combination of high&low portions from PROTVER in UBX-MON-VER register
+	
 	struct svinStructure {
 		boolean active;
 		boolean valid;
@@ -218,7 +230,7 @@ class SFE_UBLOX_GPS
     TwoWire *_i2cPort; //The generic connection to user's chosen I2C hardware
 	Stream *_nmeaOutputPort = NULL; //The user can assign an output port to print NMEA sentences if they wish
 	
-	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
+	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software
 	
 	//These are pointed at from within the ubxPacket

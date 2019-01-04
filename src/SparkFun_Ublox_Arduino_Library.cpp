@@ -197,7 +197,11 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
     else if (ubxFrameClass == CLASS_NOT_AN_ACK)
       processUBX(incoming, &packetCfg);
     else
-      ; //Serial.println("No frame class set");
+	{
+#ifdef DEBUG
+	debug.println(F("No frame class set"));
+#endif
+	}
   }
   else if (currentSentence == NMEA)
   {
@@ -318,16 +322,20 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 
     if (incomingUBX->checksumA == tempA && incomingUBX->checksumB == tempB)
     {
-      //Serial.print("Frame cleared: ");
-      //printFrame(incomingUBX);
+#ifdef DEBUG
+		debug.print("Frame cleared: ");
+		//printFrame(incomingUBX);
+#endif
 
       incomingUBX->valid = true;
       processUBXpacket(incomingUBX); //We've got a valid packet, now do something with it
     }
   }
-  else //Load this byte into the appropriate array
+  else //Load this byte into the payload array
   {
-    incomingUBX->payload[incomingUBX->counter - 4] = incoming; //Store this byte into payload array
+	  //Check to see if we have room for this byte
+	  if( (incomingUBX->counter - 4) < MAX_PAYLOAD_SIZE)
+		incomingUBX->payload[incomingUBX->counter - 4] = incoming; //Store this byte into payload array
   }
 
   incomingUBX->counter++;
@@ -344,7 +352,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       if (msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
       {
         //The ack we just received matched the CLS/ID of last packetCfg sent
-        //Serial.println("Command sent/ack'd successfully");
+#ifdef DEBUG
+        debug.println("Command sent/ack'd successfully");
+#endif
+
         commandAck = true;
       }
     }
@@ -474,8 +485,12 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
     if (commandAck == true) return (true);
     if (packetCfg.valid == true) return (true);
   }
-  //Serial.println("waitForResponse timeout");
-  return (false);
+
+#ifdef DEBUG
+	debug.println(F("waitForResponse timeout"));
+#endif
+	
+	return (false);
 }
 
 //Get the current TimeMode3 settings - these contain survey in statuses
@@ -735,4 +750,22 @@ int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 	alt |= payloadCfg[19] << 8*3;
 
 	return(alt);
+}
+
+//Get the current protocol version of the Ublox module we're communicating with
+//This is helpful when deiciding if we should call the high-precision Lat/Long (HPPOSLLH) or the regular (POSLLH)
+uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
+{
+	//Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
+	packetCfg.cls = UBX_CLASS_MON;
+	packetCfg.id = UBX_MON_VER;
+	packetCfg.len = 0;
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(0); //If command send fails then bail
+
+	//We got a response, now find the extension that contains 'PROTVER'
+	//The response for this register can be quite large, many hundreds of bytes so we have to use a new, much larger array
+
+	return(0);
 }
