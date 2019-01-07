@@ -802,6 +802,9 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 	longitude = extractLong(24 - packetCfg.startingSpot);
 	latitude = extractLong(28 - packetCfg.startingSpot);
 	altitude = extractLong(36 - packetCfg.startingSpot);
+	groundSpeed = extractLong(60 - packetCfg.startingSpot);
+	headingOfMotion = extractLong(64 - packetCfg.startingSpot);
+	pDOP = extractLong(76 - packetCfg.startingSpot);
 	
 	//Mark all datums as fresh (not read before)
 	//moduleQueried ThisStruct;
@@ -812,6 +815,9 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 	moduleQueried.SIV = true;
 	moduleQueried.fixType = true;
 	moduleQueried.carrierSolution = true;
+	moduleQueried.groundSpeed = true;
+	moduleQueried.headingOfMotion = true;
+	moduleQueried.pDOP = true;
 	
 	return(true);
 }
@@ -894,6 +900,33 @@ uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
 	moduleQueried.carrierSolution = false; //Since we are about to give this to user, mark this data as stale
 	
 	return(carrierSolution);
+}
+
+//Get the ground speed in mm/s
+int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
+{
+	if(moduleQueried.groundSpeed == false) getPVT();
+	moduleQueried.groundSpeed = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(groundSpeed);
+}
+
+//Get the heading of motion (as opposed to heading of car) in degrees * 10^-5
+int32_t SFE_UBLOX_GPS::getHeading(uint16_t maxWait)
+{
+	if(moduleQueried.headingOfMotion == false) getPVT();
+	moduleQueried.headingOfMotion = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(headingOfMotion);
+}
+
+//Get the positional dillution of precision * 10^-2
+uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
+{
+	if(moduleQueried.pDOP == false) getPVT();
+	moduleQueried.pDOP = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(pDOP);
 }
 
 //Get the current protocol version of the Ublox module we're communicating with

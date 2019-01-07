@@ -45,7 +45,7 @@ void setup()
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  
+
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.setNavigationFrequency(4); //Set output to 4 times a second
 
@@ -83,41 +83,55 @@ void setup()
   byte RTK = myGPS.getCarrierSolutionType();
   Serial.print(" RTK: ");
   Serial.print(RTK);
-  if(RTK == 1) Serial.println("High precision float fix!");
-  if(RTK == 2) Serial.println("High precision fix!");
+  if (RTK == 1) Serial.println("High precision float fix!");
+  if (RTK == 2) Serial.println("High precision fix!");
+
+  long speed = myGPS.getGroundSpeed();
+  Serial.print(" Speed: ");
+  Serial.print(speed);
+  Serial.print(" (mm/s)");
+
+  long heading = myGPS.getHeading();
+  Serial.print(" Heading: ");
+  Serial.print(heading);
+  Serial.print(" (degrees * 10^-5)");
+
+  int pDOP = myGPS.getPDOP();
+  Serial.print(" pDOP: ");
+  Serial.print(pDOP / 100.0, 2);
 
   while (1);
 }
 
 void loop()
 {
-/*  myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
+  /*  myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
-  delay(250); //Don't pound too hard on the I2C bus
+    delay(250); //Don't pound too hard on the I2C bus
 
-  //Every other second print the current 3D position accuracy
-  if (millis() - lastTime > 1000)
-  {
-    long latitude = myGPS.getLatitude();
-    Serial.print("Lat: ");
-    Serial.print(latitude);
+    //Every other second print the current 3D position accuracy
+    if (millis() - lastTime > 1000)
+    {
+      long latitude = myGPS.getLatitude();
+      Serial.print("Lat: ");
+      Serial.print(latitude);
 
-    while (1);
+      while (1);
 
-    long longitude = myGPS.getLongitude();
-    Serial.print(" Long: ");
-    Serial.print(longitude);
-    Serial.print(" (degrees * 10^-7)");
+      long longitude = myGPS.getLongitude();
+      Serial.print(" Long: ");
+      Serial.print(longitude);
+      Serial.print(" (degrees * 10^-7)");
 
-    long altitude = myGPS.getAltitude();
-    Serial.print(" Alt (above mean sea level): ");
-    Serial.print(altitude);
-    Serial.print(" (mm)");
+      long altitude = myGPS.getAltitude();
+      Serial.print(" Alt (above mean sea level): ");
+      Serial.print(altitude);
+      Serial.print(" (mm)");
 
-    long altitudeEllipsoid = myGPS.getAltitudeEllipsoid();
-    Serial.print(" AltMSL (above Ellipsoid model surface of earth): ");
-    Serial.print(altitudeEllipsoid);
-    Serial.println(" (mm)");
-  }*/
+      long altitudeEllipsoid = myGPS.getAltitudeEllipsoid();
+      Serial.print(" AltMSL (above Ellipsoid model surface of earth): ");
+      Serial.print(altitudeEllipsoid);
+      Serial.println(" (mm)");
+    }*/
 
 }

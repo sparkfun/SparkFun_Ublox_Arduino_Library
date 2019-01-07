@@ -187,6 +187,7 @@ class SFE_UBLOX_GPS
 
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
+	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250); //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
 
 	boolean setI2COutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setUART1Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
@@ -195,10 +196,6 @@ class SFE_UBLOX_GPS
 	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
 
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
-
-	boolean setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t maxWait = 250); //Enable/Disable RTCM3 (both input and output) for a given port
-
-	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250); //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
 	
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 	
@@ -209,6 +206,9 @@ class SFE_UBLOX_GPS
 	uint8_t getSIV(uint16_t maxWait = 250); //Returns number of sats used in fix
 	uint8_t getFixType(uint16_t maxWait = 250); //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 	uint8_t getCarrierSolutionType(uint16_t maxWait = 250); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
+	int32_t getGroundSpeed(uint16_t maxWait = 250); //Returns speed in mm/s
+	int32_t getHeading(uint16_t maxWait = 250); //Returns heading in degrees * 10^-7
+	uint16_t getPDOP(uint16_t maxWait = 250); //Returns positional dillution of precision * 10^-2
 
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 1000); //Returns the PROTVER XX.00 from UBX-MON-VER register
 	//uint8_t getProtocolVersionLow(uint16_t maxWait = 1000); //Returns the PROTVER 00.XX from UBX-MON-VER register
@@ -222,12 +222,16 @@ class SFE_UBLOX_GPS
 		float meanAccuracy;
 	} svin;
 	
-	int32_t latitude;
-	int32_t longitude;
-	int32_t altitude;	
-	uint8_t SIV;
-	uint8_t fixType;
-	uint8_t carrierSolution;
+	//The major datums we want to globally store
+	int32_t latitude; //Degrees * 10^-7 (more accurate than floats)
+	int32_t longitude; //Degrees * 10^-7 (more accurate than floats)
+	int32_t altitude; //Number of mm above Mean Sea Level
+	uint8_t SIV; //Number of satellites used in position solution
+	uint8_t fixType; //Tells us when we have a solution aka lock
+	uint8_t carrierSolution; //Tells us when we have an RTK float/fixed solution
+	int32_t groundSpeed; //mm/s
+	int32_t headingOfMotion; //degress * 10^-5
+	uint16_t pDOP; //Positional dillution of precision
 
 	uint16_t rtcmFrameCounter = 0;
 	
@@ -297,6 +301,9 @@ class SFE_UBLOX_GPS
 	   uint16_t SIV : 1;
 	   uint16_t fixType : 1;
 	   uint16_t carrierSolution : 1;
+	   uint16_t groundSpeed : 1;
+	   uint16_t headingOfMotion : 1;
+	   uint16_t pDOP : 1;
 	} moduleQueried;
 
 	uint16_t rtcmLen = 0;

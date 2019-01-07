@@ -37,7 +37,7 @@ void setup()
 
   Wire.begin();
 
-  myGPS.begin(Wire); //Connect to the Ublox module using Wire port
+  myGPS.begin(); //Connect to the Ublox module using Wire port
   if (myGPS.isConnected() == false)
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
@@ -114,10 +114,10 @@ void setup()
   Serial.println("Survey valid!");
 
   response = true;
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, UBX_RTCM_I2C_PORT, 1); //Enable message 1005 to output through I2C port, message every second
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1077, UBX_RTCM_I2C_PORT, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1087, UBX_RTCM_I2C_PORT, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, UBX_RTCM_I2C_PORT, 10); //Enable message every 10 seconds
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1077, COM_PORT_I2C, 1);
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1087, COM_PORT_I2C, 1);
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_I2C, 10); //Enable message every 10 seconds
 
   if (response == true)
   {
