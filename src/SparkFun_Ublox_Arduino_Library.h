@@ -99,10 +99,10 @@ const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
 const uint8_t SVIN_MODE_DISABLE = 0x00;
 const uint8_t SVIN_MODE_ENABLE = 0x01;
 
-const uint8_t UBX_NAV_POSLLH = 0x02; //Used for obtaining lat/long/alt in low precision
+const uint8_t UBX_NAV_PVT = 0x07; //All the things! Position, velocity, time, PDOP, height, h/v accuracies, number of satellites
+const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high precision)
 const uint8_t UBX_NAV_HPPOSLLH = 0x14; //Used for obtaining lat/long/alt in high precision
 const uint8_t UBX_NAV_SVIN = 0x3B; //Used for checking Survey In status
-const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high precision)
 
 const uint8_t UBX_MON_VER = 0x04; //Used for obtaining Protocol Version
 
@@ -183,21 +183,32 @@ class SFE_UBLOX_GPS
 	
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 	
+	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. 
 	int32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getAltitude(uint16_t maxWait = 250); //Returns the current altitude in mm above mean sea level (most common output of GPS receivers).
-	int32_t getAltitudeEllipsoid(uint16_t maxWait = 250); //Returns the current altitude in mm, ellipsoid model.
+	uint8_t getSIV(uint16_t maxWait = 250); //Returns number of sats used in fix
+	uint8_t getFixType(uint16_t maxWait = 250); //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
+	uint8_t getCarrierSolutionType(uint16_t maxWait = 250); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
 
-	uint8_t getProtocolVersionHigh(uint16_t maxWait = 250); //Returns the PROTVER XX.00 from UBX-MON-VER register
-	//uint8_t getProtocolVersionLow(uint16_t maxWait = 250); //Returns the PROTVER 00.XX from UBX-MON-VER register
-	//float getProtocolVersion(uint16_t maxWait = 250); //Returns the combination of high&low portions from PROTVER in UBX-MON-VER register
+	uint8_t getProtocolVersionHigh(uint16_t maxWait = 1000); //Returns the PROTVER XX.00 from UBX-MON-VER register
+	//uint8_t getProtocolVersionLow(uint16_t maxWait = 1000); //Returns the PROTVER 00.XX from UBX-MON-VER register
+	//float getProtocolVersion(uint16_t maxWait = 1000); //Returns the combination of high&low portions from PROTVER in UBX-MON-VER register
 	
+	//Survey-in specific controls
 	struct svinStructure {
 		boolean active;
 		boolean valid;
 		uint16_t observationTime;
 		float meanAccuracy;
 	} svin;
+	
+	int32_t latitude;
+	int32_t longitude;
+	int32_t altitude;	
+	uint8_t SIV;
+	uint8_t fixType;
+	uint8_t carrierSolution;
 
 	uint16_t rtcmFrameCounter = 0;
 	
@@ -227,6 +238,11 @@ class SFE_UBLOX_GPS
 		COMM_TYPE_SPI
 	} commType = COMM_TYPE_I2C; //Controls which port we look to for incoming bytes
 
+	//Functions
+	uint32_t extractLong(uint8_t spotToStart); //Combine four bytes from payload into long
+	uint8_t extractByte(uint8_t spotToStart); //Get byte from payload
+	void addToChecksum(uint8_t incoming); //Given an incoming byte, adjust rollingChecksumA/B 
+
 	//Variables
     TwoWire *_i2cPort; //The generic connection to user's chosen I2C hardware
 	Stream *_nmeaOutputPort = NULL; //The user can assign an output port to print NMEA sentences if they wish
@@ -249,7 +265,19 @@ class SFE_UBLOX_GPS
 
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
-	void addToChecksum(uint8_t incoming); //Given an incoming byte, adjust rollingChecksumA/B 
+	
+	//Create bit field for staleness of each datum in PVT we want to monitor
+	//moduleQueried.latitude goes true each time we call getPVT()
+	//This reduces the number of times we have to call getPVT as this can take up to ~1s per read
+	//depending on update rate
+	struct {
+	   uint16_t longitude : 1;
+	   uint16_t latitude : 1;
+	   uint16_t altitude : 1;
+	   uint16_t SIV : 1;
+	   uint16_t fixType : 1;
+	   uint16_t carrierSolution : 1;
+	} moduleQueried;
 
 	uint16_t rtcmLen = 0;
 };

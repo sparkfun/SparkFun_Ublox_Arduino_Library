@@ -676,104 +676,93 @@ boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
   return ( sendCommand(packetCfg, maxWait) );
 }
 
+//Given a spot, extract four bytes and build a long from the payload
+uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
+{
+	uint32_t pos = 0;
+	pos |= (int32_t)payloadCfg[spotToStart + 0] << 8*0;
+	pos |= (int32_t)payloadCfg[spotToStart + 1] << 8*1;
+	pos |= (int32_t)payloadCfg[spotToStart + 2] << 8*2;
+	pos |= (int32_t)payloadCfg[spotToStart + 3] << 8*3;
+	return(pos);
+}
+
+//Given a spot, extract byte the payload
+uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
+{
+	return(payloadCfg[spotToStart]);
+}
+
+//Get the latest Position/Velocity/Time solution and fill all global variables
+boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
+{
+	//Query the module for the latest lat/long
+	packetCfg.cls = UBX_CLASS_NAV;
+	packetCfg.id = UBX_NAV_PVT;
+	packetCfg.len = 0;
+	packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(false); //If command send fails then bail
+
+	//Parse various byte fields into global vars
+	fixType = extractByte(20 - packetCfg.startingSpot);
+	carrierSolution = extractByte(21 - packetCfg.startingSpot) >> 6; //Get 6th&7th bits of this byte
+	SIV = extractByte(23 - packetCfg.startingSpot);
+	longitude = extractLong(24 - packetCfg.startingSpot);
+	latitude = extractLong(28 - packetCfg.startingSpot);
+	altitude = extractLong(36 - packetCfg.startingSpot);
+	
+	//Mark all datums as fresh (not read before)
+	//moduleQueried ThisStruct;
+	//memset(&ThisStruct, 0, sizeof(moduleQueried));
+	moduleQueried.longitude = true;
+	moduleQueried.latitude = true;
+	moduleQueried.altitude = true;
+	moduleQueried.SIV = true;
+	moduleQueried.fixType = true;
+	moduleQueried.carrierSolution = true;
+	
+	return(true);
+}
+
 //Get the current 3D high precision positional accuracy - a fun thing to watch
 //Returns a float representing the 3D accuracy in millimeters
 uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 {
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_HPPOSECEF;
-  packetCfg.len = 0;
-  packetCfg.startingSpot = 0;
-
-  if(sendCommand(packetCfg, maxWait) == false)
-    return(0); //If command send fails then bail
-
-  //We got a response, now parse the byte fields into our variable
-  uint32_t tempAccuracy = 0;
-  tempAccuracy |= payloadCfg[24] << 8*0;
-  tempAccuracy |= payloadCfg[25] << 8*1;
-  tempAccuracy |= payloadCfg[26] << 8*2;
-  tempAccuracy |= payloadCfg[27] << 8*3;
-
-  Serial.print("temp: ");
-  Serial.println(tempAccuracy, HEX);
-  
-  if( (tempAccuracy % 10) >= 5) tempAccuracy += 5; //Round fraction of mm up to next mm if .5 or above
-  tempAccuracy /= 10; //Convert 0.1mm units to mm
-
-  Serial.print("temp: ");
-  Serial.println(tempAccuracy, HEX);
-
-  return(tempAccuracy);
-}
-//Get the current latitude in degrees
-//Returns a long representing the number of degrees *10^-7
-int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
-{
-	//Query the module for the latest lat/long
 	packetCfg.cls = UBX_CLASS_NAV;
-	packetCfg.id = UBX_NAV_POSLLH;
+	packetCfg.id = UBX_NAV_HPPOSECEF;
 	packetCfg.len = 0;
 	packetCfg.startingSpot = 0;
 
 	if(sendCommand(packetCfg, maxWait) == false)
 		return(0); //If command send fails then bail
 
-	//We got a response, now parse the byte fields
-	uint32_t pos = 0;
-	pos |= payloadCfg[8] << 8*0;
-	pos |= payloadCfg[9] << 8*1;
-	pos |= payloadCfg[10] << 8*2;
-	pos |= payloadCfg[11] << 8*3;
+	uint32_t tempAccuracy = extractLong(24); //We got a response, now extract a long beginning at a given position
 
-	return(pos);
+	if( (tempAccuracy % 10) >= 5) tempAccuracy += 5; //Round fraction of mm up to next mm if .5 or above
+	tempAccuracy /= 10; //Convert 0.1mm units to mm
+
+	return(tempAccuracy);
+}
+//Get the current latitude in degrees
+//Returns a long representing the number of degrees *10^-7
+int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
+{
+	if(moduleQueried.latitude == false) getPVT();
+	moduleQueried.latitude = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(latitude);
 }
 
 //Get the current longitude in degrees
 //Returns a long representing the number of degrees *10^-7
 int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 {
-	//Query the module for the latest lat/long
-	packetCfg.cls = UBX_CLASS_NAV;
-	packetCfg.id = UBX_NAV_POSLLH;
-	packetCfg.len = 0;
-	packetCfg.startingSpot = 0;
-
-	if(sendCommand(packetCfg, maxWait) == false)
-		return(0); //If command send fails then bail
-
-	//We got a response, now parse the byte fields
-	uint32_t pos = 0;
-	pos |= payloadCfg[4] << 8*0;
-	pos |= payloadCfg[5] << 8*1;
-	pos |= payloadCfg[6] << 8*2;
-	pos |= payloadCfg[7] << 8*3;
-
-	return(pos);
-}
-
-//Get the current altitude in mm according to the Ellipsoid model. 
-//Ellipsoid model: https://www.esri.com/news/arcuser/0703/geoid1of3.html
-//Difference between Ellipsoid Model and Mean Sea Level: https://eos-gnss.com/elevation-for-beginners/
-int32_t SFE_UBLOX_GPS::getAltitudeEllipsoid(uint16_t maxWait)
-{
-	//Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
-	packetCfg.cls = UBX_CLASS_NAV;
-	packetCfg.id = UBX_NAV_POSLLH;
-	packetCfg.len = 0;
-	packetCfg.startingSpot = 0;
-
-	if(sendCommand(packetCfg, maxWait) == false)
-		return(0); //If command send fails then bail
-
-	//We got a response, now parse the byte fields
-	uint32_t alt = 0;
-	alt |= payloadCfg[12] << 8*0;
-	alt |= payloadCfg[13] << 8*1;
-	alt |= payloadCfg[14] << 8*2;
-	alt |= payloadCfg[15] << 8*3;
-
-	return(alt);
+	if(moduleQueried.longitude == false) getPVT();
+	moduleQueried.longitude = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(longitude);
 }
 
 //Get the current altitude in mm according to mean sea level
@@ -781,23 +770,40 @@ int32_t SFE_UBLOX_GPS::getAltitudeEllipsoid(uint16_t maxWait)
 //Difference between Ellipsoid Model and Mean Sea Level: https://eos-gnss.com/elevation-for-beginners/
 int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 {
-	//Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
-	packetCfg.cls = UBX_CLASS_NAV;
-	packetCfg.id = UBX_NAV_POSLLH;
-	packetCfg.len = 0;
-	packetCfg.startingSpot = 0;
+	if(moduleQueried.altitude == false) getPVT();
+	moduleQueried.altitude = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(altitude);
+}
 
-	if(sendCommand(packetCfg, maxWait) == false)
-		return(0); //If command send fails then bail
+//Get the number of satellites used in fix
+uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
+{
+	if(moduleQueried.SIV == false) getPVT();
+	moduleQueried.SIV = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(SIV);
+}
 
-	//We got a response, now parse the byte fields
-	uint32_t alt = 0;
-	alt |= payloadCfg[16] << 8*0;
-	alt |= payloadCfg[17] << 8*1;
-	alt |= payloadCfg[18] << 8*2;
-	alt |= payloadCfg[19] << 8*3;
+//Get the current fix type
 
-	return(alt);
+uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
+{
+	if(moduleQueried.fixType == false) getPVT();
+	moduleQueried.fixType = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(fixType);
+}
+
+//Get the carrier phase range solution status
+//Useful when querying module to see if it has high-precision RTK fix
+//0=No solution, 1=Float solution, 2=Fixed solution
+uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
+{
+	if(moduleQueried.carrierSolution == false) getPVT();
+	moduleQueried.carrierSolution = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(carrierSolution);
 }
 
 //Get the current protocol version of the Ublox module we're communicating with
@@ -807,40 +813,35 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 	//Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
 	packetCfg.cls = UBX_CLASS_MON;
 	packetCfg.id = UBX_MON_VER;
-	packetCfg.len = 0;
-
-	packetCfg.startingSpot = 0; //Get software version
 	
-	if(sendCommand(packetCfg, maxWait) == false)
-		return(0); //If command send fails then bail
-	
-	Serial.print("Software version: ");
-	for(int location = 0 ; location < 64 ; location++)
-	{
-		Serial.write(payloadCfg[location]);
-		if(payloadCfg[location] == '\0') break;
-	}
-	Serial.println();
-	
-	//while(1);
-
 	//We will send the command repeatedly, increasing the startingSpot as we go
 	//Then we look at each extension field of 30 bytes
-	for(uint8_t extensionNumber = 0 ; extensionNumber < 4 ; extensionNumber++)
+	for(uint8_t extensionNumber = 0 ; extensionNumber < 10 ; extensionNumber++)
 	{
+		packetCfg.len = 0;
 		packetCfg.startingSpot = 40 + (30*extensionNumber);
 		
 		if(sendCommand(packetCfg, maxWait) == false)
 			return(0); //If command send fails then bail
-		
-		//Now we need to start looking for "PROTVER" in the incoming byte stream
-		Serial.print("Extension: ");
-		for(int location = 0 ; location < 64 ; location++)
+
+#ifdef DEBUG		
+		Serial.print("Extension ");
+		Serial.print(extensionNumber);
+		Serial.print(": ");
+		for(int location = 0 ; location < MAX_PAYLOAD_SIZE ; location++)
 		{
-			Serial.write(payloadCfg[location]);
 			if(payloadCfg[location] == '\0') break;
+			Serial.write(payloadCfg[location]);
 		}
 		Serial.println();
+#endif		
+
+		//Now we need to find "PROTVER=18.00" in the incoming byte stream
+		if(payloadCfg[0] == 'P' && payloadCfg[6] == 'R')
+		{
+			byte versionHigh = (payloadCfg[8] - '0') * 10 + (payloadCfg[9] - '0'); //Convert '18' to 18
+			return(versionHigh);
+		}
 	}
 
 	return(0);

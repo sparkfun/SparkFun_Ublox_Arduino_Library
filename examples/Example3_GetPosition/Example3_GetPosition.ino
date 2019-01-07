@@ -43,20 +43,51 @@ void setup()
     while (1);
   }
 
-  //Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  //long pos = myGPS.getPositionAccuracy(2000);
-  //Serial.print("pos: ");
-  //Serial.println(pos);
+  /*long pos = myGPS.getPositionAccuracy();
+    Serial.print("pos: ");
+    Serial.println(pos);
 
-  byte version = myGPS.getProtocolVersionHigh(2000);
-  
+    byte version = myGPS.getProtocolVersionHigh();
+    Serial.print("version: ");
+    Serial.println(version);*/
+
+  long latitude = myGPS.getLatitude(1000);
+  Serial.print("Lat: ");
+  Serial.print(latitude);
+
+
+  long longitude = myGPS.getLongitude(2000);
+  Serial.print(" Long: ");
+  Serial.print(longitude);
+  Serial.print(" (degrees * 10^-7)");
+
+  long altitude = myGPS.getAltitude();
+  Serial.print(" Alt (above mean sea level): ");
+  Serial.print(altitude);
+  Serial.print(" (mm)");
+
+  byte SIV = myGPS.getSIV();
+  Serial.print(" SIV: ");
+  Serial.print(SIV);
+
+  byte fixType = myGPS.getFixType();
+  Serial.print(" Fix: ");
+  Serial.print(fixType);
+
+  byte RTK = myGPS.getCarrierSolutionType();
+  Serial.print(" RTK: ");
+  Serial.print(RTK);
+  if(RTK == 1) Serial.println("High precision float fix!");
+  if(RTK == 2) Serial.println("High precision fix!");
+
   while (1);
 }
 
 void loop()
 {
-  myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
+/*  myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
   delay(250); //Don't pound too hard on the I2C bus
 
@@ -83,6 +114,6 @@ void loop()
     Serial.print(" AltMSL (above Ellipsoid model surface of earth): ");
     Serial.print(altitudeEllipsoid);
     Serial.println(" (mm)");
-  }
+  }*/
 
 }
