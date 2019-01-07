@@ -45,6 +45,10 @@ void setup()
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
+  
+  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGPS.setNavigationFrequency(4); //Set output to 4 times a second
+
   /*long pos = myGPS.getPositionAccuracy();
     Serial.print("pos: ");
     Serial.println(pos);

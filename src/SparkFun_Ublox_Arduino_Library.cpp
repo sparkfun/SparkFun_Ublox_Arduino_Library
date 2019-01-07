@@ -590,16 +590,9 @@ boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
     return(false); //If command send fails then bail
 
   //We got a response, now parse the bits into the svin structure
-  svin.observationTime |= payloadCfg[8] << 8*0;
-  svin.observationTime |= payloadCfg[9] << 8*1;
-  svin.observationTime |= payloadCfg[10] << 8*2;
-  svin.observationTime |= payloadCfg[11] << 8*3;
+  svin.observationTime = extractLong(8);
 
-  uint32_t tempFloat = 0;
-  tempFloat |= payloadCfg[28] << 8*0;
-  tempFloat |= payloadCfg[29] << 8*1;
-  //tempFloat |= payloadCfg[30] << 8*2;
-  //tempFloat |= payloadCfg[31] << 8*3;
+  uint32_t tempFloat = extractInt(28);
   svin.meanAccuracy = tempFloat / 10000.0; //Convert 0.1mm to m
 
   svin.valid = payloadCfg[36];
@@ -645,7 +638,7 @@ boolean SFE_UBLOX_GPS::disableRTCMmessage(uint8_t messageNumber, uint8_t portID,
 boolean SFE_UBLOX_GPS::setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t maxWait)
 {
   //Get the current config values for this port ID
-  getPortSettings(portID);
+  getPortSettings(portID); //This will load the payloadCfg array with current port settings
 
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
@@ -656,14 +649,14 @@ boolean SFE_UBLOX_GPS::setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t
   for(uint8_t x = 0 ; x < packetCfg.len ; x++)
     packetCfg.payload[x] = 0;
 
-  //msg_payload is now loaded with current bytes. Change only the ones we need to
+  //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[13] |= (1 << 5); //InProtocolMask LSB - Set inRtcm3
   payloadCfg[15] |= (1 << 5); //OutProtocolMask LSB - Set outRtcm3
 
   return ( sendCommand(packetCfg, maxWait) );
 }
 
-//Returns the current protocol bits in the UBX-CFG-PRT command for a given port
+//Loads the payloadCfg array with the current protocol bits located the UBX-CFG-PRT register for a given port
 boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
@@ -676,15 +669,112 @@ boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
   return ( sendCommand(packetCfg, maxWait) );
 }
 
-//Given a spot, extract four bytes and build a long from the payload
+//Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
+//Port 0=I2c, 1=UART1, 2=UART2, 3=USB, 4=SPI
+//Bit:0 = UBX, :1=NMEA, :5=RTCM3
+boolean SFE_UBLOX_GPS::setPortOutput(uint8_t portID, uint8_t outStreamSettings, uint16_t maxWait)
+{
+  //Get the current config values for this port ID
+  getPortSettings(portID); //This will load the payloadCfg array with current port settings
+
+  //Yes, this is the depreciated way to do it but it's still supported on v27 so it 
+  //covers both ZED-F9P (v27) and SAM-M8Q (v18)
+  
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PRT;
+  packetCfg.len = 20;
+  packetCfg.startingSpot = 0;
+
+  //payloadCfg is now loaded with current bytes. Change only the ones we need to
+  payloadCfg[14] = outStreamSettings; //OutProtocolMask LSB - Set outStream bits
+
+  return ( sendCommand(packetCfg, maxWait) );
+}
+
+//Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
+//Port 0=I2c, 1=UART1, 2=UART2, 3=USB, 4=SPI
+//Bit:0 = UBX, :1=NMEA, :5=RTCM3
+boolean SFE_UBLOX_GPS::setPortInput(uint8_t portID, uint8_t inStreamSettings, uint16_t maxWait)
+{
+  //Get the current config values for this port ID
+  getPortSettings(portID); //This will load the payloadCfg array with current port settings
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PRT;
+  packetCfg.len = 20;
+  packetCfg.startingSpot = 0;
+
+  //payloadCfg is now loaded with current bytes. Change only the ones we need to
+  payloadCfg[12] = inStreamSettings; //InProtocolMask LSB - Set inStream bits
+
+  return ( sendCommand(packetCfg, maxWait) );
+}
+
+//Configure a port to output UBX, NMEA, RTCM3 or a combination thereof
+boolean SFE_UBLOX_GPS::setI2COutput(uint8_t comSettings, uint16_t maxWait)
+{
+	return(setPortOutput(COM_PORT_I2C, comSettings, maxWait));
+}
+boolean SFE_UBLOX_GPS::setUART1Output(uint8_t comSettings, uint16_t maxWait)
+{
+	return(setPortOutput(COM_PORT_UART1, comSettings, maxWait));
+}
+boolean SFE_UBLOX_GPS::setUART2Output(uint8_t comSettings, uint16_t maxWait)
+{
+	return(setPortOutput(COM_PORT_UART2, comSettings, maxWait));
+}
+boolean SFE_UBLOX_GPS::setUSBOutput(uint8_t comSettings, uint16_t maxWait)
+{
+	return(setPortOutput(COM_PORT_USB, comSettings, maxWait));
+}
+boolean SFE_UBLOX_GPS::setSPIOutput(uint8_t comSettings, uint16_t maxWait)
+{
+	return(setPortOutput(COM_PORT_SPI, comSettings, maxWait));
+}
+
+//Set the rate at which the module will give us an updated navigation solution
+//Expects a number that is the updates per second. For example 1 = 1Hz, 2 = 2Hz, etc.
+//Max is 40Hz(?!)
+boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
+{
+	//if(updateRate > 40) updateRate = 40; //Not needed: module will correct out of bounds values
+
+	//Query the module for the latest lat/long
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_RATE;
+	packetCfg.len = 0;
+	packetCfg.startingSpot = 0;
+
+	if(sendCommand(packetCfg, maxWait) == false) //This will load the payloadCfg array with current settings of the given register
+		return(false); //If command send fails then bail
+
+	uint16_t measurementRate = 1000 / navFreq ;
+	
+	//payloadCfg is now loaded with current bytes. Change only the ones we need to
+	payloadCfg[0] = measurementRate & 0xFF; //measRate LSB
+	payloadCfg[1] = measurementRate >> 8; //measRate MSB
+
+	return ( sendCommand(packetCfg, maxWait) );
+}
+
+//Given a spot in the payload array, extract four bytes and build a long
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {
-	uint32_t pos = 0;
-	pos |= (int32_t)payloadCfg[spotToStart + 0] << 8*0;
-	pos |= (int32_t)payloadCfg[spotToStart + 1] << 8*1;
-	pos |= (int32_t)payloadCfg[spotToStart + 2] << 8*2;
-	pos |= (int32_t)payloadCfg[spotToStart + 3] << 8*3;
-	return(pos);
+	uint32_t val = 0;
+	val |= (int32_t)payloadCfg[spotToStart + 0] << 8*0;
+	val |= (int32_t)payloadCfg[spotToStart + 1] << 8*1;
+	val |= (int32_t)payloadCfg[spotToStart + 2] << 8*2;
+	val |= (int32_t)payloadCfg[spotToStart + 3] << 8*3;
+	return(val);
+}
+
+//Given a spot in the payload array, extract two bytes and build an int
+uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
+{
+	uint16_t val = 0;
+	val |= (int16_t)payloadCfg[spotToStart + 0] << 8*0;
+	val |= (int16_t)payloadCfg[spotToStart + 1] << 8*1;
+	return(val);
 }
 
 //Given a spot, extract byte the payload

@@ -113,14 +113,21 @@ const uint8_t UBX_RTCM_1005 = 0x05; //Stationary RTK reference ARP
 const uint8_t UBX_RTCM_1077 = 0x4D; //GPS MSM7
 const uint8_t UBX_RTCM_1087 = 0x57; //GLONASS MSM7
 const uint8_t UBX_RTCM_1230 = 0xE6; //GLONASS code-phase biases, set to once every 10 seconds
-const uint8_t UBX_RTCM_I2C_PORT = 0;
-const uint8_t UBX_RTCM_UART1_PORT = 1;
-const uint8_t UBX_RTCM_UART2_PORT = 2;
-const uint8_t UBX_RTCM_USB_PORT = 3;
-const uint8_t UBX_RTCM_SPI_PORT = 4;
 
 const uint8_t UBX_ACK_NACK = 0x00;
 const uint8_t UBX_ACK_ACK = 0x01;
+
+//The folloing consts are used to configure the various ports and streams for those ports. See -CFG-PRT.
+const uint8_t COM_PORT_I2C = 0;
+const uint8_t COM_PORT_UART1 = 1;
+const uint8_t COM_PORT_UART2 = 2;
+const uint8_t COM_PORT_USB = 3;
+const uint8_t COM_PORT_SPI = 4;
+
+const uint8_t COM_TYPE_UBX = (1<<0);
+const uint8_t COM_TYPE_NMEA = (1<<1);
+const uint8_t COM_TYPE_RTCM3 = (1<<5);
+
 
 #define MAX_PAYLOAD_SIZE 64 //Some commands are larger than 64 bytes but this covers most
 
@@ -177,6 +184,18 @@ class SFE_UBLOX_GPS
 	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables 
 	boolean enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t secondsBetweenMessages, uint16_t maxWait = 250); //Given a message number turns on a message ID for output over given PortID
 	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250); //Turn off given RTCM message from a given port
+
+	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
+
+	boolean setI2COutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUART1Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUART2Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
+
+	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
+
 	boolean setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t maxWait = 250); //Enable/Disable RTCM3 (both input and output) for a given port
 
 	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250); //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
@@ -240,6 +259,7 @@ class SFE_UBLOX_GPS
 
 	//Functions
 	uint32_t extractLong(uint8_t spotToStart); //Combine four bytes from payload into long
+	uint16_t extractInt(uint8_t spotToStart); //Combine two bytes from payload into int
 	uint8_t extractByte(uint8_t spotToStart); //Get byte from payload
 	void addToChecksum(uint8_t incoming); //Given an incoming byte, adjust rollingChecksumA/B 
 
