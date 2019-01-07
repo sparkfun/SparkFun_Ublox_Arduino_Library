@@ -152,7 +152,7 @@ class SFE_UBLOX_GPS
     SFE_UBLOX_GPS(void);
 
     //By default use the default I2C address, and use Wire port
-    void begin(TwoWire &wirePort = Wire);
+    boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
 
 	boolean isConnected(); //Returns turn if device answers on _gpsI2Caddress address
 
@@ -171,34 +171,13 @@ class SFE_UBLOX_GPS
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
 	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes
 
-	void setI2CReadAddress(uint8_t deviceAddress); //Sets the internal variable for the address of ublox module we want to read from
+	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250); //Changes the I2C address of the Ublox module
 	void setNMEAOutputPort(Stream &nmeaOutputPort); //Sets the internal variable for the port to direct NMEA characters to
 	
+	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
+
 	boolean waitForResponse(uint16_t maxTime = 250); //Poll the module until and ack is received
 
-	boolean getSurveyMode(uint16_t maxWait = 250); //Get the current TimeMode3 settings
-	boolean setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Control survey in mode
-	boolean enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Begin Survey-In for NEO-M8P
-	boolean disableSurveyMode(uint16_t maxWait = 250); //Stop Survey-In mode
-	
-	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables 
-	boolean enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t secondsBetweenMessages, uint16_t maxWait = 250); //Given a message number turns on a message ID for output over given PortID
-	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250); //Turn off given RTCM message from a given port
-
-	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
-	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250); //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
-
-	boolean setI2COutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setUART1Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setUART2Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
-
-	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
-	
-	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
-	
 	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. 
 	int32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
@@ -210,6 +189,29 @@ class SFE_UBLOX_GPS
 	int32_t getHeading(uint16_t maxWait = 250); //Returns heading in degrees * 10^-7
 	uint16_t getPDOP(uint16_t maxWait = 250); //Returns positional dillution of precision * 10^-2
 
+	//Port configurations
+	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
+	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250); //Returns the current protocol bits in the UBX-CFG-PRT command for a given port
+
+	boolean setI2COutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUART1Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUART2Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
+
+	//Functions used for RTK and base station setup
+	boolean getSurveyMode(uint16_t maxWait = 250); //Get the current TimeMode3 settings
+	boolean setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Control survey in mode
+	boolean enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Begin Survey-In for NEO-M8P
+	boolean disableSurveyMode(uint16_t maxWait = 250); //Stop Survey-In mode
+	
+	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables 
+	boolean enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t secondsBetweenMessages, uint16_t maxWait = 250); //Given a message number turns on a message ID for output over given PortID
+	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250); //Turn off given RTCM message from a given port
+	
+	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
+	
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 1000); //Returns the PROTVER XX.00 from UBX-MON-VER register
 	//uint8_t getProtocolVersionLow(uint16_t maxWait = 1000); //Returns the PROTVER 00.XX from UBX-MON-VER register
 	//float getProtocolVersion(uint16_t maxWait = 1000); //Returns the combination of high&low portions from PROTVER in UBX-MON-VER register

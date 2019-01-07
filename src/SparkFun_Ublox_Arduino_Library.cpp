@@ -34,7 +34,7 @@ SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
 }
 
 //Initialize the Serial port
-void SFE_UBLOX_GPS::begin(TwoWire &wirePort)
+boolean SFE_UBLOX_GPS::begin(TwoWire &wirePort, uint8_t deviceAddress)
 {
 	commType = COMM_TYPE_I2C;
 	_i2cPort = &wirePort; //Grab which port the user wants us to use
@@ -46,14 +46,34 @@ void SFE_UBLOX_GPS::begin(TwoWire &wirePort)
 	//ie, there are some platforms that don't handle multiple starts to the wire hardware. Also, every time you start the wire
 	//hardware the clock speed reverts back to 100kHz regardless of previous Wire.setClocks().
 	//_i2cPort->begin();
+
+	_gpsI2Caddress = deviceAddress; //Store the I2C address from user
+	
+	return(isConnected());
 }
 
-//Sets the internal global variable that is the I2C address we read from
-//This does not change the I2C address of the module
-//0x42 is the default but can be changed via software command
-void SFE_UBLOX_GPS::setI2CReadAddress(uint8_t deviceAddress)
+//Changes the I2C address that the Ublox module responds to
+//0x42 is the default but can be changed with this command
+boolean SFE_UBLOX_GPS::setI2CAddress(uint8_t deviceAddress, uint16_t maxWait)
 {
-	_gpsI2Caddress = deviceAddress; //Store the I2C address from user
+	//Get the current config values for the I2C port
+	getPortSettings(COM_PORT_I2C); //This will load the payloadCfg array with current port settings
+
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_PRT;
+	packetCfg.len = 20;
+	packetCfg.startingSpot = 0;
+
+	//payloadCfg is now loaded with current bytes. Change only the ones we need to
+	payloadCfg[4] = deviceAddress << 1; //DDC mode LSB
+
+	if( sendCommand(packetCfg, maxWait) == true)
+	{
+		//Success! Now change our internal global.
+		_gpsI2Caddress = deviceAddress; //Store the I2C address from user
+		return(true);
+	}
+	return(false);
 }
 
 //Want to see the NMEA messages on the Serial port? Here's how
@@ -575,16 +595,16 @@ boolean SFE_UBLOX_GPS::disableSurveyMode(uint16_t maxWait)
 //Returns true if commands was successful
 boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
 {
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_SVIN;
-  packetCfg.len = 0;
-  packetCfg.startingSpot = 0;
-
   //Reset variables
   svin.active = false;
   svin.valid = false;
   svin.observationTime = 0;
   svin.meanAccuracy = 0;
+
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_SVIN;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
 
   if(sendCommand(packetCfg, maxWait) == false)
     return(false); //If command send fails then bail
@@ -631,29 +651,6 @@ boolean SFE_UBLOX_GPS::enableRTCMmessage(uint8_t messageNumber, uint8_t portID, 
 boolean SFE_UBLOX_GPS::disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait)
 {
 	return(enableRTCMmessage(messageNumber, portID, 0, maxWait));
-}
-
-//Enable/Disable RTCM3 (both input and output) for a given port
-//Use to enable RTCM3 on I2C port (ID 0)
-boolean SFE_UBLOX_GPS::setRTCMport(uint8_t portID, boolean enableRTCM3, uint16_t maxWait)
-{
-  //Get the current config values for this port ID
-  getPortSettings(portID); //This will load the payloadCfg array with current port settings
-
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_PRT;
-  packetCfg.len = 20;
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for(uint8_t x = 0 ; x < packetCfg.len ; x++)
-    packetCfg.payload[x] = 0;
-
-  //payloadCfg is now loaded with current bytes. Change only the ones we need to
-  payloadCfg[13] |= (1 << 5); //InProtocolMask LSB - Set inRtcm3
-  payloadCfg[15] |= (1 << 5); //OutProtocolMask LSB - Set outRtcm3
-
-  return ( sendCommand(packetCfg, maxWait) );
 }
 
 //Loads the payloadCfg array with the current protocol bits located the UBX-CFG-PRT register for a given port
