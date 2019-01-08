@@ -823,9 +823,6 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 	if(sendCommand(packetCfg, maxWait) == false) //This will load the payloadCfg array with current settings of the given register
 		return(false); //If command send fails then bail
 
-	Serial.print("Len: ");
-	Serial.print(packetCfg.len);
-		
 	uint16_t measurementRate = 1000 / navFreq ;
 	
 	//payloadCfg is now loaded with current bytes. Change only the ones we need to
