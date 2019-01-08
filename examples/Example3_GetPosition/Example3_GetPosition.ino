@@ -43,13 +43,29 @@ void setup()
     while (1);
   }
 
-  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+  //Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+
+  /*byte response;
+  response = myGPS.getVal(VAL_GROUP_I2C, VAL_ID_I2C_ADDRESS, VAL_GROUP_I2C_SIZE, VAL_LAYER_RAM);
+  Serial.print("res: 0x");
+  Serial.println(response, HEX);
+
+  delay(100);
+
+  response = myGPS.getVal(VAL_GROUP_I2COUTPROT, VAL_ID_I2COUTPROT_NMEA, VAL_GROUP_I2COUTPROT_SIZE, VAL_LAYER_RAM);
+  Serial.print("res: 0x");
+  Serial.print(response, HEX);
+  while(1);*/
+
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  
-  myGPS.setUSBOutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  
   myGPS.setNavigationFrequency(4); //Set output to 4 times a second
+
+  byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
+  Serial.print("Update rate:");
+  Serial.println(rate);
+
+  while(1);
 
   /*long pos = myGPS.getPositionAccuracy();
     Serial.print("pos: ");

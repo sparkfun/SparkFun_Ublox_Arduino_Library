@@ -158,6 +158,15 @@ boolean SFE_UBLOX_GPS::checkUbloxSerial()
 //Take a given byte and file it into the proper array
 void SFE_UBLOX_GPS::process(uint8_t incoming)
 {
+	
+#ifdef DEBUG
+    //if (currentSentence == NONE && incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
+	//	debug.println(); //Show new packet start
+
+	//debug.print(" ");
+	//debug.print(incoming, HEX);
+#endif
+	
   if (currentSentence == NONE || currentSentence == NMEA)
   {
     if (incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
@@ -196,26 +205,23 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
       currentSentence = NONE; //Something went wrong. Reset.
     else if (ubxFrameCounter == 2) //Class
     {
+      packetAck.counter = 0;
+      packetAck.valid = false;
+	  packetCfg.counter = 0;
+	  packetCfg.valid = false;
+	  
       //We can now identify the type of response
       if (incoming == UBX_CLASS_ACK)
-      {
         ubxFrameClass = CLASS_ACK;
-        packetAck.counter = 0;
-        packetAck.valid = false;
-      }
       else
-      {
         ubxFrameClass = CLASS_NOT_AN_ACK;
-        packetCfg.counter = 0;
-        packetCfg.valid = false;
-      }
     }
 
     ubxFrameCounter++;
 
     //Depending on this frame's class, pass different structs and payload arrays
     if (ubxFrameClass == CLASS_ACK)
-      processUBX(incoming, &packetAck);
+		processUBX(incoming, &packetAck);
     else if (ubxFrameClass == CLASS_NOT_AN_ACK)
       processUBX(incoming, &packetCfg);
   }
@@ -343,8 +349,8 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 		if (incomingUBX->checksumA == rollingChecksumA && incomingUBX->checksumB == rollingChecksumB)
 		{
 #ifdef DEBUG
-			debug.println("Checksum/Frame Good");
-			//printFrame(incomingUBX);
+			debug.print("Received: ");
+			printPacket(incomingUBX);
 #endif
 			incomingUBX->valid = true;
 			processUBXpacket(incomingUBX); //We've got a valid packet, now do something with it
@@ -403,6 +409,11 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
   commandAck = false; //We're about to send a command. Begin waiting for ack.
 
   calcChecksum(&outgoingUBX); //Sets checksum A and B bytes of the packet
+
+#ifdef DEBUG
+			debug.print("Sending: ");
+			printPacket(&outgoingUBX);
+#endif
 
   //Point at 0xFF data register
   _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
@@ -508,8 +519,32 @@ void SFE_UBLOX_GPS::addToChecksum(uint8_t incoming)
 	rollingChecksumB += rollingChecksumA;
 }
 
+//Pretty prints the current ubxPacket
+void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
+{
+	debug.print("CLS:");
+	debug.print(packet->cls, HEX);
 
-//=-=-=-=-=-=-=-= Specific commands =-=-=-=-=-=-=-=
+	debug.print(" ID:");
+	debug.print(packet->id, HEX);
+
+	//debug.print(" Len: 0x");
+	//debug.print(packet->len, HEX);
+	
+	debug.print(" Payload:");
+	
+	for(int x = 0 ; x < packet->len ; x++)
+	{
+		debug.print(" ");
+		debug.print(packet->payload[x], HEX);
+	}
+	debug.println();
+}
+
+
+//=-=-=-=-=-=-=-= Specific commands =-=-=-=-=-=-=-==-=-=-=-=-=-=-=
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 
 //Poll the module until and ack is received
 boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
@@ -522,10 +557,8 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
   {
     checkUblox(); //See if new data is available. Process bytes as they come in.
 
-    //If the packet we just sent was a CFG packet then we'll get an ACK
-    //If the packet we just sent was a NAV packet then we'll just get data back
-    if (commandAck == true) return (true);
-    if (packetCfg.valid == true) return (true);
+    if (commandAck == true) return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
+    if (packetCfg.valid == true) return (true); //If the packet we just sent was a NAV packet then we'll just get data back
   }
 
 #ifdef DEBUG
@@ -533,6 +566,48 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
 #endif
 	
 	return (false);
+}
+
+//Given a key, return its value
+//This is how the new Ublox modules are communicating, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_VALGET;
+	packetCfg.len = 4 + 4*1; //Only one key at a time
+	packetCfg.startingSpot = 0;
+
+	//Clear packet payload
+	for(uint8_t x = 0 ; x < packetCfg.len ; x++)
+		packetCfg.payload[x] = 0;
+
+	payloadCfg[0] = 0; //Message Version - set to 0
+	payloadCfg[1] = layer;
+	
+	//Create key
+	uint32_t key = 0;
+	key |= (uint32_t)id;
+	key |= (uint32_t)group << 16;
+	key |= (uint32_t)size << 28;
+	
+#ifdef DEBUG
+	Serial.print("key: 0x");
+	Serial.print(key, HEX);
+	Serial.println();
+#endif
+
+	//Load key into outgoing payload
+	payloadCfg[4] = key >> 8*0; //Key LSB
+	payloadCfg[5] = key >> 8*1;
+	payloadCfg[6] = key >> 8*2;
+	payloadCfg[7] = key >> 8*3;
+
+	//Send VALGET command with this key
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(false); //If command send fails then bail
+
+	//Pull the requested value from the response
+	return(extractByte(8)); //Look for our response value at location 4+4*N
 }
 
 //Get the current TimeMode3 settings - these contain survey in statuses
@@ -672,7 +747,8 @@ boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
 boolean SFE_UBLOX_GPS::setPortOutput(uint8_t portID, uint8_t outStreamSettings, uint16_t maxWait)
 {
   //Get the current config values for this port ID
-  getPortSettings(portID); //This will load the payloadCfg array with current port settings
+  if(getPortSettings(portID) == false) 
+		return(false); //Something went wrong. Bail.
 
   //Yes, this is the depreciated way to do it but it's still supported on v27 so it 
   //covers both ZED-F9P (v27) and SAM-M8Q (v18)
@@ -694,7 +770,9 @@ boolean SFE_UBLOX_GPS::setPortOutput(uint8_t portID, uint8_t outStreamSettings, 
 boolean SFE_UBLOX_GPS::setPortInput(uint8_t portID, uint8_t inStreamSettings, uint16_t maxWait)
 {
   //Get the current config values for this port ID
-  getPortSettings(portID); //This will load the payloadCfg array with current port settings
+  //This will load the payloadCfg array with current port settings
+  if(getPortSettings(portID) == false) 
+		return(false); //Something went wrong. Bail.
 
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
@@ -745,6 +823,9 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 	if(sendCommand(packetCfg, maxWait) == false) //This will load the payloadCfg array with current settings of the given register
 		return(false); //If command send fails then bail
 
+	Serial.print("Len: ");
+	Serial.print(packetCfg.len);
+		
 	uint16_t measurementRate = 1000 / navFreq ;
 	
 	//payloadCfg is now loaded with current bytes. Change only the ones we need to
@@ -752,6 +833,27 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 	payloadCfg[1] = measurementRate >> 8; //measRate MSB
 
 	return ( sendCommand(packetCfg, maxWait) );
+}
+
+//Get the rate at which the module is outputting nav solutions
+uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
+{
+	//Query the module for the latest lat/long
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_RATE;
+	packetCfg.len = 0;
+	packetCfg.startingSpot = 0;
+
+	if(sendCommand(packetCfg, maxWait) == false) //This will load the payloadCfg array with current settings of the given register
+		return(0); //If command send fails then bail
+
+	uint16_t measurementRate = 0;
+	
+	//payloadCfg is now loaded with current bytes. Get what we need
+	measurementRate = extractInt(0); //Pull from payloadCfg at measRate LSB
+
+	measurementRate = 1000 / measurementRate; //This may return an int when it's a float, but I'd rather not return 4 bytes
+	return (measurementRate);
 }
 
 //Given a spot in the payload array, extract four bytes and build a long

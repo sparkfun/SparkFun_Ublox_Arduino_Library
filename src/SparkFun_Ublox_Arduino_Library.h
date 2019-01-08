@@ -94,6 +94,9 @@ const uint8_t UBX_CLASS_HNR = 0x28;
 
 const uint8_t UBX_CFG_PRT = 0x00; //Used to configure port specifics
 const uint8_t UBX_CFG_RATE = 0x08; //Used to set port baud rates
+const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
+const uint8_t UBX_CFG_VALGET = 0x8B; //Used for config of higher version Ublox modules (ie protocol v27 and above)
+const uint8_t UBX_CFG_VALDEL = 0x8C; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 
 const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
 const uint8_t SVIN_MODE_DISABLE = 0x00;
@@ -117,7 +120,7 @@ const uint8_t UBX_RTCM_1230 = 0xE6; //GLONASS code-phase biases, set to once eve
 const uint8_t UBX_ACK_NACK = 0x00;
 const uint8_t UBX_ACK_ACK = 0x01;
 
-//The folloing consts are used to configure the various ports and streams for those ports. See -CFG-PRT.
+//The following consts are used to configure the various ports and streams for those ports. See -CFG-PRT.
 const uint8_t COM_PORT_I2C = 0;
 const uint8_t COM_PORT_UART1 = 1;
 const uint8_t COM_PORT_UART2 = 2;
@@ -128,6 +131,26 @@ const uint8_t COM_TYPE_UBX = (1<<0);
 const uint8_t COM_TYPE_NMEA = (1<<1);
 const uint8_t COM_TYPE_RTCM3 = (1<<5);
 
+//The following consts are used to generate KEY values for the advanced protocol functions of VELGET/SET/DEL
+const uint8_t VAL_SIZE_BIT = 0x01;
+const uint8_t VAL_SIZE_BYTE = 0x02;
+
+const uint8_t VAL_LAYER_RAM = 0;
+const uint8_t VAL_LAYER_BBR = 1;
+const uint8_t VAL_LAYER_FLASH = 2;
+const uint8_t VAL_LAYER_DEFAULT = 7;
+
+const uint8_t VAL_GROUP_I2COUTPROT_SIZE = VAL_SIZE_BIT; //All fields in I2C group are currently 1 bit
+const uint8_t VAL_GROUP_I2COUTPROT = 0x72;
+
+const uint8_t VAL_ID_I2COUTPROT_UBX = 0x01;
+const uint8_t VAL_ID_I2COUTPROT_NMEA = 0x02;
+const uint8_t VAL_ID_I2COUTPROT_RTCM3 = 0x03;
+
+const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_BYTE; //All fields in I2C group are currently 1 byte
+const uint8_t VAL_GROUP_I2C = 0x51;
+
+const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
 #define MAX_PAYLOAD_SIZE 64 //Some commands are larger than 64 bytes but this covers most
 
@@ -171,10 +194,13 @@ class SFE_UBLOX_GPS
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
 	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes
 
+	void printPacket(ubxPacket *packet); //Useful for debugging
+
 	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250); //Changes the I2C address of the Ublox module
 	void setNMEAOutputPort(Stream &nmeaOutputPort); //Sets the internal variable for the port to direct NMEA characters to
 	
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
+	uint8_t getNavigationFrequency(uint16_t maxWait = 250); //Get the number of nav solutions sent per second currently being output by module
 
 	boolean waitForResponse(uint16_t maxTime = 250); //Poll the module until and ack is received
 
@@ -200,6 +226,9 @@ class SFE_UBLOX_GPS
 	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250); //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
 
+	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
+	uint8_t getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
+	
 	//Functions used for RTK and base station setup
 	boolean getSurveyMode(uint16_t maxWait = 250); //Get the current TimeMode3 settings
 	boolean setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Control survey in mode
