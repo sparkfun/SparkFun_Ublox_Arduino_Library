@@ -522,6 +522,7 @@ void SFE_UBLOX_GPS::addToChecksum(uint8_t incoming)
 //Pretty prints the current ubxPacket
 void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 {
+#ifdef DEBUG
 	debug.print("CLS:");
 	debug.print(packet->cls, HEX);
 
@@ -539,6 +540,7 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 		debug.print(packet->payload[x], HEX);
 	}
 	debug.println();
+#endif
 }
 
 
@@ -978,7 +980,7 @@ uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 }
 
 //Get the current fix type
-
+//0=no fix, 1=dead reckoning, 2=2D, 3=3D, 4=GNSS, 5=Time fix
 uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
 {
 	if(moduleQueried.fixType == false) getPVT();
