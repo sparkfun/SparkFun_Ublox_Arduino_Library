@@ -1,16 +1,16 @@
 /*
-  Reading lat and long via UBX binary commands - no more NMEA parsing!
+  Reading the protocol version of a Ublox module
   By: Nathan Seidle
   SparkFun Electronics
   Date: January 3rd, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to query a Ublox module for its lat/long/altitude. 
+  This example shows how to query a Ublox module for its protocol version.
 
-  Note: Long/lat are large numbers because they are * 10^7. To convert lat/long
-  to something google maps understands simply divide the numbers by 1,000,000. We 
-  do this so that we don't have to use floating point numbers.
+  Various modules have various protocol version. We've seen v18 up to v27. Depending
+  on the protocol version there are different commands available. This is a handy
+  way to predict which commands will or won't work.
 
   Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
 
@@ -31,7 +31,7 @@
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
+long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
 
 void setup()
 {
@@ -46,34 +46,16 @@ void setup()
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
+
+  Serial.print(F("Version: "));
+  byte versionHigh = myGPS.getProtocolVersionHigh();
+  Serial.print(versionHigh);
+  Serial.print(".");
+  //byte versionLow = myGPS.getProtocolVersionLow();
+  //Serial.print(versionLow);
 }
 
 void loop()
 {
-  //Query module only every second. Doing it more often will just cause I2C traffic.
-  //The module only responds when a new position is available
-  if (millis() - lastTime > 1000)
-  {
-    lastTime = millis(); //Update the timer
-    
-    long latitude = myGPS.getLatitude();
-    Serial.print(F("Lat: "));
-    Serial.print(latitude);
-
-    long longitude = myGPS.getLongitude();
-    Serial.print(F(" Long: "));
-    Serial.print(longitude);
-    Serial.print(F(" (degrees * 10^-7)"));
-
-    long altitude = myGPS.getAltitude();
-    Serial.print(F(" Alt (above mean sea level): "));
-    Serial.print(altitude);
-    Serial.print(F(" (mm)"));
-
-    byte SIV = myGPS.getSIV();
-    Serial.print(F(" SIV: "));
-    Serial.print(SIV);
-
-    Serial.println();
-  }
+  //Do nothing
 }
