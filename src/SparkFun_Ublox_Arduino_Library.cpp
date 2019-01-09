@@ -114,7 +114,9 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
 
     if (bytesAvailable == 0)
 	{
-		Serial.println("No bytes available");
+#ifdef DEBUG      
+	  debug.println("No bytes available");
+#endif
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
 	}
 
@@ -659,9 +661,9 @@ uint8_t SFE_UBLOX_GPS::getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t
 	key |= (uint32_t)size << 28;
 	
 #ifdef DEBUG
-	Serial.print("key: 0x");
-	Serial.print(key, HEX);
-	Serial.println();
+	debug.print("key: 0x");
+	debug.print(key, HEX);
+	debug.println();
 #endif
 
 	//Load key into outgoing payload
@@ -694,7 +696,6 @@ boolean SFE_UBLOX_GPS::setSurveyMode(uint8_t mode, uint16_t observationTime, flo
 {
   if (getSurveyMode() == false) //Ask module for the current TimeMode3 settings. Loads into payloadCfg.
     return (false);
-  //Serial.println("Current settings obtained");
 
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_TMODE3;
@@ -716,7 +717,6 @@ boolean SFE_UBLOX_GPS::setSurveyMode(uint8_t mode, uint16_t observationTime, flo
   payloadCfg[29] = svinAccLimit >> 8;
   payloadCfg[30] = svinAccLimit >> 16;
 
-  //Serial.println("Sending new settings");
   return ( sendCommand(packetCfg, maxWait) ); //Wait for ack
 }
 
@@ -1141,15 +1141,15 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
 			return(false); //If command send fails then bail
 
 #ifdef DEBUG		
-		Serial.print("Extension ");
-		Serial.print(extensionNumber);
-		Serial.print(": ");
+		debug.print("Extension ");
+		debug.print(extensionNumber);
+		debug.print(": ");
 		for(int location = 0 ; location < MAX_PAYLOAD_SIZE ; location++)
 		{
 			if(payloadCfg[location] == '\0') break;
-			Serial.write(payloadCfg[location]);
+			debug.write(payloadCfg[location]);
 		}
-		Serial.println();
+		debug.println();
 #endif		
 
 		//Now we need to find "PROTVER=18.00" in the incoming byte stream

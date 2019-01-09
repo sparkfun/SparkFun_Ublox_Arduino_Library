@@ -6,7 +6,9 @@
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to query a Ublox module for its lat/long/altitude. 
+  This example shows how to query a Ublox module for its lat/long/altitude. We also
+  turn off the NMEA output on the I2C port. This decreases the amount of I2C traffic 
+  dramatically.
 
   Note: Long/lat are large numbers because they are * 10^7. To convert lat/long
   to something google maps understands simply divide the numbers by 10,000,000. We 
@@ -46,6 +48,9 @@ void setup()
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
+
+  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 }
 
 void loop()

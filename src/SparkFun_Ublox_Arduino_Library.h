@@ -39,7 +39,7 @@
 
 //Uncomment the following line to enable a variety of debug statements
 //This will increase the codeword and RAM footprint of the library
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define debug Serial //Point debug statements to print to Serial port
