@@ -113,7 +113,10 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     }
 
     if (bytesAvailable == 0)
+	{
+		Serial.println("No bytes available");
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
+	}
 
     while (bytesAvailable)
     {
@@ -221,9 +224,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
 
     //Depending on this frame's class, pass different structs and payload arrays
     if (ubxFrameClass == CLASS_ACK)
-		processUBX(incoming, &packetAck);
+	  processUBX(incoming, &packetAck);
     else if (ubxFrameClass == CLASS_NOT_AN_ACK)
-      processUBX(incoming, &packetCfg);
+	  processUBX(incoming, &packetCfg);
   }
   else if (currentSentence == NMEA)
   {
@@ -311,7 +314,7 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 //Set valid = true once sentence is completely received and passes CRC
 //The payload portion of the packet can be 100s of bytes but the max array
 //size is roughly 64 bytes. startingSpot can be set so we only record
-//interim bytes. 
+//a subset of bytes within a larger packet. 
 void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 {
 	//Add all incoming bytes to the rolling checksum
@@ -470,7 +473,8 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 
   if (maxWait > 0)
   {
-    if (waitForResponse(maxWait) == false) //Wait for Ack response
+	//Give waitForResponse the cls/id to check for
+    if (waitForResponse(outgoingUBX.cls, outgoingUBX.id, maxWait) == false) //Wait for Ack response
       return (false);
   }
   return (true);
@@ -549,18 +553,37 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 
 
 //Poll the module until and ack is received
-boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
+boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime)
 {
   commandAck = false; //Reset flag
   packetCfg.valid = false; //This will go true when we receive a response to the packet we sent
 
-  long startTime = millis();
+  unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
     checkUblox(); //See if new data is available. Process bytes as they come in.
 
     if (commandAck == true) return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
-    if (packetCfg.valid == true) return (true); //If the packet we just sent was a NAV packet then we'll just get data back
+    if (packetCfg.valid == true)
+	{
+		//Did we receive a config packet that matches the cls/id we requested?
+		if(packetCfg.cls == requestedClass && packetCfg.id == requestedID)
+		{
+#ifdef DEBUG
+			debug.println(F("CLS/ID match!"));
+#endif
+			return (true); //If the packet we just sent was a NAV packet then we'll just get data back
+		}
+#ifdef DEBUG
+		else
+		{
+			debug.print(F("Packet didn't match CLS/ID"));
+			printPacket(&packetCfg);
+		}
+#endif
+	}
+
+	delay(1);
   }
 
 #ifdef DEBUG
@@ -568,6 +591,49 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint16_t maxTime)
 #endif
 	
 	return (false);
+}
+
+//Save current configuration to flash and BBR (battery backed RAM)
+//This still works but it is the old way of configuring ublox modules. See getVal and setVal for the new methods
+boolean SFE_UBLOX_GPS::saveConfiguration(uint16_t maxWait)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_CFG;
+	packetCfg.len = 12;
+	packetCfg.startingSpot = 0;
+  
+	//Clear packet payload
+	for(uint8_t x = 0 ; x < packetCfg.len ; x++)
+		packetCfg.payload[x] = 0;
+	
+	packetCfg.payload[4] = 0xFF; //Set any bit in the saveMask field to save current config to Flash and BBR
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(false); //If command send fails then bail
+	
+	return(true);
+}
+
+//Reset module to factory defaults
+//This still works but it is the old way of configuring ublox modules. See getVal and setVal for the new methods
+boolean SFE_UBLOX_GPS::factoryDefault(uint16_t maxWait)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_CFG;
+	packetCfg.len = 12;
+	packetCfg.startingSpot = 0;
+  
+	//Clear packet payload
+	for(uint8_t x = 0 ; x < packetCfg.len ; x++)
+		packetCfg.payload[x] = 0;
+	
+	packetCfg.payload[0] = 0xFF; //Set any bit in the clearMask field to clear saved config
+	packetCfg.payload[8] = 0xFF; //Set any bit in the loadMask field to discard current config and rebuild from lower non-volatile memory layers
+
+	if(sendCommand(packetCfg, maxWait) == false)
+		return(false); //If command send fails then bail
+	
+	return(true);
 }
 
 //Given a key, return its value

@@ -94,6 +94,7 @@ const uint8_t UBX_CLASS_HNR = 0x28;
 
 const uint8_t UBX_CFG_PRT = 0x00; //Used to configure port specifics
 const uint8_t UBX_CFG_RATE = 0x08; //Used to set port baud rates
+const uint8_t UBX_CFG_CFG = 0x09; //Used to save current configuration
 const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALGET = 0x8B; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALDEL = 0x8C; //Used for config of higher version Ublox modules (ie protocol v27 and above)
@@ -189,7 +190,7 @@ class SFE_UBLOX_GPS
 	void processRTCM(uint8_t incoming) __attribute__((weak)); //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
 	
 	void processUBXpacket(ubxPacket *msg); //Once a packet has been received and validated, identify this packet's class/id and update internal flags
-	void processNMEA(char incoming) __attribute__((weak)); //Given a nmea character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
+	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
 	
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
 	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes
@@ -201,8 +202,10 @@ class SFE_UBLOX_GPS
 	
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
 	uint8_t getNavigationFrequency(uint16_t maxWait = 250); //Get the number of nav solutions sent per second currently being output by module
+	boolean saveConfiguration(uint16_t maxWait = 250); //Save current configuration to flash and BBR (battery backed RAM)
+	boolean factoryDefault(uint16_t maxWait = 250); //Reset module to factory defaults
 
-	boolean waitForResponse(uint16_t maxTime = 250); //Poll the module until and ack is received
+	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
 
 	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. 
 	int32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
