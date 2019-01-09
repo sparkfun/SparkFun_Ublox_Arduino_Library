@@ -899,7 +899,8 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 	SIV = extractByte(23 - packetCfg.startingSpot);
 	longitude = extractLong(24 - packetCfg.startingSpot);
 	latitude = extractLong(28 - packetCfg.startingSpot);
-	altitude = extractLong(36 - packetCfg.startingSpot);
+	altitude = extractLong(32 - packetCfg.startingSpot);
+	altitudeMSL = extractLong(36 - packetCfg.startingSpot);
 	groundSpeed = extractLong(60 - packetCfg.startingSpot);
 	headingOfMotion = extractLong(64 - packetCfg.startingSpot);
 	pDOP = extractLong(76 - packetCfg.startingSpot);
@@ -910,6 +911,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 	moduleQueried.longitude = true;
 	moduleQueried.latitude = true;
 	moduleQueried.altitude = true;
+	moduleQueried.altitudeMSL = true;
 	moduleQueried.SIV = true;
 	moduleQueried.fixType = true;
 	moduleQueried.carrierSolution = true;
@@ -921,7 +923,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 }
 
 //Get the current 3D high precision positional accuracy - a fun thing to watch
-//Returns a float representing the 3D accuracy in millimeters
+//Returns a long representing the 3D accuracy in millimeters
 uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 {
 	packetCfg.cls = UBX_CLASS_NAV;
@@ -959,15 +961,24 @@ int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 	return(longitude);
 }
 
-//Get the current altitude in mm according to mean sea level
-//Ellipsoid model: https://www.esri.com/news/arcuser/0703/geoid1of3.html
-//Difference between Ellipsoid Model and Mean Sea Level: https://eos-gnss.com/elevation-for-beginners/
+//Get the current altitude in mm according to ellipsoid model
 int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 {
 	if(moduleQueried.altitude == false) getPVT();
 	moduleQueried.altitude = false; //Since we are about to give this to user, mark this data as stale
 	
 	return(altitude);
+}
+
+//Get the current altitude in mm according to mean sea level
+//Ellipsoid model: https://www.esri.com/news/arcuser/0703/geoid1of3.html
+//Difference between Ellipsoid Model and Mean Sea Level: https://eos-gnss.com/elevation-for-beginners/
+int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
+{
+	if(moduleQueried.altitudeMSL == false) getPVT();
+	moduleQueried.altitudeMSL = false; //Since we are about to give this to user, mark this data as stale
+	
+	return(altitudeMSL);
 }
 
 //Get the number of satellites used in fix
@@ -1031,6 +1042,24 @@ uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 //This is helpful when deciding if we should call the high-precision Lat/Long (HPPOSLLH) or the regular (POSLLH)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 {
+	if(moduleQueried.versionNumber == false) getProtocolVersion();
+	moduleQueried.versionNumber = false;
+	return(versionHigh);
+}
+
+//Get the current protocol version of the Ublox module we're communicating with
+//This is helpful when deciding if we should call the high-precision Lat/Long (HPPOSLLH) or the regular (POSLLH)
+uint8_t SFE_UBLOX_GPS::getProtocolVersionLow(uint16_t maxWait)
+{
+	if(moduleQueried.versionNumber == false) getProtocolVersion();
+	moduleQueried.versionNumber = false;
+	return(versionLow);
+}
+
+//Get the current protocol version of the Ublox module we're communicating with
+//This is helpful when deciding if we should call the high-precision Lat/Long (HPPOSLLH) or the regular (POSLLH)
+boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
+{
 	//Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
 	packetCfg.cls = UBX_CLASS_MON;
 	packetCfg.id = UBX_MON_VER;
@@ -1043,7 +1072,7 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 		packetCfg.startingSpot = 40 + (30*extensionNumber);
 		
 		if(sendCommand(packetCfg, maxWait) == false)
-			return(0); //If command send fails then bail
+			return(false); //If command send fails then bail
 
 #ifdef DEBUG		
 		Serial.print("Extension ");
@@ -1060,10 +1089,13 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 		//Now we need to find "PROTVER=18.00" in the incoming byte stream
 		if(payloadCfg[0] == 'P' && payloadCfg[6] == 'R')
 		{
-			byte versionHigh = (payloadCfg[8] - '0') * 10 + (payloadCfg[9] - '0'); //Convert '18' to 18
-			return(versionHigh);
+			versionHigh = (payloadCfg[8] - '0') * 10 + (payloadCfg[9] - '0'); //Convert '18' to 18
+			versionLow = (payloadCfg[11] - '0') * 10 + (payloadCfg[12] - '0'); //Convert '00' to 00
+			return(versionLow);
 		}
 	}
 
-	return(0);
+	moduleQueried.versionNumber = true; //Mark this data as new
+	
+	return(true);
 }

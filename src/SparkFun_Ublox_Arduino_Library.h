@@ -39,7 +39,7 @@
 
 //Uncomment the following line to enable a variety of debug statements
 //This will increase the codeword and RAM footprint of the library
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define debug Serial //Point debug statements to print to Serial port
@@ -207,7 +207,8 @@ class SFE_UBLOX_GPS
 	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. 
 	int32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getAltitude(uint16_t maxWait = 250); //Returns the current altitude in mm above mean sea level (most common output of GPS receivers).
+	int32_t getAltitude(uint16_t maxWait = 250); //Returns the current altitude in mm above ellipsoid
+	int32_t getAltitudeMSL(uint16_t maxWait = 250); //Returns the current altitude in mm above mean sea level
 	uint8_t getSIV(uint16_t maxWait = 250); //Returns number of sats used in fix
 	uint8_t getFixType(uint16_t maxWait = 250); //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 	uint8_t getCarrierSolutionType(uint16_t maxWait = 250); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
@@ -242,8 +243,8 @@ class SFE_UBLOX_GPS
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 	
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 1000); //Returns the PROTVER XX.00 from UBX-MON-VER register
-	//uint8_t getProtocolVersionLow(uint16_t maxWait = 1000); //Returns the PROTVER 00.XX from UBX-MON-VER register
-	//float getProtocolVersion(uint16_t maxWait = 1000); //Returns the combination of high&low portions from PROTVER in UBX-MON-VER register
+	uint8_t getProtocolVersionLow(uint16_t maxWait = 1000); //Returns the PROTVER 00.XX from UBX-MON-VER register
+	boolean getProtocolVersion(uint16_t maxWait = 1000); //Queries module, loads low/high bytes
 	
 	//Survey-in specific controls
 	struct svinStructure {
@@ -256,15 +257,18 @@ class SFE_UBLOX_GPS
 	//The major datums we want to globally store
 	int32_t latitude; //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude; //Degrees * 10^-7 (more accurate than floats)
-	int32_t altitude; //Number of mm above Mean Sea Level
+	int32_t altitude; //Number of mm above ellipsoid
+	int32_t altitudeMSL; //Number of mm above Mean Sea Level
 	uint8_t SIV; //Number of satellites used in position solution
 	uint8_t fixType; //Tells us when we have a solution aka lock
 	uint8_t carrierSolution; //Tells us when we have an RTK float/fixed solution
 	int32_t groundSpeed; //mm/s
-	int32_t headingOfMotion; //degress * 10^-5
-	uint16_t pDOP; //Positional dillution of precision
+	int32_t headingOfMotion; //degrees * 10^-5
+	uint16_t pDOP; //Positional dilution of precision
+	uint8_t versionLow; //Loaded from getProtocolVersion(). 
+	uint8_t versionHigh;
 
-	uint16_t rtcmFrameCounter = 0;
+	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 	
   private:
 
@@ -329,12 +333,14 @@ class SFE_UBLOX_GPS
 	   uint16_t longitude : 1;
 	   uint16_t latitude : 1;
 	   uint16_t altitude : 1;
+	   uint16_t altitudeMSL : 1;
 	   uint16_t SIV : 1;
 	   uint16_t fixType : 1;
 	   uint16_t carrierSolution : 1;
 	   uint16_t groundSpeed : 1;
 	   uint16_t headingOfMotion : 1;
 	   uint16_t pDOP : 1;
+	   uint16_t versionNumber : 1;
 	} moduleQueried;
 
 	uint16_t rtcmLen = 0;
