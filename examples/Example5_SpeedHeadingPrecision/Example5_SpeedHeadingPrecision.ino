@@ -37,7 +37,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("Reading Lat/Long Example");
+  Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
 

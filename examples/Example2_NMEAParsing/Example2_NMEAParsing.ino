@@ -36,18 +36,15 @@ MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("Ublox GPS I2C Test");
+  Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
 
-  myGPS.begin();
-  if (myGPS.isConnected() == false)
+  if (myGPS.begin() == false)
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
-
-  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 }
 
 void loop()

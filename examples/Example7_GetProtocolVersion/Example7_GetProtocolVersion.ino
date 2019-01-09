@@ -37,7 +37,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("Reading Lat/Long Example");
+  Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
 
@@ -51,8 +51,8 @@ void setup()
   byte versionHigh = myGPS.getProtocolVersionHigh();
   Serial.print(versionHigh);
   Serial.print(".");
-  //byte versionLow = myGPS.getProtocolVersionLow();
-  //Serial.print(versionLow);
+  byte versionLow = myGPS.getProtocolVersionLow();
+  Serial.print(versionLow);
 }
 
 void loop()

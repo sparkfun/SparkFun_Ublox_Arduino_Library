@@ -26,7 +26,7 @@
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
+long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
 
 void setup()
 {

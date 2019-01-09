@@ -1,16 +1,16 @@
 /*
-  Send UBX binary commands to enable RTCM sentences on Ublox NEO-M8P-2 module
+  Configuring Ublox Module using new VALGET / VALSET / VALDEL methods
   By: Nathan Seidle
   SparkFun Electronics
-  Date: September 7th, 2018
+  Date: January 3rd, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example does all steps to configure and enable a NEO-M8P-2 as a base station:
-    Begin Survey-In
-    Once we've achieved 2m accuracy and 300s have passed, survey is complete
-    Enable four RTCM messages
-    Begin outputting RTCM bytes
+  Ublox depricated many -CFG messages and replaced them with new
+  VALGET, VALSET, VALDEL methods. This shows the basics of how to use
+  these methods.
+
+  Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -29,39 +29,32 @@
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
+long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
 
 void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("Ublox high precision accuracy example");
+  Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
 
-  myGPS.begin(); //Connect to the Ublox module using Wire port
-  if (myGPS.isConnected() == false)
+  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+  byte response;
+  response = myGPS.getVal(VAL_GROUP_I2C, VAL_ID_I2C_ADDRESS, VAL_GROUP_I2C_SIZE, VAL_LAYER_RAM);
+  Serial.print(F("I2C Address: 0x"));
+  Serial.println(response >> 1, HEX); //We have to shift by 1 to get the common '7-bit' I2C address format
+
+  response = myGPS.getVal(VAL_GROUP_I2COUTPROT, VAL_ID_I2COUTPROT_NMEA, VAL_GROUP_I2COUTPROT_SIZE, VAL_LAYER_RAM);
+  Serial.print(F("Output NMEA over I2C port: 0x"));
+  Serial.print(response, HEX);
 }
 
 void loop()
 {
-  myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
-
-  delay(250); //Don't pound too hard on the I2C bus
-
-  //Every other second print the current 3D position accuracy
-  if(millis() - lastTime > 1000)
-  {
-    long accuracy = myGPS.getPositionAccuracy();
-    Serial.print("3D Positional Accuracy: ");
-    Serial.print(accuracy);
-    Serial.println("mm");
-  }
-
 }

@@ -1,19 +1,13 @@
 /*
-  Set update rate to 10Hz
+  Get the high position accuracy of the RTK enhanced position
   By: Nathan Seidle
   SparkFun Electronics
   Date: January 3rd, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to increase the output of the module from 1Hz to 4Hz.
-  The max output rate various from model to model. RTFM! But you cannot do harm
-  to the module.
-
-  We also disable NMEA output on the I2C bus and use only UBX. This dramatically 
-  decreases the amount of data that needs to be transmitted.
-
-  Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
+  This example shows how to inspect the accuracy of the high-precision
+  positional solution.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -33,8 +27,6 @@
 SFE_UBLOX_GPS myGPS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
-long startTime = 0; //Used to calc the actual update rate.
-long updateCount = 0; //Used to calc the actual update rate.
 
 void setup()
 {
@@ -43,49 +35,40 @@ void setup()
   Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
-  Wire.setClock(400000);
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
-
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.setNavigationFrequency(10); //Set output to 10 times a second
-
-  byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
-  Serial.print("Current update rate:");
-  Serial.println(rate);
-
-  startTime = millis();
 }
 
 void loop()
 {
   //Query module only every second. Doing it more often will just cause I2C traffic.
-  //The module only responds when a new position is available. This is defined
-  //by the update freq.
-  if (millis() - lastTime > 25)
+  //The module only responds when a new position is available
+  if (millis() - lastTime > 1000)
   {
     lastTime = millis(); //Update the timer
     
-    long latitude = myGPS.getLatitude();
+    long latitude = myGPS.getLatitude(1000);
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
+    /*long longitude = myGPS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
+    Serial.print(F(" (degrees * 10^-7)"));
 
-    updateCount++;
+    long altitude = myGPS.getAltitude();
+    Serial.print(F(" Alt: "));
+    Serial.print(altitude);
+    Serial.print(F(" (mm)"));*/
 
-    //Calculate the actual update rate based on the sketch start time and the 
-    //number of updates we've received.
-    Serial.print(F(" Rate: "));
-    Serial.print( updateCount / ((millis() - startTime) / 1000.0), 2);
-    Serial.print(F("Hz"));
-
-    Serial.println();
+    long accuracy = myGPS.getPositionAccuracy(1000);
+    Serial.print(F(" 3D Positional Accuracy: "));
+    Serial.print(accuracy);
+    Serial.println(F("mm"));
   }
+
 }

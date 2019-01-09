@@ -43,7 +43,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("Reading Lat/Long Example");
+  Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
   Wire.setClock(400000); //Optional. Increase I2C clock speed to 400kHz.
