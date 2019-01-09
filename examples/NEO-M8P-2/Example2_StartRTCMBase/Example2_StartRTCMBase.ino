@@ -36,15 +36,16 @@ void setup()
   Serial.println("Ublox NEO-M8P-2 base station example");
 
   Wire.begin();
+  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  myGPS.begin(); //Connect to the Ublox module using Wire port
-  if (myGPS.isConnected() == false)
+  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
-  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 
   while (Serial.available()) Serial.read(); //Clear any latent chars in serial buffer
   Serial.println("Press any key to send commands to begin Survey-In");

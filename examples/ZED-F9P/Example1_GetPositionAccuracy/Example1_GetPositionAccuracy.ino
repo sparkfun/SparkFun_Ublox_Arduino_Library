@@ -41,6 +41,9 @@ void setup()
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
+
+  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 }
 
 void loop()
@@ -50,12 +53,12 @@ void loop()
   if (millis() - lastTime > 1000)
   {
     lastTime = millis(); //Update the timer
-    
-    long latitude = myGPS.getLatitude(1000);
+
+    long latitude = myGPS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    /*long longitude = myGPS.getLongitude();
+    long longitude = myGPS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
@@ -63,9 +66,9 @@ void loop()
     long altitude = myGPS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
-    Serial.print(F(" (mm)"));*/
+    Serial.print(F(" (mm)"));
 
-    long accuracy = myGPS.getPositionAccuracy(1000);
+    long accuracy = myGPS.getPositionAccuracy();
     Serial.print(F(" 3D Positional Accuracy: "));
     Serial.print(accuracy);
     Serial.println(F("mm"));
