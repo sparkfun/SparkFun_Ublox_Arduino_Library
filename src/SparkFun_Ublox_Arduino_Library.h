@@ -114,8 +114,12 @@ const uint8_t UBX_MON_VER = 0x04; //Used for obtaining Protocol Version
 const uint8_t UBX_CFG_MSG = 0x01;
 const uint8_t UBX_RTCM_MSB = 0xF5; //All RTCM enable commands have 0xF5 as MSB
 const uint8_t UBX_RTCM_1005 = 0x05; //Stationary RTK reference ARP
+const uint8_t UBX_RTCM_1074 = 0x4A; //GPS MSM4
 const uint8_t UBX_RTCM_1077 = 0x4D; //GPS MSM7
+const uint8_t UBX_RTCM_1084 = 0x54; //GLONASS MSM4
 const uint8_t UBX_RTCM_1087 = 0x57; //GLONASS MSM7
+const uint8_t UBX_RTCM_1094 = 0x5E; //Galileo MSM4
+const uint8_t UBX_RTCM_1124 = 0x7C; //BeiDou MSM4
 const uint8_t UBX_RTCM_1230 = 0xE6; //GLONASS code-phase biases, set to once every 10 seconds
 
 const uint8_t UBX_ACK_NACK = 0x00;

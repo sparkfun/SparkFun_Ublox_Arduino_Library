@@ -53,6 +53,8 @@ void setup()
 
     if (myGPS.begin(Wire, newAddress) == true)
     {
+      myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+      
       Serial.print("Address successfully changed to 0x");
       Serial.println(newAddress, HEX);
       Serial.print("Now load another example sketch using .begin(Wire, 0x");
