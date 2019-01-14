@@ -1,13 +1,24 @@
 SparkFun Ublox Arduino Library
 ===========================================================
 
-[![SparkFun GPS-RTK - NEO-M8P-2](https://cdn.sparkfun.com//assets/parts/1/3/3/2/0/15005-SparkFun_GPS-RTK__Qwiic__-_NEO-M8P-2-00.jpg)](https://www.sparkfun.com/products/15005)
+<table class="table table-hover table-striped table-bordered">
+  <tr align="center">
+   <td><a href="https://www.sparkfun.com/products/15005"><img src="https://cdn.sparkfun.com//assets/parts/1/3/3/2/0/15005-SparkFun_GPS-RTK__Qwiic__-_NEO-M8P-2-00.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/15136"><img src="https://cdn.sparkfun.com//assets/parts/1/3/5/1/4/15136-SparkFun_GPS-RTK2_Board_-_ZED-F9P__Qwiic_-03.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/15106"><img src="https://cdn.sparkfun.com//assets/parts/1/3/4/6/9/15106-GPS_Breakout_Ublox_SAM-M8Q__Qwiic_-01.jpg"></a></td>
+  </tr>
+  <tr align="center">
+    <td><a href="https://www.sparkfun.com/products/15005">SparkFun GPS-RTK - NEO-M8P-2 (GPS-15005)</a></td>
+    <td><a href="https://www.sparkfun.com/products/15136">SparkFun GPS-RTK2 - ZED-F9P (GPS-15136)</a></td>
+    <td><a href="https://www.sparkfun.com/products/15106">SparkFun SAM-M8Q Breakout (Qwiic) (SPX-15106)</a></td>
+  </tr>
+</table>
 
-[*SparkFun GPS-RTK - NEO-M8P-2 (GPS-15005)*](https://www.sparkfun.com/products/15005)
+Ublox makes some incredible GPS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of Ublox devices over I2C (called DDC by Ublox). An I2C interface combined with the binary UBX protocol makes for a much easier and lighterweight interface to a GPS module. Stop parsing NMEA data! And simply ask for the datums you need.
 
-The NEO-M8P-2 module is the top-of-the-line module for high accuracy GNSS and GPS location solutions including RTK. The NEO-M8P-2 is unique in that it is capable of both rover and base station operations. The ‘-2’ designation means this module has survey-in mode allowing the module to become a base station and produce RTCM 3.x correction data. 
+This library can be installed via the Arduino Library manager. Search for *SparkFun Ublox*.
 
-This library allows the reading of NMEA data over I2C as well as sending binary UBX configuration commands over I2C. This is helpful for configuring advanced modules like the NEO-M8P-2.
+Want to help? Please do! We are always looking for ways to improve and build out features of this library.
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
@@ -23,13 +34,14 @@ Documentation
 --------------
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
-* **[Product Repository](https://github.com/sparkfunX/Qwiic_GPS-RTK)** - Main repository (including hardware files)
-* **[Hookup Guide](https://learn.sparkfun.com/tutorials/gps-rtk-hookup-guide)** - Basic hookup guide for the SparkFun Ublox GPS-RTK.
 
 Products That Use This Library 
 ---------------------------------
-* [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun Red
-* [SPX-14980](https://www.sparkfun.com/products/14980) - SparkX Black
+
+* [GPS-15136](https://www.sparkfun.com/products/15136) - SparkFun GPS-RTK2 ZED-F9P
+* [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun GPS-RTK NEO-M8P-2
+* [SPX-14980](https://www.sparkfun.com/products/14980) - SparkX GPS-RTK Black
+* [SPX-15106](https://www.sparkfun.com/products/15106) - SparkX SAM-M8Q
 
 License Information
 -------------------
