@@ -48,8 +48,68 @@ boolean SFE_UBLOX_GPS::begin(TwoWire &wirePort, uint8_t deviceAddress)
 	//_i2cPort->begin();
 
 	_gpsI2Caddress = deviceAddress; //Store the I2C address from user
-	
+
 	return(isConnected());
+}
+
+//Initialize the Serial port
+boolean SFE_UBLOX_GPS::begin(Stream &serialPort)
+{
+	commType = COMM_TYPE_SERIAL;
+	_serialPort = &serialPort; //Grab which port the user wants us to use
+
+	return(isConnected());
+}
+
+void SFE_UBLOX_GPS::factoryReset() {
+    // Copy default settings to permanent
+    packetCfg.cls = UBX_CLASS_CFG;
+    packetCfg.id = UBX_CFG_CFG;
+    packetCfg.len = 13;
+    packetCfg.startingSpot = 0;
+    for (int i=0; i<4; i++) {
+        payloadCfg[0+i] = 0xff; // clear mask: copy default config to permanent config
+        payloadCfg[4+i] = 0x00; // save mask: don't save current to permanent
+        payloadCfg[8+i] = 0x00; // load mask: don't copy permanent config to current
+    }
+    payloadCfg[12] = 0xff; // all forms of permanent memory
+    sendCommand(packetCfg, 0); // don't expect ACK
+
+    // Issue hard reset
+    packetCfg.cls = UBX_CLASS_CFG;
+    packetCfg.id = UBX_CFG_RST;
+    packetCfg.len = 4;
+    packetCfg.startingSpot = 0;
+    payloadCfg[0] = 0xff; // cold start
+    payloadCfg[1] = 0xff; // cold start
+    payloadCfg[2] = 0; // 0=HW reset
+    payloadCfg[3] = 0; // reserved
+    sendCommand(packetCfg, 0); // don't expect ACK
+}
+
+//Changes the serial baud rate of the Ublox module, can't return success/fail 'cause ACK from modem
+//is lost due to baud rate change
+void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint16_t maxWait) {
+	//Get the current config values for the UART port
+	getPortSettings(COM_PORT_UART1, maxWait); //This will load the payloadCfg array with current port settings
+        Serial.printf("Current baud rate: %d\n",
+                ((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8]);
+
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_PRT;
+	packetCfg.len = 20;
+	packetCfg.startingSpot = 0;
+
+	//payloadCfg is now loaded with current bytes. Change only the ones we need to
+	payloadCfg[8] = baudrate;
+	payloadCfg[9] = baudrate>>8;
+	payloadCfg[10] = baudrate>>16;
+	payloadCfg[11] = baudrate>>24;
+        Serial.printf("Next baud rate: %d=0x%x\n",
+                ((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8],
+                ((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8]);
+
+	sendCommand(packetCfg);
 }
 
 //Changes the I2C address that the Ublox module responds to
@@ -89,6 +149,7 @@ boolean SFE_UBLOX_GPS::checkUblox()
 		checkUbloxI2C();
 	else if(commType == COMM_TYPE_SERIAL)
 		checkUbloxSerial();
+        return false;
 }
 
 //Polls I2C for data, passing any new bytes to process()
@@ -150,12 +211,14 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
 
 } //end checkUbloxI2C()
 
-//Polls Serial for data, passing any new bytes to process()
-//Times out after given amount of time
+//Checks Serial for data, passing any new bytes to process()
 boolean SFE_UBLOX_GPS::checkUbloxSerial()
 {
-	//Todo
-	return (true);
+    while (_serialPort->available())
+    {
+        process(_serialPort->read());
+    }
+    return (true);
 
 } //end checkUbloxSerial()
 
@@ -406,20 +469,35 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
   }
 }
 
-//Given a packet and payload, send everything including CRC bytes
-//Poll for a response, returning true if command was ack'd, false if we time out waiting for response
-//Setting timeout to 0 will skip checking for response - handy if you need to scan a raw response (like checking the PROTVER)
+//Given a packet and payload, send everything including CRC bytes via I2C port
 boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 {
-  commandAck = false; //We're about to send a command. Begin waiting for ack.
-
-  calcChecksum(&outgoingUBX); //Sets checksum A and B bytes of the packet
+    commandAck = false; //We're about to send a command. Begin waiting for ack.
+    calcChecksum(&outgoingUBX); //Sets checksum A and B bytes of the packet
 
 #ifdef DEBUG
-			debug.print("Sending: ");
-			printPacket(&outgoingUBX);
+    debug.print("Sending: ");
+    printPacket(&outgoingUBX);
 #endif
 
+    if(commType == COMM_TYPE_I2C)
+    {
+        if (!sendI2cCommand(outgoingUBX, maxWait)) return false;
+    } else if(commType == COMM_TYPE_SERIAL)
+    {
+        sendSerialCommand(outgoingUBX);
+    }
+
+    if (maxWait > 0)
+    {
+        //Give waitForResponse the cls/id to check for
+        return waitForResponse(outgoingUBX.cls, outgoingUBX.id, maxWait); //Wait for Ack response
+    }
+    return true;
+}
+
+boolean SFE_UBLOX_GPS::sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait)
+{
   //Point at 0xFF data register
   _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
   _i2cPort->write(0xFF);
@@ -468,27 +546,54 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
   if (bytesToSend == 1) _i2cPort->write(outgoingUBX.payload, 1);
   _i2cPort->write(outgoingUBX.checksumA);
   _i2cPort->write(outgoingUBX.checksumB);
-	
+
   //All done transmitting bytes. Release bus.
   if (_i2cPort->endTransmission() != 0)
 	return (false); //Sensor did not ACK
-
-  if (maxWait > 0)
-  {
-	//Give waitForResponse the cls/id to check for
-    if (waitForResponse(outgoingUBX.cls, outgoingUBX.id, maxWait) == false) //Wait for Ack response
-      return (false);
-  }
   return (true);
+}
+
+//Given a packet and payload, send everything including CRC bytesA via Serial port
+void SFE_UBLOX_GPS::sendSerialCommand(ubxPacket outgoingUBX)
+{
+    //Write header bytes
+    _serialPort->write(UBX_SYNCH_1); //μ - oh ublox, you're funny. I will call you micro-blox from now on.
+    _serialPort->write(UBX_SYNCH_2); //b
+    _serialPort->write(outgoingUBX.cls);
+    _serialPort->write(outgoingUBX.id);
+    _serialPort->write(outgoingUBX.len & 0xFF); //LSB
+    _serialPort->write(outgoingUBX.len >> 8); //MSB
+
+    //Write payload.
+    for (int i=0; i<outgoingUBX.len; i++)
+    {
+        _serialPort->write(outgoingUBX.payload[i]);
+    }
+
+    //Write checksum
+    _serialPort->write(outgoingUBX.checksumA);
+    _serialPort->write(outgoingUBX.checksumB);
 }
 
 //Returns true if I2C device ack's
 boolean SFE_UBLOX_GPS::isConnected()
 {
-  _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-  if (_i2cPort->endTransmission() != 0)
-    return (false); //Sensor did not ACK
-  return (true);
+    if(commType == COMM_TYPE_I2C)
+    {
+        _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
+        return _i2cPort->endTransmission() == 0;
+    }
+    else if(commType == COMM_TYPE_SERIAL)
+    {
+        // Query navigation rate to see whether we get a meaningful response
+        packetCfg.cls = UBX_CLASS_CFG;
+        packetCfg.id = UBX_CFG_RATE;
+        packetCfg.len = 0;
+        packetCfg.startingSpot = 0;
+
+        return sendCommand(packetCfg);
+    }
+    return false;
 }
 
 //Given a message, calc and store the two byte "8-Bit Fletcher" checksum over the entirety of the message

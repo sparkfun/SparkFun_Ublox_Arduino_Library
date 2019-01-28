@@ -93,6 +93,7 @@ const uint8_t UBX_CLASS_SEC = 0x27;
 const uint8_t UBX_CLASS_HNR = 0x28;
 
 const uint8_t UBX_CFG_PRT = 0x00; //Used to configure port specifics
+const uint8_t UBX_CFG_RST = 0x04; //Used to reset device
 const uint8_t UBX_CFG_RATE = 0x08; //Used to set port baud rates
 const uint8_t UBX_CFG_CFG = 0x09; //Used to save current configuration
 const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
@@ -181,6 +182,8 @@ class SFE_UBLOX_GPS
 
     //By default use the default I2C address, and use Wire port
     boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
+    //By default use 9600 baud
+    boolean begin(Stream &serialPort); //Returns true if module is detected
 
 	boolean isConnected(); //Returns turn if device answers on _gpsI2Caddress address
 
@@ -198,10 +201,15 @@ class SFE_UBLOX_GPS
 	
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
 	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes
+	boolean sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250);
+	void sendSerialCommand(ubxPacket outgoingUBX);
 
 	void printPacket(ubxPacket *packet); //Useful for debugging
 
+        void factoryReset(); //Send factory reset sequence
+
 	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250); //Changes the I2C address of the Ublox module
+	void setSerialRate(uint32_t baudrate, uint16_t maxTime = 250); //Changes the serial baud rate of the Ublox module
 	void setNMEAOutputPort(Stream &nmeaOutputPort); //Sets the internal variable for the port to direct NMEA characters to
 	
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
@@ -311,6 +319,7 @@ class SFE_UBLOX_GPS
 
 	//Variables
     TwoWire *_i2cPort; //The generic connection to user's chosen I2C hardware
+    Stream *_serialPort; //The generic connection to user's chosen Serial hardware
 	Stream *_nmeaOutputPort = NULL; //The user can assign an output port to print NMEA sentences if they wish
 	
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
