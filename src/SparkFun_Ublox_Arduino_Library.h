@@ -174,7 +174,7 @@ typedef struct
 	boolean valid; //Goes true when both checksums pass
 } ubxPacket;
 
-	
+
 class SFE_UBLOX_GPS
 {
   public:
@@ -182,7 +182,7 @@ class SFE_UBLOX_GPS
 
     //By default use the default I2C address, and use Wire port
     boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
-    //By default use 9600 baud
+    //serialPort needs to be perviously initialized to correct baud rate
     boolean begin(Stream &serialPort); //Returns true if module is detected
 
 	boolean isConnected(); //Returns turn if device answers on _gpsI2Caddress address
@@ -193,12 +193,12 @@ class SFE_UBLOX_GPS
 
 	void process(uint8_t incoming); //Processes NMEA and UBX binary sentences one byte at a time
 	void processUBX(uint8_t incoming, ubxPacket *incomingUBX); //Given a character, file it away into the uxb packet structure
-	void processRTCMframe(uint8_t incoming); //Monitor the incoming bytes for start and length bytes 
+	void processRTCMframe(uint8_t incoming); //Monitor the incoming bytes for start and length bytes
 	void processRTCM(uint8_t incoming) __attribute__((weak)); //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
-	
+
 	void processUBXpacket(ubxPacket *msg); //Once a packet has been received and validated, identify this packet's class/id and update internal flags
 	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
-	
+
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
 	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes
 	boolean sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250);
@@ -206,12 +206,12 @@ class SFE_UBLOX_GPS
 
 	void printPacket(ubxPacket *packet); //Useful for debugging
 
-        void factoryReset(); //Send factory reset sequence
+        void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration)
 
 	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250); //Changes the I2C address of the Ublox module
 	void setSerialRate(uint32_t baudrate, uint16_t maxTime = 250); //Changes the serial baud rate of the Ublox module
 	void setNMEAOutputPort(Stream &nmeaOutputPort); //Sets the internal variable for the port to direct NMEA characters to
-	
+
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
 	uint8_t getNavigationFrequency(uint16_t maxWait = 250); //Get the number of nav solutions sent per second currently being output by module
 	boolean saveConfiguration(uint16_t maxWait = 250); //Save current configuration to flash and BBR (battery backed RAM)
@@ -219,7 +219,7 @@ class SFE_UBLOX_GPS
 
 	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
 
-	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. 
+	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc.
 	int32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getAltitude(uint16_t maxWait = 250); //Returns the current altitude in mm above ellipsoid
@@ -244,23 +244,23 @@ class SFE_UBLOX_GPS
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 	uint8_t getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
-	
+
 	//Functions used for RTK and base station setup
 	boolean getSurveyMode(uint16_t maxWait = 250); //Get the current TimeMode3 settings
 	boolean setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Control survey in mode
 	boolean enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Begin Survey-In for NEO-M8P
 	boolean disableSurveyMode(uint16_t maxWait = 250); //Stop Survey-In mode
-	
-	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables 
+
+	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables
 	boolean enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t secondsBetweenMessages, uint16_t maxWait = 250); //Given a message number turns on a message ID for output over given PortID
 	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250); //Turn off given RTCM message from a given port
-	
+
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
-	
+
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 1000); //Returns the PROTVER XX.00 from UBX-MON-VER register
 	uint8_t getProtocolVersionLow(uint16_t maxWait = 1000); //Returns the PROTVER 00.XX from UBX-MON-VER register
 	boolean getProtocolVersion(uint16_t maxWait = 1000); //Queries module, loads low/high bytes
-	
+
 	//Survey-in specific controls
 	struct svinStructure {
 		boolean active;
@@ -268,7 +268,7 @@ class SFE_UBLOX_GPS
 		uint16_t observationTime;
 		float meanAccuracy;
 	} svin;
-	
+
 	//The major datums we want to globally store
 	int32_t latitude; //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude; //Degrees * 10^-7 (more accurate than floats)
@@ -280,11 +280,11 @@ class SFE_UBLOX_GPS
 	int32_t groundSpeed; //mm/s
 	int32_t headingOfMotion; //degrees * 10^-5
 	uint16_t pDOP; //Positional dilution of precision
-	uint8_t versionLow; //Loaded from getProtocolVersion(). 
+	uint8_t versionLow; //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
-	
+
   private:
 
 	//Depending on the sentence type the processor will load characters into different arrays
@@ -303,7 +303,7 @@ class SFE_UBLOX_GPS
 		CLASS_ACK,
 		CLASS_NOT_AN_ACK
 	} ubxFrameClass = CLASS_NONE;
-	
+
 	enum commTypes
 	{
 		COMM_TYPE_I2C = 0,
@@ -315,16 +315,16 @@ class SFE_UBLOX_GPS
 	uint32_t extractLong(uint8_t spotToStart); //Combine four bytes from payload into long
 	uint16_t extractInt(uint8_t spotToStart); //Combine two bytes from payload into int
 	uint8_t extractByte(uint8_t spotToStart); //Get byte from payload
-	void addToChecksum(uint8_t incoming); //Given an incoming byte, adjust rollingChecksumA/B 
+	void addToChecksum(uint8_t incoming); //Given an incoming byte, adjust rollingChecksumA/B
 
 	//Variables
     TwoWire *_i2cPort; //The generic connection to user's chosen I2C hardware
     Stream *_serialPort; //The generic connection to user's chosen Serial hardware
 	Stream *_nmeaOutputPort = NULL; //The user can assign an output port to print NMEA sentences if they wish
-	
+
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software
-	
+
 	//These are pointed at from within the ubxPacket
 	uint8_t payloadAck[2];
 	uint8_t payloadCfg[MAX_PAYLOAD_SIZE];
@@ -340,7 +340,7 @@ class SFE_UBLOX_GPS
 
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
-	
+
 	//Create bit field for staleness of each datum in PVT we want to monitor
 	//moduleQueried.latitude goes true each time we call getPVT()
 	//This reduces the number of times we have to call getPVT as this can take up to ~1s per read
