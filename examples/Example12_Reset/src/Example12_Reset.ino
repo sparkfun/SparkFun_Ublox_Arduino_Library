@@ -5,14 +5,7 @@
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to configure the library and U-Blox for serial port use as well as
-  switching the module from the default 9600 baud to 38400.
-
-  Note: Long/lat are large numbers because they are * 10^7. To convert lat/long
-  to something google maps understands simply divide the numbers by 10,000,000. We 
-  do this so that we don't have to use floating point numbers.
-
-  Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
+  This example shows how to reset the U-Box module.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
