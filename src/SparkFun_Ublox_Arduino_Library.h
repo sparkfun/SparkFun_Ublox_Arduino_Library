@@ -206,10 +206,11 @@ class SFE_UBLOX_GPS
 
 	void printPacket(ubxPacket *packet); //Useful for debugging
 
-        void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration)
+        void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration and perform hardReset)
+        void hardReset(); //Perform a reset leading to a cold start (zero info start-up)
 
 	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250); //Changes the I2C address of the Ublox module
-	void setSerialRate(uint32_t baudrate, uint16_t maxTime = 250); //Changes the serial baud rate of the Ublox module
+	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = 250); //Changes the serial baud rate of the Ublox module, uartPort should be COM_PORT_UART1/2
 	void setNMEAOutputPort(Stream &nmeaOutputPort); //Sets the internal variable for the port to direct NMEA characters to
 
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second

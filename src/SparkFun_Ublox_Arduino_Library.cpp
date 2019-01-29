@@ -68,14 +68,18 @@ void SFE_UBLOX_GPS::factoryReset()
     packetCfg.id = UBX_CFG_CFG;
     packetCfg.len = 13;
     packetCfg.startingSpot = 0;
-    for (int i=0; i<4; i++) {
+    for (uint8_t i=0; i<4; i++) {
         payloadCfg[0+i] = 0xff; // clear mask: copy default config to permanent config
         payloadCfg[4+i] = 0x00; // save mask: don't save current to permanent
         payloadCfg[8+i] = 0x00; // load mask: don't copy permanent config to current
     }
     payloadCfg[12] = 0xff; // all forms of permanent memory
     sendCommand(packetCfg, 0); // don't expect ACK
+    hardReset(); // cause factory default config to actually be loaded and used cleanly
+}
 
+void SFE_UBLOX_GPS::hardReset()
+{
     // Issue hard reset
     packetCfg.cls = UBX_CLASS_CFG;
     packetCfg.id = UBX_CFG_RST;
@@ -90,13 +94,13 @@ void SFE_UBLOX_GPS::factoryReset()
 
 //Changes the serial baud rate of the Ublox module, can't return success/fail 'cause ACK from modem
 //is lost due to baud rate change
-void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint16_t maxWait)
+void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t maxWait)
 {
     //Get the current config values for the UART port
-    getPortSettings(COM_PORT_UART1, maxWait); //This will load the payloadCfg array with current port settings
+    getPortSettings(uartPort, maxWait); //This will load the payloadCfg array with current port settings
 #ifdef DEBUG
-    Serial.printf("Current baud rate: %d\n",
-            ((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8]);
+    debug.print("Current baud rate: ");
+    debug.println(((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8]);
 #endif
 
     packetCfg.cls = UBX_CLASS_CFG;
@@ -110,9 +114,8 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint16_t maxWait)
     payloadCfg[10] = baudrate>>16;
     payloadCfg[11] = baudrate>>24;
 #ifdef DEBUG
-    Serial.printf("Next baud rate: %d=0x%x\n",
-            ((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8],
-            ((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8]);
+    debug.print("New baud rate:");
+    debug.println(((uint32_t)payloadCfg[10]<<16) | ((uint32_t)payloadCfg[9]<<8) | payloadCfg[8]);
 #endif
 
     sendCommand(packetCfg);
