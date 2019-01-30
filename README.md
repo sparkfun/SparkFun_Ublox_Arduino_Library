@@ -14,11 +14,14 @@ SparkFun Ublox Arduino Library
   </tr>
 </table>
 
-Ublox makes some incredible GPS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of Ublox devices over I2C (called DDC by Ublox). An I2C interface combined with the binary UBX protocol makes for a much easier and lighterweight interface to a GPS module. Stop parsing NMEA data! And simply ask for the datums you need.
+Ublox makes some incredible GPS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of Ublox devices over I2C (called DDC by Ublox) and Serial. The UBX protocol is supported over both I2C and serial, and is a much easier and lighterweight interface to a GPS module. Stop parsing NMEA data! And simply ask for the datums you need.
 
 This library can be installed via the Arduino Library manager. Search for **SparkFun Ublox**.
 
 Want to help? Please do! We are always looking for ways to improve and build out features of this library.
+
+* Special thanks to [tve](https://github.com/tve) for building out serial additions and examples.
+* We are always interested in adding SPI support with a checkUbloxSPI() function
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 

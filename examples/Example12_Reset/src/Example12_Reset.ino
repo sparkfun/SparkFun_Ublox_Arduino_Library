@@ -5,7 +5,7 @@
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to reset the U-Box module.
+  This example shows how to reset the U-Blox module to factory defaults.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -15,6 +15,7 @@
 
   Hardware Connections:
   Connect the U-Blox serial port to Serial1
+  If you're using an Uno or don't have a 2nd serial port (Serial1), consider using software serial
   Open the serial monitor at 115200 baud to see the output
 */
 

@@ -22,14 +22,18 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Connect the U-Blox serial port to Serial1
+  Connect the U-Blox serial TX pin to Uno pin 10
+  Connect the U-Blox serial RX pin to Uno pin 11
   Open the serial monitor at 115200 baud to see the output
 */
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(10, 11); // RX, TX. Pin 10 on Uno goes to TX pin on GPS module.
+
+long lastTime = 0; //Simple local timer. Limits amount of I2C traffic to Ublox module.
 
 void setup()
 {
@@ -41,18 +45,18 @@ void setup()
   //Loop until we're in sync and then ensure it's at 38400 baud.
   do {
     Serial.println("GPS: trying 38400 baud");
-    Serial1.begin(38400);
-    if (myGPS.begin(Serial1)) break;
+    mySerial.begin(38400);
+    if (myGPS.begin(mySerial) == true) break;
 
     delay(100);
     Serial.println("GPS: trying 9600 baud");
-    Serial1.begin(9600);
-    if (myGPS.begin(Serial1)) {
+    mySerial.begin(9600);
+    if (myGPS.begin(mySerial) == true) {
         Serial.println("GPS: connected at 9600 baud, switching to 38400");
         myGPS.setSerialRate(38400);
         delay(100);
     } else {
-        //gps.factoryReset();
+        //myGPS.factoryReset();
         delay(2000); //Wait a bit before trying again to limit the Serial output
     }
   } while(1);
