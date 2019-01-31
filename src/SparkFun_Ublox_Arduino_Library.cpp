@@ -470,7 +470,6 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         break;
 
     case UBX_CLASS_NAV:
-        Serial.println("**************************************************");
         if (msg->id == UBX_NAV_PVT && msg->len == 92)
         {
             //Parse various byte fields into global vars
