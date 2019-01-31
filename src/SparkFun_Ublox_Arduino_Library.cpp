@@ -188,6 +188,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
 	  debug.println("No bytes available");
 #endif
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
+      return true;
 	}
 
     while (bytesAvailable)
@@ -455,27 +456,50 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 //Once a packet has been received and validated, identify this packet's class/id and update internal flags
 void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 {
-  if (msg->cls == UBX_CLASS_ACK)
-  {
-    //We don't want to store ACK packets, just set commandAck flag
-    if (msg->id == UBX_ACK_ACK)
-    {
-      if (msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
-      {
-        //The ack we just received matched the CLS/ID of last packetCfg sent
+    switch (msg->cls) {
+    case UBX_CLASS_ACK:
+        //We don't want to store ACK packets, just set commandAck flag
+        if (msg->id == UBX_ACK_ACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
+        {
+            //The ack we just received matched the CLS/ID of last packetCfg sent
 #ifdef DEBUG
-        debug.println("Command sent/ack'd successfully");
+            debug.println("Command sent/ack'd successfully");
 #endif
+            commandAck = true;
+        }
+        break;
 
-        commandAck = true;
-      }
+    case UBX_CLASS_NAV:
+        Serial.println("**************************************************");
+        if (msg->id == UBX_NAV_PVT && msg->len == 92)
+        {
+            //Parse various byte fields into global vars
+            fixType = extractByte(20 - packetCfg.startingSpot);
+            carrierSolution = extractByte(21 - packetCfg.startingSpot) >> 6; //Get 6th&7th bits of this byte
+            SIV = extractByte(23 - packetCfg.startingSpot);
+            longitude = extractLong(24 - packetCfg.startingSpot);
+            latitude = extractLong(28 - packetCfg.startingSpot);
+            altitude = extractLong(32 - packetCfg.startingSpot);
+            altitudeMSL = extractLong(36 - packetCfg.startingSpot);
+            groundSpeed = extractLong(60 - packetCfg.startingSpot);
+            headingOfMotion = extractLong(64 - packetCfg.startingSpot);
+            pDOP = extractLong(76 - packetCfg.startingSpot);
+
+            //Mark all datums as fresh (not read before)
+            moduleQueried.all = true;
+            moduleQueried.longitude = true;
+            moduleQueried.latitude = true;
+            moduleQueried.altitude = true;
+            moduleQueried.altitudeMSL = true;
+            moduleQueried.SIV = true;
+            moduleQueried.fixType = true;
+            moduleQueried.carrierSolution = true;
+            moduleQueried.groundSpeed = true;
+            moduleQueried.headingOfMotion = true;
+            moduleQueried.pDOP = true;
+        }
+        break;
     }
-    //else
-    //{
-      //Serial.println("Command send fail");
-      //module.ackReceived = false;
-    //}
-  }
 }
 
 //Given a packet and payload, send everything including CRC bytes via I2C port
@@ -1035,6 +1059,24 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
 	return (measurementRate);
 }
 
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
+//works.
+boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
+{
+    packetCfg.cls = UBX_CLASS_CFG;
+    packetCfg.id = UBX_CFG_MSG;
+    packetCfg.len = 3;
+    packetCfg.startingSpot = 0;
+    payloadCfg[0] = UBX_CLASS_NAV;
+    payloadCfg[1] = UBX_NAV_PVT;
+    payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+    bool ok = sendCommand(packetCfg, maxWait);
+    if (ok) autoPVT = enable;
+    moduleQueried.all = false;
+    return ok;
+}
+
 //Given a spot in the payload array, extract four bytes and build a long
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {
@@ -1064,42 +1106,22 @@ uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
 //Get the latest Position/Velocity/Time solution and fill all global variables
 boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 {
-	//Query the module for the latest lat/long
-	packetCfg.cls = UBX_CLASS_NAV;
-	packetCfg.id = UBX_NAV_PVT;
-	packetCfg.len = 0;
-	packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes
+    if (autoPVT) {
+        //The GPS is automatically reporting, we just check whether we got unread data
+        checkUblox();
+        return moduleQueried.all;
+    } else {
+        //The GPS is not automatically reporting navigation position so we have to poll explicitly
+        packetCfg.cls = UBX_CLASS_NAV;
+        packetCfg.id = UBX_NAV_PVT;
+        packetCfg.len = 0;
+        packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes
 
-	if(sendCommand(packetCfg, maxWait) == false)
-		return(false); //If command send fails then bail
+        //The data is parsed as part of processing the response
+        return sendCommand(packetCfg, maxWait);
+            return(false); //If command send fails then bail
+    }
 
-	//Parse various byte fields into global vars
-	fixType = extractByte(20 - packetCfg.startingSpot);
-	carrierSolution = extractByte(21 - packetCfg.startingSpot) >> 6; //Get 6th&7th bits of this byte
-	SIV = extractByte(23 - packetCfg.startingSpot);
-	longitude = extractLong(24 - packetCfg.startingSpot);
-	latitude = extractLong(28 - packetCfg.startingSpot);
-	altitude = extractLong(32 - packetCfg.startingSpot);
-	altitudeMSL = extractLong(36 - packetCfg.startingSpot);
-	groundSpeed = extractLong(60 - packetCfg.startingSpot);
-	headingOfMotion = extractLong(64 - packetCfg.startingSpot);
-	pDOP = extractLong(76 - packetCfg.startingSpot);
-
-	//Mark all datums as fresh (not read before)
-	//moduleQueried ThisStruct;
-	//memset(&ThisStruct, 0, sizeof(moduleQueried));
-	moduleQueried.longitude = true;
-	moduleQueried.latitude = true;
-	moduleQueried.altitude = true;
-	moduleQueried.altitudeMSL = true;
-	moduleQueried.SIV = true;
-	moduleQueried.fixType = true;
-	moduleQueried.carrierSolution = true;
-	moduleQueried.groundSpeed = true;
-	moduleQueried.headingOfMotion = true;
-	moduleQueried.pDOP = true;
-
-	return(true);
 }
 
 //Get the current 3D high precision positional accuracy - a fun thing to watch
@@ -1137,6 +1159,7 @@ int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 {
 	if(moduleQueried.longitude == false) getPVT();
 	moduleQueried.longitude = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(longitude);
 }
@@ -1146,6 +1169,7 @@ int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 {
 	if(moduleQueried.altitude == false) getPVT();
 	moduleQueried.altitude = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(altitude);
 }
@@ -1157,6 +1181,7 @@ int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
 {
 	if(moduleQueried.altitudeMSL == false) getPVT();
 	moduleQueried.altitudeMSL = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(altitudeMSL);
 }
@@ -1166,6 +1191,7 @@ uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 {
 	if(moduleQueried.SIV == false) getPVT();
 	moduleQueried.SIV = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(SIV);
 }
@@ -1176,6 +1202,7 @@ uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
 {
 	if(moduleQueried.fixType == false) getPVT();
 	moduleQueried.fixType = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(fixType);
 }
@@ -1187,6 +1214,7 @@ uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
 {
 	if(moduleQueried.carrierSolution == false) getPVT();
 	moduleQueried.carrierSolution = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(carrierSolution);
 }
@@ -1196,6 +1224,7 @@ int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
 {
 	if(moduleQueried.groundSpeed == false) getPVT();
 	moduleQueried.groundSpeed = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(groundSpeed);
 }
@@ -1205,6 +1234,7 @@ int32_t SFE_UBLOX_GPS::getHeading(uint16_t maxWait)
 {
 	if(moduleQueried.headingOfMotion == false) getPVT();
 	moduleQueried.headingOfMotion = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(headingOfMotion);
 }
@@ -1214,6 +1244,7 @@ uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 {
 	if(moduleQueried.pDOP == false) getPVT();
 	moduleQueried.pDOP = false; //Since we are about to give this to user, mark this data as stale
+        moduleQueried.all = false;
 
 	return(pDOP);
 }
