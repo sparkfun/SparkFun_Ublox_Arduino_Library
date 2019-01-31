@@ -38,6 +38,39 @@ Documentation
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
+Polling vs. auto-reporting
+--------------------------
+
+This library supports two modes of operation for getting navigation information with the `getPVT`
+function (based on the `UBX_NAV_PVT` protocol packet): polling and auto-reporting.
+
+The standard method is for the sketch to call `getPVT` (or one of the `getLatitude`, `getLongitude`,
+etc. methods) when it needs a fresh navigation solution. At that point the library sends a request
+to the GPS to produce a fresh solution. The GPS then waits until the next measurement occurs (e.g.
+once per second or as set using `setNavigationFrequency`) and then sends the fresh data.
+The advantage of this method is that the data received is always fresh, the downside is that getPVT
+can block until the next measurement is made by the GPS, e.g. up to 1 second if the nav frequency is
+set to one second.
+
+An alternate method can be chosen using `setAutoPVT(true)` which instructs the GPS to send the
+navigation information (`UBX_NAV_PVT` packet) as soon as it is produced. This is the way the older
+NMEA navigation data has been used for years. The sketch continues to call `getPVT` as before but
+under the hood the library returns the data of the last solution received from the GPS, which may be
+a bit out of date (how much depends on the `setNavigationFrequency` value).
+
+The advantage of this method is that getPVT does not block: it returns true if new data is available
+and false otherwise. The disadvantages are that the data may be a bit old and that buffering for
+these spontaneus `UBX_NAV_PVT` packets is required (100 bytes each). When using Serial the buffering
+is an issue because the std serial buffer is 32 or 64 bytes long depending on Arduino version. When
+using I2C the buffering is not an issue because the GPS device has at least 1KB of internal buffering
+(possibly as large as 4KB).
+
+As an example, assume that the GPS is set to produce 5 navigation
+solutions per second and that the sketch only calls getPVT once a second, then the GPS will queue 5
+packets in its internal buffer (about 500 bytes) and the library will read those when getPVT is
+called, update its internal copy of the nav data 5 times, and return `true` to the sketch. The
+skecth calls `getLatitude`, etc. and retrieve the data of the most recent of those 5 packets.
+
 Products That Use This Library 
 ---------------------------------
 
