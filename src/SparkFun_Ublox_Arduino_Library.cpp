@@ -442,7 +442,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 	{
 		//If a UBX_NAV_PVT packet comes in asynchronously, we need to fudge the startingSpot
 		uint16_t startingSpot = incomingUBX->startingSpot;
-		if (autoPVT && incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
+		if (incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
 			startingSpot = 20;
 		//Begin recording if counter goes past startingSpot
 		if( (incomingUBX->counter - 4) >= startingSpot)
