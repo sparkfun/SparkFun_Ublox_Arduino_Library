@@ -162,7 +162,6 @@ boolean SFE_UBLOX_GPS::checkUblox()
 }
 
 //Polls I2C for data, passing any new bytes to process()
-//Times out after given amount of time
 boolean SFE_UBLOX_GPS::checkUbloxI2C()
 {
   if (millis() - lastCheck >= I2C_POLLING_WAIT_MS)
@@ -215,7 +214,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
 
       bytesAvailable -= bytesToRead;
     }
-  } //end timed read
+  }
 
   return (true);
 
@@ -441,12 +440,16 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 	}
 	else //Load this byte into the payload array
 	{
+		//If a UBX_NAV_PVT packet comes in asynchronously, we need to fudge the startingSpot
+		uint16_t startingSpot = incomingUBX->startingSpot;
+		if (autoPVT && incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
+			startingSpot = 20;
 		//Begin recording if counter goes past startingSpot
-		if( (incomingUBX->counter - 4) >= incomingUBX->startingSpot)
+		if( (incomingUBX->counter - 4) >= startingSpot)
 		{
 			//Check to see if we have room for this byte
-			if( ((incomingUBX->counter - 4) - incomingUBX->startingSpot) < MAX_PAYLOAD_SIZE) //If counter = 208, starting spot = 200, we're good to record.
-				incomingUBX->payload[incomingUBX->counter - 4 - incomingUBX->startingSpot] = incoming; //Store this byte into payload array
+			if( ((incomingUBX->counter - 4) - startingSpot) < MAX_PAYLOAD_SIZE) //If counter = 208, starting spot = 200, we're good to record.
+				incomingUBX->payload[incomingUBX->counter - 4 - startingSpot] = incoming; //Store this byte into payload array
 		}
 	}
 
@@ -473,16 +476,17 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         if (msg->id == UBX_NAV_PVT && msg->len == 92)
         {
             //Parse various byte fields into global vars
-            fixType = extractByte(20 - packetCfg.startingSpot);
-            carrierSolution = extractByte(21 - packetCfg.startingSpot) >> 6; //Get 6th&7th bits of this byte
-            SIV = extractByte(23 - packetCfg.startingSpot);
-            longitude = extractLong(24 - packetCfg.startingSpot);
-            latitude = extractLong(28 - packetCfg.startingSpot);
-            altitude = extractLong(32 - packetCfg.startingSpot);
-            altitudeMSL = extractLong(36 - packetCfg.startingSpot);
-            groundSpeed = extractLong(60 - packetCfg.startingSpot);
-            headingOfMotion = extractLong(64 - packetCfg.startingSpot);
-            pDOP = extractLong(76 - packetCfg.startingSpot);
+            constexpr int startingSpot = 20; //fixed value used in processUBX
+            fixType = extractByte(20 - startingSpot);
+            carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
+            SIV = extractByte(23 - startingSpot);
+            longitude = extractLong(24 - startingSpot);
+            latitude = extractLong(28 - startingSpot);
+            altitude = extractLong(32 - startingSpot);
+            altitudeMSL = extractLong(36 - startingSpot);
+            groundSpeed = extractLong(60 - startingSpot);
+            headingOfMotion = extractLong(64 - startingSpot);
+            pDOP = extractLong(76 - startingSpot);
 
             //Mark all datums as fresh (not read before)
             moduleQueried.all = true;
@@ -1114,7 +1118,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
         packetCfg.cls = UBX_CLASS_NAV;
         packetCfg.id = UBX_NAV_PVT;
         packetCfg.len = 0;
-        packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes
+        //packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes Note:now hard-coded in processUBX
 
         //The data is parsed as part of processing the response
         return sendCommand(packetCfg, maxWait);
