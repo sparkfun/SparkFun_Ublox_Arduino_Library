@@ -1,6 +1,6 @@
 /*
   Configuring the GPS to automatically send position reports over I2C
-  By: Nathan Seidle
+  By: Nathan Seidle and Thorsten von Eicken
   SparkFun Electronics
   Date: January 3rd, 2019
   License: MIT. See license file for more information but you can

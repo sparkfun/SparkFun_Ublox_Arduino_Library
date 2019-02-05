@@ -5,7 +5,7 @@
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to reset the U-Blox module to factory defaults.
+  This example shows how to reset the U-Blox module to factory defaults over serial.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!

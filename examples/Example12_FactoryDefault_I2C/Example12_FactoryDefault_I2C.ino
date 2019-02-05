@@ -1,11 +1,11 @@
 /*
-  Test baud rate changes on serial, factory reset, and hard reset.
-  By: Thorsten von Eicken
+  Send command to reset module over I2C
+  By: Nathan Seidle
   Date: January 29rd, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to reset the U-Blox module to factory defaults.
+  This example shows how to reset the U-Blox module to factory defaults over I2C.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -21,8 +21,6 @@
 
 #include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
-
-int state = 0; // steps through auto-baud, reset, etc states
 
 void setup()
 {
@@ -42,7 +40,7 @@ void setup()
   Serial.println("Press a key to reset module to factory defaults");
   while (Serial.available() == false) ; //Wait for user to send character
 
-  myGPS.factoryReset();
+  myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
   if (myGPS.begin() == false) //Attempt to re-connect
   {
