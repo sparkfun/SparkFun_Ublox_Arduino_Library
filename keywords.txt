@@ -79,6 +79,7 @@ getProtocolVersionLow	KEYWORD2
 getProtocolVersion  KEYWORD2
 
 factoryReset    KEYWORD2
+setAutoPVT  KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

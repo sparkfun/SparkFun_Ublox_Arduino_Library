@@ -26,7 +26,6 @@
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <Particle.h>
 #include <Wire.h> //Needed for I2C to GPS
 
 #include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_Ublox_GPS
@@ -54,31 +53,31 @@ void setup()
 
 void loop()
 {
-    // Calling getPVT returns true if there actually is a fresh navigation solution available.
-    if (myGPS.getPVT())
-    {
-        Serial.println();
-        long latitude = myGPS.getLatitude();
-        Serial.print(F("Lat: "));
-        Serial.print(latitude);
+  // Calling getPVT returns true if there actually is a fresh navigation solution available.
+  if (myGPS.getPVT())
+  {
+    Serial.println();
+    long latitude = myGPS.getLatitude();
+    Serial.print(F("Lat: "));
+    Serial.print(latitude);
 
-        long longitude = myGPS.getLongitude();
-        Serial.print(F(" Long: "));
-        Serial.print(longitude);
-        Serial.print(F(" (degrees * 10^-7)"));
+    long longitude = myGPS.getLongitude();
+    Serial.print(F(" Long: "));
+    Serial.print(longitude);
+    Serial.print(F(" (degrees * 10^-7)"));
 
-        long altitude = myGPS.getAltitude();
-        Serial.print(F(" Alt: "));
-        Serial.print(altitude);
-        Serial.print(F(" (mm)"));
+    long altitude = myGPS.getAltitude();
+    Serial.print(F(" Alt: "));
+    Serial.print(altitude);
+    Serial.print(F(" (mm)"));
 
-        byte SIV = myGPS.getSIV();
-        Serial.print(F(" SIV: "));
-        Serial.print(SIV);
+    byte SIV = myGPS.getSIV();
+    Serial.print(F(" SIV: "));
+    Serial.print(SIV);
 
-        Serial.println();
-    } else {
-        Serial.print(".");
-        delay(50);
-    }
+    Serial.println();
+  } else {
+    Serial.print(".");
+    delay(50);
+  }
 }
