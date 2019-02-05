@@ -110,6 +110,7 @@ const uint8_t UBX_NAV_HPPOSLLH = 0x14; //Used for obtaining lat/long/alt in high
 const uint8_t UBX_NAV_SVIN = 0x3B; //Used for checking Survey In status
 
 const uint8_t UBX_MON_VER = 0x04; //Used for obtaining Protocol Version
+const uint8_t UBX_MON_TXBUF = 0x08; //Used for query tx buffer size/state
 
 //The following are used to enable RTCM messages
 const uint8_t UBX_CFG_MSG = 0x01;
@@ -200,7 +201,7 @@ class SFE_UBLOX_GPS
 	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
 
 	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
-	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes
+	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
 	boolean sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250);
 	void sendSerialCommand(ubxPacket outgoingUBX);
 
@@ -220,7 +221,9 @@ class SFE_UBLOX_GPS
 
 	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
 
-	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc.
+        boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency
+	boolean getPVT(uint16_t maxWait = 1000); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+
 	int32_t getLatitude(uint16_t maxWait = 250); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = 250); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getAltitude(uint16_t maxWait = 250); //Returns the current altitude in mm above ellipsoid
@@ -336,6 +339,7 @@ class SFE_UBLOX_GPS
 
 	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
 	unsigned long lastCheck = 0;
+        boolean autoPVT = false; //Whether autoPVT is enabled or not
 	boolean commandAck = false; //This goes true after we send a command and it's ack'd
 	uint8_t ubxFrameCounter;
 
@@ -347,6 +351,7 @@ class SFE_UBLOX_GPS
 	//This reduces the number of times we have to call getPVT as this can take up to ~1s per read
 	//depending on update rate
 	struct {
+	   uint16_t all : 1;
 	   uint16_t longitude : 1;
 	   uint16_t latitude : 1;
 	   uint16_t altitude : 1;
