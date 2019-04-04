@@ -10,7 +10,7 @@ SparkFun Ublox Arduino Library
   <tr align="center">
     <td><a href="https://www.sparkfun.com/products/15136">SparkFun GPS-RTK2 - ZED-F9P (GPS-15136)</a></td>
     <td><a href="https://www.sparkfun.com/products/15005">SparkFun GPS-RTK - NEO-M8P-2 (GPS-15005)</a></td>
-    <td><a href="https://www.sparkfun.com/products/15106">SparkFun SAM-M8Q Breakout (Qwiic) (SPX-15106)</a></td>
+    <td><a href="https://www.sparkfun.com/products/15210">SparkFun SAM-M8Q Breakout (Qwiic) (GPS-15210)</a></td>
   </tr>
 </table>
 
@@ -76,6 +76,8 @@ Products That Use This Library
 
 * [GPS-15136](https://www.sparkfun.com/products/15136) - SparkFun GPS-RTK2 ZED-F9P
 * [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun GPS-RTK NEO-M8P-2
+* [GPS-15210](https://www.sparkfun.com/products/15210) - SparkFun GPS Breakout - Chip Antenna, SAM-M8Q (Qwiic)
+* [GPS-15193](https://www.sparkfun.com/products/15193) - SparkFun GPS Breakout - Chip Antenna, ZOE-M8Q (Qwiic)
 * [SPX-14980](https://www.sparkfun.com/products/14980) - SparkX GPS-RTK Black
 * [SPX-15106](https://www.sparkfun.com/products/15106) - SparkX SAM-M8Q
 
