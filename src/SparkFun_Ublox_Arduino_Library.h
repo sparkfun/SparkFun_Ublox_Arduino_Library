@@ -62,10 +62,9 @@
 //#elif __MK20DX256__
 //Teensy
 
-//#elif ARDUINO_ARCH_ESP32
-//ESP32 based platforms
+#endif
 
-#else
+#ifndef I2C_BUFFER_LENGTH
 
 //The catch-all default is 32
 #define I2C_BUFFER_LENGTH 32
@@ -369,3 +368,4 @@ class SFE_UBLOX_GPS
 };
 
 #endif
+
