@@ -11,8 +11,8 @@ SparkFun Ublox Arduino Library
   <tr align="center">
     <td><a href="https://www.sparkfun.com/products/15136">SparkFun GPS-RTK2 - ZED-F9P (GPS-15136)</a></td>
     <td><a href="https://www.sparkfun.com/products/15005">SparkFun GPS-RTK - NEO-M8P-2 (GPS-15005)</a></td>
-    <td><a href="https://www.sparkfun.com/products/15193">SparkFun ZOE-M8Q Breakout (Qwiic) (GPS-15193)</a></td>
-    <td><a href="https://www.sparkfun.com/products/15210">SparkFun SAM-M8Q Breakout (Qwiic) (GPS-15210)</a></td>
+    <td><a href="https://www.sparkfun.com/products/15193">SparkFun ZOE-M8Q Breakout (GPS-15193)</a></td>
+    <td><a href="https://www.sparkfun.com/products/15210">SparkFun SAM-M8Q Breakout (GPS-15210)</a></td>
   </tr>
 </table>
 
@@ -24,9 +24,9 @@ Want to help? Please do! We are always looking for ways to improve and build out
 
 Thanks to:
 
+* We are always interested in adding SPI support with a checkUbloxSPI() function
 * [trycoon](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/pull/7) for fixing the lack of I2C buffer length defines
 * [tve](https://github.com/tve) for building out serial additions and examples
-* We are always interested in adding SPI support with a checkUbloxSPI() function
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
