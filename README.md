@@ -5,11 +5,13 @@ SparkFun Ublox Arduino Library
   <tr align="center">
    <td><a href="https://www.sparkfun.com/products/15136"><img src="https://cdn.sparkfun.com//assets/parts/1/3/5/1/4/15136-SparkFun_GPS-RTK2_Board_-_ZED-F9P__Qwiic_-03.jpg"></a></td>
    <td><a href="https://www.sparkfun.com/products/15005"><img src="https://cdn.sparkfun.com//assets/parts/1/3/3/2/0/15005-SparkFun_GPS-RTK__Qwiic__-_NEO-M8P-2-00.jpg"></a></td>
-   <td><a href="https://www.sparkfun.com/products/15210"><img src="https://cdn.sparkfun.com//assets/parts/1/3/6/4/8/15210-SparkFun_GPS_Breakout_-_Chip_Antenna__SAM-M8Q__Qwiic_-01.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/15193"><img src="https://cdn.sparkfun.com//assets/parts/1/3/6/1/4/15193-SparkFun_GPS_Breakout_-_U.FL__ZOE-M8__Qwiic_-01.jpg"></<td><a href="https://www.sparkfun.com/products/15210"><img src="https://cdn.sparkfun.com//assets/parts/1/3/6/4/8/15210-SparkFun_GPS_Breakout_-_Chip_Antenna__SAM-M8Q__Qwiic_-01.jpg"></a></td>
+a></td>
   </tr>
   <tr align="center">
     <td><a href="https://www.sparkfun.com/products/15136">SparkFun GPS-RTK2 - ZED-F9P (GPS-15136)</a></td>
     <td><a href="https://www.sparkfun.com/products/15005">SparkFun GPS-RTK - NEO-M8P-2 (GPS-15005)</a></td>
+    <td><a href="https://www.sparkfun.com/products/15193">SparkFun ZOE-M8Q Breakout (Qwiic) (GPS-15193)</a></td>
     <td><a href="https://www.sparkfun.com/products/15210">SparkFun SAM-M8Q Breakout (Qwiic) (GPS-15210)</a></td>
   </tr>
 </table>
@@ -20,7 +22,10 @@ This library can be installed via the Arduino Library manager. Search for **Spar
 
 Want to help? Please do! We are always looking for ways to improve and build out features of this library.
 
-* Special thanks to [tve](https://github.com/tve) for building out serial additions and examples.
+Thanks to:
+
+* [trycoon](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/pull/7) for fixing the lack of I2C buffer length defines
+* [tve](https://github.com/tve) for building out serial additions and examples
 * We are always interested in adding SPI support with a checkUbloxSPI() function
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
