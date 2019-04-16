@@ -233,6 +233,14 @@ class SFE_UBLOX_GPS
 	int32_t getGroundSpeed(uint16_t maxWait = 250); //Returns speed in mm/s
 	int32_t getHeading(uint16_t maxWait = 250); //Returns heading in degrees * 10^-7
 	uint16_t getPDOP(uint16_t maxWait = 250); //Returns positional dillution of precision * 10^-2
+	uint16_t getYear(uint16_t maxWait = 250);
+	uint8_t getMonth(uint16_t maxWait = 250);
+	uint8_t getDay(uint16_t maxWait = 250);
+	uint8_t getHour(uint16_t maxWait = 250);
+	uint8_t getMinute(uint16_t maxWait = 250);
+	uint8_t getSecond(uint16_t maxWait = 250);
+
+
 
 	//Port configurations
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
@@ -273,6 +281,13 @@ class SFE_UBLOX_GPS
 	} svin;
 
 	//The major datums we want to globally store
+	uint16_t gpsYear;
+	uint8_t gpsMonth;
+	uint8_t gpsDay;
+	uint8_t gpsHour;
+	uint8_t gpsMinute;
+	uint8_t gpsSecond;
+	
 	int32_t latitude; //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude; //Degrees * 10^-7 (more accurate than floats)
 	int32_t altitude; //Number of mm above ellipsoid
@@ -350,6 +365,12 @@ class SFE_UBLOX_GPS
 	//This reduces the number of times we have to call getPVT as this can take up to ~1s per read
 	//depending on update rate
 	struct {
+	   uint16_t gpsYear: 1;
+	   uint16_t gpsMonth: 1;
+	   uint16_t gpsDay: 1;
+	   uint16_t gpsHour: 1;
+	   uint16_t gpsMinute: 1;
+	   uint16_t gpsSecond: 1;
 	   uint16_t all : 1;
 	   uint16_t longitude : 1;
 	   uint16_t latitude : 1;

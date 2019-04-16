@@ -1,6 +1,8 @@
 SparkFun Ublox Arduino Library
 ===========================================================
 
+Added support for parsing date and time. See Example14_GetDateTime.
+
 <table class="table table-hover table-striped table-bordered">
   <tr align="center">
    <td><a href="https://www.sparkfun.com/products/15136"><img src="https://cdn.sparkfun.com//assets/parts/1/3/5/1/4/15136-SparkFun_GPS-RTK2_Board_-_ZED-F9P__Qwiic_-03.jpg"></a></td>

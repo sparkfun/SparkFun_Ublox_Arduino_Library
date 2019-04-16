@@ -17,6 +17,10 @@
   Development environment specifics:
   Arduino IDE 1.8.5
 
+  Modified by David Mann @ Loggerhead Instruments, 16 April 2019
+  - Added support for parsing date and time
+  - Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -25,6 +29,7 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 
 #include "SparkFun_Ublox_Arduino_Library.h"
 
@@ -443,7 +448,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 		//If a UBX_NAV_PVT packet comes in asynchronously, we need to fudge the startingSpot
 		uint16_t startingSpot = incomingUBX->startingSpot;
 		if (incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
-			startingSpot = 20;
+			startingSpot = 0;
 		//Begin recording if counter goes past startingSpot
 		if( (incomingUBX->counter - 4) >= startingSpot)
 		{
@@ -474,12 +479,22 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
     case UBX_CLASS_NAV:
         if (msg->id == UBX_NAV_PVT && msg->len == 92)
-        {
+        {         
+
             //Parse various byte fields into global vars
-            constexpr int startingSpot = 20; //fixed value used in processUBX
+            constexpr int startingSpot = 0; //fixed value used in processUBX
+           
+            gpsYear = extractInt(4);
+            gpsMonth = extractByte(6);
+            gpsDay = extractByte(7);
+            gpsHour = extractByte(8);
+            gpsMinute = extractByte(9);
+            gpsSecond = extractByte(10);
+
+
             fixType = extractByte(20 - startingSpot);
             carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
-            SIV = extractByte(23 - startingSpot);
+            SIV = extractByte(23);
             longitude = extractLong(24 - startingSpot);
             latitude = extractLong(28 - startingSpot);
             altitude = extractLong(32 - startingSpot);
@@ -489,6 +504,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
             pDOP = extractLong(76 - startingSpot);
 
             //Mark all datums as fresh (not read before)
+            moduleQueried.gpsYear = true;
+            moduleQueried.gpsMonth = true;
+            moduleQueried.gpsDay = true;
+            moduleQueried.gpsHour = true;
+            moduleQueried.gpsMinute = true;
+            moduleQueried.gpsSecond = true;
             moduleQueried.all = true;
             moduleQueried.longitude = true;
             moduleQueried.latitude = true;
@@ -1104,6 +1125,54 @@ uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
 uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
 {
 	return(payloadCfg[spotToStart]);
+}
+
+//Get the current year
+uint16_t SFE_UBLOX_GPS::getYear(uint16_t maxWait)
+{
+  if(moduleQueried.gpsYear == false) getPVT();
+  moduleQueried.gpsYear = false; //Since we are about to give this to user, mark this data as stale
+  return(gpsYear);
+}
+
+//Get the current month
+uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
+{
+  if(moduleQueried.gpsMonth == false) getPVT();
+  moduleQueried.gpsMonth = false; //Since we are about to give this to user, mark this data as stale
+  return(gpsMonth);
+}
+
+//Get the current year
+uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
+{
+  if(moduleQueried.gpsDay == false) getPVT();
+  moduleQueried.gpsDay = false; //Since we are about to give this to user, mark this data as stale
+  return(gpsDay);
+}
+
+//Get the current year
+uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
+{
+  if(moduleQueried.gpsHour == false) getPVT();
+  moduleQueried.gpsHour = false; //Since we are about to give this to user, mark this data as stale
+  return(gpsHour);
+}
+
+//Get the current year
+uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
+{
+  if(moduleQueried.gpsMinute == false) getPVT();
+  moduleQueried.gpsMinute = false; //Since we are about to give this to user, mark this data as stale
+  return(gpsMinute);
+}
+
+//Get the current year
+uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
+{
+  if(moduleQueried.gpsSecond == false) getPVT();
+  moduleQueried.gpsSecond = false; //Since we are about to give this to user, mark this data as stale
+  return(gpsSecond);
 }
 
 //Get the latest Position/Velocity/Time solution and fill all global variables
