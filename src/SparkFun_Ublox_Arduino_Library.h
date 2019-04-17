@@ -158,7 +158,11 @@ const uint8_t VAL_GROUP_I2C = 0x51;
 
 const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
+#ifndef MAX_PAYLOAD_SIZE
+
 #define MAX_PAYLOAD_SIZE 64 //Some commands are larger than 64 bytes but this covers most
+
+#endif
 
 //-=-=-=-=- UBX binary specific variables
 typedef struct
