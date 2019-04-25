@@ -78,6 +78,8 @@ getProtocolVersionHigh	KEYWORD2
 getProtocolVersionLow	KEYWORD2
 getProtocolVersion  KEYWORD2
 
+getRELPOSNED    KEYWORD2
+
 factoryReset    KEYWORD2
 setAutoPVT  KEYWORD2
 

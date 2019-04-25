@@ -268,6 +268,8 @@ public:
 	uint8_t getProtocolVersionLow(uint16_t maxWait = 1000);	//Returns the PROTVER 00.XX from UBX-MON-VER register
 	boolean getProtocolVersion(uint16_t maxWait = 1000);		 //Queries module, loads low/high bytes
 
+	boolean getRELPOSNED(uint16_t maxWait = 1000); //Get Relative Positioning Information of the NED frame
+
 	//Survey-in specific controls
 	struct svinStructure
 	{

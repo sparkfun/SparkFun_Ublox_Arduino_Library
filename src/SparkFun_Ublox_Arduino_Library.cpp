@@ -1340,3 +1340,22 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
 
   return (true);
 }
+
+//Relative Positioning Information in NED frame
+//Returns true if commands was successful
+boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_RELPOSNED;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false)
+    return (false); //If command send fails then bail
+
+  //We got a response, now parse the bits
+  Serial.print("RELPOSNED: 0x");
+  Serial.println(payloadCfg[38], HEX);
+
+  return (true);
+}
