@@ -279,6 +279,27 @@ public:
 		float meanAccuracy;
 	} svin;
 
+	//Relative Positioning Info in NED frame specific controls
+	struct frelPosInfoStructure
+	{
+		uint16_t refStationID;
+
+		float relPosN;
+		float relPosE;
+		float relPosD;
+		float accN;
+		float accE;
+		float accD;
+
+		bool gnssFixOk;
+		bool diffSoln;
+		bool relPosValid;
+		uint8_t carrSoln;
+		bool isMoving;
+		bool refPosMiss;
+		bool refObsMiss;
+	} relPosInfo;
+
 	//The major datums we want to globally store
 	int32_t latitude;				 //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude;			 //Degrees * 10^-7 (more accurate than floats)

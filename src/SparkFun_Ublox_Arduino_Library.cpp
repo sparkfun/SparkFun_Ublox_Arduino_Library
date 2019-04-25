@@ -1354,8 +1354,42 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
     return (false); //If command send fails then bail
 
   //We got a response, now parse the bits
-  Serial.print("RELPOSNED: 0x");
-  Serial.println(payloadCfg[38], HEX);
+
+  uint16_t refStationID = extractInt(2);
+  Serial.print("refStationID: ");
+  Serial.println(refStationID);
+
+  int32_t tempRelPos;
+
+  tempRelPos = extractLong(8);
+  relPosInfo.relPosN = tempRelPos / 100.0; //Convert cm to m
+
+  tempRelPos = extractLong(12);
+  relPosInfo.relPosE = tempRelPos / 100.0; //Convert cm to m
+
+  tempRelPos = extractLong(16);
+  relPosInfo.relPosD = tempRelPos / 100.0; //Convert cm to m
+
+  uint32_t tempAcc;
+
+  tempAcc = extractLong(24);
+  relPosInfo.accN = tempAcc / 10000.0; //Convert 0.1 mm to m
+
+  tempAcc = extractLong(28);
+  relPosInfo.accE = tempAcc / 10000.0; //Convert 0.1 mm to m
+
+  tempAcc = extractLong(32);
+  relPosInfo.accD = tempAcc / 10000.0; //Convert 0.1 mm to m
+
+  uint8_t flags = payloadCfg[36];
+
+  relPosInfo.gnssFixOk = flags & (1 << 0);
+  relPosInfo.diffSoln = flags & (1 << 1);
+  relPosInfo.relPosValid = flags & (1 << 2);
+  relPosInfo.carrSoln = (flags & (0b11 << 3)) >> 3;
+  relPosInfo.isMoving = flags & (1 << 5);
+  relPosInfo.refPosMiss = flags & (1 << 6);
+  relPosInfo.refObsMiss = flags & (1 << 7);
 
   return (true);
 }
