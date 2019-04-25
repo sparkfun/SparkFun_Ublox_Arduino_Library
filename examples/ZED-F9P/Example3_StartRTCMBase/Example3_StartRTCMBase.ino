@@ -69,7 +69,7 @@ void setup()
   }
   else
   {
-    Serial.println("RTCM failed to enable. Are you sure you have an NEO-M8P?");
+    Serial.println("RTCM failed to enable. Are you sure you have an ZED-F9P?");
     while (1); //Freeze
   }
 
