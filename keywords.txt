@@ -80,6 +80,9 @@ getProtocolVersion  KEYWORD2
 
 getRELPOSNED    KEYWORD2
 
+enableDebugging KEYWORD2
+disableDebugging    KEYWORD2
+
 factoryReset    KEYWORD2
 setAutoPVT  KEYWORD2
 

@@ -63,13 +63,13 @@ boolean SFE_UBLOX_GPS::begin(Stream &serialPort)
 
 //Enable or disable the printing of sent/response HEX values.
 //Use this in conjunction with 'Transport Logging' from the Universal Reader Assistant to see what they're doing that we're not
-void RFID::enableDebugging(Stream &debugPort)
+void SFE_UBLOX_GPS::enableDebugging(Stream &debugPort)
 {
   _debugSerial = &debugPort; //Grab which port the user wants us to use for debugging
 
   _printDebug = true; //Should we print the commands we send? Good for debugging
 }
-void RFID::disableDebugging(void)
+void SFE_UBLOX_GPS::disableDebugging(void)
 {
   _printDebug = false; //Turn off extra print statements
 }
@@ -115,8 +115,8 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
 
   if (_printDebug == true)
   {
-    debug.print("Current baud rate: ");
-    debug.println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
+    _debugSerial->print("Current baud rate: ");
+    _debugSerial->println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
   }
 
   packetCfg.cls = UBX_CLASS_CFG;
@@ -132,8 +132,8 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
 
   if (_printDebug == true)
   {
-    debug.print("New baud rate:");
-    debug.println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
+    _debugSerial->print("New baud rate:");
+    _debugSerial->println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
   }
 
   sendCommand(packetCfg);
@@ -203,7 +203,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     {
       if (_printDebug == true)
       {
-        debug.println("No bytes available");
+        _debugSerial->println("No bytes available");
       }
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
       return true;
@@ -259,10 +259,10 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
   if (_printDebug == true)
   {
     //if (currentSentence == NONE && incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
-    //	debug.println(); //Show new packet start
+    //	_debugSerial->println(); //Show new packet start
 
-    //debug.print(" ");
-    //debug.print(incoming, HEX);
+    //_debugSerial->print(" ");
+    //_debugSerial->print(incoming, HEX);
   }
 
   if (currentSentence == NONE || currentSentence == NMEA)
@@ -447,15 +447,18 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        debug.print("Received: ");
+        _debugSerial->print("Received: ");
         printPacket(incomingUBX);
       }
       incomingUBX->valid = true;
       processUBXpacket(incomingUBX); //We've got a valid packet, now do something with it
     }
-    if (_printDebug == true)
+    else
     {
-      else debug.println("Checksum failed. Response too big?");
+      if (_printDebug == true)
+      {
+        _debugSerial->println("Checksum failed. Response too big?");
+      }
     }
   }
   else //Load this byte into the payload array
@@ -488,7 +491,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //The ack we just received matched the CLS/ID of last packetCfg sent
       if (_printDebug == true)
       {
-        debug.println("Command sent/ack'd successfully");
+        _debugSerial->println("Command sent/ack'd successfully");
       }
       commandAck = true;
     }
@@ -535,7 +538,7 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 
   if (_printDebug == true)
   {
-    debug.print("Sending: ");
+    _debugSerial->print("Sending: ");
     printPacket(&outgoingUBX);
   }
   if (commType == COMM_TYPE_I2C)
@@ -697,23 +700,23 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 {
   if (_printDebug == true)
   {
-    debug.print("CLS:");
-    debug.print(packet->cls, HEX);
+    _debugSerial->print("CLS:");
+    _debugSerial->print(packet->cls, HEX);
 
-    debug.print(" ID:");
-    debug.print(packet->id, HEX);
+    _debugSerial->print(" ID:");
+    _debugSerial->print(packet->id, HEX);
 
-    //debug.print(" Len: 0x");
-    //debug.print(packet->len, HEX);
+    //_debugSerial->print(" Len: 0x");
+    //_debugSerial->print(packet->len, HEX);
 
-    debug.print(" Payload:");
+    _debugSerial->print(" Payload:");
 
     for (int x = 0; x < packet->len; x++)
     {
-      debug.print(" ");
-      debug.print(packet->payload[x], HEX);
+      _debugSerial->print(" ");
+      _debugSerial->print(packet->payload[x], HEX);
     }
-    debug.println();
+    _debugSerial->println();
   }
 }
 
@@ -740,15 +743,15 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
       {
         if (_printDebug == true)
         {
-          debug.println(F("CLS/ID match!"));
+          _debugSerial->println(F("CLS/ID match!"));
         }
         return (true); //If the packet we just sent was a NAV packet then we'll just get data back
       }
-      if (_printDebug == true)
+      else
       {
-        else
+        if (_printDebug == true)
         {
-          debug.print(F("Packet didn't match CLS/ID"));
+          _debugSerial->print(F("Packet didn't match CLS/ID"));
           printPacket(&packetCfg);
         }
       }
@@ -759,7 +762,7 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
 
   if (_printDebug == true)
   {
-    debug.println(F("waitForResponse timeout"));
+    _debugSerial->println(F("waitForResponse timeout"));
   }
 
   return (false);
@@ -832,9 +835,9 @@ uint8_t SFE_UBLOX_GPS::getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t
 
   if (_printDebug == true)
   {
-    debug.print("key: 0x");
-    debug.print(key, HEX);
-    debug.println();
+    _debugSerial->print("key: 0x");
+    _debugSerial->print(key, HEX);
+    _debugSerial->println();
   }
 
   //Load key into outgoing payload
@@ -849,9 +852,9 @@ uint8_t SFE_UBLOX_GPS::getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t
 
   if (_printDebug == true)
   {
-    debug.print("response (should be 0x01): 0x");
-    debug.print(payloadCfg[0], HEX);
-    debug.println();
+    _debugSerial->print("response (should be 0x01): 0x");
+    _debugSerial->print(payloadCfg[0], HEX);
+    _debugSerial->println();
   }
 
   //Pull the requested value from the response
@@ -1349,17 +1352,18 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
 
     if (_printDebug == true)
     {
-      debug.print("Extension ");
-      debug.print(extensionNumber);
-      debug.print(": ");
+      _debugSerial->print("Extension ");
+      _debugSerial->print(extensionNumber);
+      _debugSerial->print(": ");
       for (int location = 0; location < MAX_PAYLOAD_SIZE; location++)
       {
         if (payloadCfg[location] == '\0')
           break;
-        debug.write(payloadCfg[location]);
+        _debugSerial->write(payloadCfg[location]);
       }
-      debug.println();
+      _debugSerial->println();
     }
+
     //Now we need to find "PROTVER=18.00" in the incoming byte stream
     if (payloadCfg[0] == 'P' && payloadCfg[6] == 'R')
     {

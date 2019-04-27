@@ -37,14 +37,6 @@
 
 #include <Wire.h>
 
-//Uncomment the following line to enable a variety of debug statements
-//This will increase the codeword and RAM footprint of the library
-//#define DEBUG
-
-#ifdef DEBUG
-#define debug Serial //Point debug statements to print to Serial port
-#endif
-
 //Platform specific configurations
 
 //Define the size of the I2C buffer based on the platform the user has
@@ -269,6 +261,9 @@ public:
 	boolean getProtocolVersion(uint16_t maxWait = 1000);		 //Queries module, loads low/high bytes
 
 	boolean getRELPOSNED(uint16_t maxWait = 1000); //Get Relative Positioning Information of the NED frame
+
+	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages
+	void disableDebugging(void);
 
 	//Survey-in specific controls
 	struct svinStructure
