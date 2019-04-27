@@ -250,7 +250,7 @@ public:
 	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250);	 //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
-	uint8_t getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
+	uint8_t getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_FLASH, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
 
 	//Functions used for RTK and base station setup
 	boolean getSurveyMode(uint16_t maxWait = 250);																																 //Get the current TimeMode3 settings
@@ -351,9 +351,12 @@ private:
 	TwoWire *_i2cPort;							//The generic connection to user's chosen I2C hardware
 	Stream *_serialPort;						//The generic connection to user's chosen Serial hardware
 	Stream *_nmeaOutputPort = NULL; //The user can assign an output port to print NMEA sentences if they wish
+	Stream *_debugSerial;						//The stream to send debug messages to if enabled
 
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software
+
+	boolean _printDebug = false; //Flag to print the serial commands we are sending to the Serial port for debug
 
 	//These are pointed at from within the ubxPacket
 	uint8_t payloadAck[2];
