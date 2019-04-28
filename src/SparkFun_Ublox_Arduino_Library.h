@@ -289,6 +289,15 @@ public:
 		float relPosN;
 		float relPosE;
 		float relPosD;
+
+		long relPosLength;
+		long relPosHeading;
+
+		int8_t relPosHPN;
+		int8_t relPosHPE;
+		int8_t relPosHPD;
+		int8_t relPosHPLength;
+
 		float accN;
 		float accE;
 		float accD;

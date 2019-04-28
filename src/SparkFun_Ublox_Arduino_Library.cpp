@@ -1458,6 +1458,14 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
   tempRelPos = extractLong(16);
   relPosInfo.relPosD = tempRelPos / 100.0; //Convert cm to m
 
+  relPosInfo.relPosLength = extractLong(20);
+  relPosInfo.relPosHeading = extractLong(24);
+
+  relPosInfo.relPosHPN = payloadCfg[32];
+  relPosInfo.relPosHPE = payloadCfg[33];
+  relPosInfo.relPosHPD = payloadCfg[34];
+  relPosInfo.relPosHPLength = payloadCfg[35];
+
   uint32_t tempAcc;
 
   tempAcc = extractLong(24);

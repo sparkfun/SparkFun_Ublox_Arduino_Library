@@ -53,6 +53,20 @@ void loop()
     Serial.print("relPosD: ");
     Serial.println(myGPS.relPosInfo.relPosD, 4);
 
+    Serial.print("relPosLength: ");
+    Serial.println(myGPS.relPosInfo.relPosLength);
+    Serial.print("relPosHeading: ");
+    Serial.println(myGPS.relPosInfo.relPosHeading);
+
+    Serial.print("relPosHPN: ");
+    Serial.println(myGPS.relPosInfo.relPosHPN);
+    Serial.print("relPosHPE: ");
+    Serial.println(myGPS.relPosInfo.relPosHPE);
+    Serial.print("relPosHPD: ");
+    Serial.println(myGPS.relPosInfo.relPosHPD);
+    Serial.print("relPosHPLength: ");
+    Serial.println(myGPS.relPosInfo.relPosHPLength);
+
     Serial.print("accN: ");
     Serial.println(myGPS.relPosInfo.accN, 4);
     Serial.print("accE: ");

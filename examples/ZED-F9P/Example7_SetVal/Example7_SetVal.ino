@@ -57,7 +57,7 @@ void setup()
 
   //Below is the original way we enabled the RTCM message on the I2C port. After that, we show how to do the same
   //but with setVal().
-  //myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
+  //Original: myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
   //setValueSuccess = myGPS.setVal(0x209102bd, 1); //Set output rate of msg 1005 over the I2C port to once per second
 
   if(setValueSuccess == true)
