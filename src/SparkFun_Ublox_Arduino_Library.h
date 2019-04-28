@@ -131,23 +131,28 @@ const uint8_t COM_TYPE_NMEA = (1 << 1);
 const uint8_t COM_TYPE_RTCM3 = (1 << 5);
 
 //The following consts are used to generate KEY values for the advanced protocol functions of VELGET/SET/DEL
-const uint8_t VAL_SIZE_BIT = 0x01;
-const uint8_t VAL_SIZE_BYTE = 0x02;
+const uint8_t VAL_SIZE_1 = 0x01;	//One bit
+const uint8_t VAL_SIZE_8 = 0x02;	//One byte
+const uint8_t VAL_SIZE_16 = 0x03; //Two bytes
+const uint8_t VAL_SIZE_32 = 0x04; //Four bytes
+const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
 
 const uint8_t VAL_LAYER_RAM = 0;
 const uint8_t VAL_LAYER_BBR = 1;
 const uint8_t VAL_LAYER_FLASH = 2;
 const uint8_t VAL_LAYER_DEFAULT = 7;
 
-const uint8_t VAL_GROUP_I2COUTPROT_SIZE = VAL_SIZE_BIT; //All fields in I2C group are currently 1 bit
+//Below are various Groups, IDs, and sizes for various settings
+//These can be used to call getVal/setVal/delVal
 const uint8_t VAL_GROUP_I2COUTPROT = 0x72;
+const uint8_t VAL_GROUP_I2COUTPROT_SIZE = VAL_SIZE_1; //All fields in I2C group are currently 1 bit
 
 const uint8_t VAL_ID_I2COUTPROT_UBX = 0x01;
 const uint8_t VAL_ID_I2COUTPROT_NMEA = 0x02;
 const uint8_t VAL_ID_I2COUTPROT_RTCM3 = 0x03;
 
-const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_BYTE; //All fields in I2C group are currently 1 byte
 const uint8_t VAL_GROUP_I2C = 0x51;
+const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_8; //All fields in I2C group are currently 1 byte
 
 const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
@@ -242,7 +247,8 @@ public:
 	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250);	 //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
-	uint8_t getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_FLASH, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
+	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
+	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);														 //Returns the value at a given group/id/size location
 
 	//Functions used for RTK and base station setup
 	boolean getSurveyMode(uint16_t maxWait = 250);																																 //Get the current TimeMode3 settings

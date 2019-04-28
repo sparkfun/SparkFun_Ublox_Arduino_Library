@@ -61,7 +61,7 @@ setUART2Output	KEYWORD2
 setUSBOutput	KEYWORD2
 setSPIOutput	KEYWORD2
 
-getVal	KEYWORD2
+getVal8	KEYWORD2
 
 getSurveyMode	KEYWORD2
 setSurveyMode	KEYWORD2

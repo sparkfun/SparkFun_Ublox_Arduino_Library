@@ -811,22 +811,11 @@ boolean SFE_UBLOX_GPS::factoryDefault(uint16_t maxWait)
   return (true);
 }
 
-//Given a key, return its value
-//This is how the new Ublox modules are communicating, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
+//Given a group, ID and size, return the value of this config spot
+//The 32-bit key is put together from group/ID/size. See other getVal to send key directly.
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
 {
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_VALGET;
-  packetCfg.len = 4 + 4 * 1; //While multiple keys are allowed, we will send only one key at a time
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
-
-  payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the flash layer
-
   //Create key
   uint32_t key = 0;
   key |= (uint32_t)id;
@@ -840,25 +829,51 @@ uint8_t SFE_UBLOX_GPS::getVal(uint16_t group, uint16_t id, uint8_t size, uint8_t
     _debugSerial->println();
   }
 
+  return getVal8(key, layer, maxWait);
+}
+
+//Given a key, return its value
+//This function takes a full 32-bit key
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_VALGET;
+  packetCfg.len = 4 + 4 * 1; //While multiple keys are allowed, we will send only one key at a time
+  packetCfg.startingSpot = 0;
+
+  //Clear packet payload
+  for (uint8_t x = 0; x < packetCfg.len; x++)
+    packetCfg.payload[x] = 0;
+
+  payloadCfg[0] = 0;     //Message Version - set to 0
+  payloadCfg[1] = layer; //By default we ask for the BBR layer
+
   //Load key into outgoing payload
   payloadCfg[4] = key >> 8 * 0; //Key LSB
   payloadCfg[5] = key >> 8 * 1;
   payloadCfg[6] = key >> 8 * 2;
   payloadCfg[7] = key >> 8 * 3;
 
+  if (_printDebug == true)
+  {
+    _debugSerial->print("key: 0x");
+    _debugSerial->print(key, HEX);
+    _debugSerial->println();
+  }
+
   //Send VALGET command with this key
   if (sendCommand(packetCfg, maxWait) == false)
     return (false); //If command send fails then bail
 
-  if (_printDebug == true)
-  {
-    _debugSerial->print("response (should be 0x01): 0x");
-    _debugSerial->print(payloadCfg[0], HEX);
-    _debugSerial->println();
-  }
+  //Verify the response is the correct length as compared to what the user called (did the module respond with 8-bits but the user called getVal32?)
+  //Response is 8 bytes plus cfg data
+  //if(packet->len > 8+1)
 
   //Pull the requested value from the response
-  return (extractByte(4)); //Look for our response value at location 4+1*N
+  //Response starts at 4+1*N with the 32-bit key so the actual data we're looking for is at 8+1*N
+  return (extractByte(8));
 }
 
 //Get the current TimeMode3 settings - these contain survey in statuses
