@@ -249,6 +249,7 @@ public:
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
 	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);														 //Returns the value at a given group/id/size location
+	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);						 //Returns the value at a given group/id/size location
 
 	//Functions used for RTK and base station setup
 	boolean getSurveyMode(uint16_t maxWait = 250);																																 //Get the current TimeMode3 settings

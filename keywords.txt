@@ -62,6 +62,7 @@ setUSBOutput	KEYWORD2
 setSPIOutput	KEYWORD2
 
 getVal8	KEYWORD2
+setVal  KEYWORD2
 
 getSurveyMode	KEYWORD2
 setSurveyMode	KEYWORD2

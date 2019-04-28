@@ -876,6 +876,42 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
   return (extractByte(8));
 }
 
+//Given a key, set an 8-bit value
+//This function takes a full 32-bit key
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_VALSET;
+  packetCfg.len = 4 + 4 + 2; //4 byte header, 4 byte key ID, 2 bytes of value
+  packetCfg.startingSpot = 0;
+
+  //Clear packet payload
+  for (uint8_t x = 0; x < packetCfg.len; x++)
+    packetCfg.payload[x] = 0;
+
+  payloadCfg[0] = 0;     //Message Version - set to 0
+  payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+  //Load key into outgoing payload
+  payloadCfg[4] = key >> 8 * 0; //Key LSB
+  payloadCfg[5] = key >> 8 * 1;
+  payloadCfg[6] = key >> 8 * 2;
+  payloadCfg[7] = key >> 8 * 3;
+
+  //Load user's value
+  payloadCfg[8] = value >> 8 * 0; //Value LSB
+  payloadCfg[9] = value >> 8 * 1;
+
+  //Send VALSET command with this key and value
+  if (sendCommand(packetCfg, maxWait) == false)
+    return (false); //If command send fails then bail
+
+  //All done
+  return (true);
+}
+
 //Get the current TimeMode3 settings - these contain survey in statuses
 boolean SFE_UBLOX_GPS::getSurveyMode(uint16_t maxWait)
 {
