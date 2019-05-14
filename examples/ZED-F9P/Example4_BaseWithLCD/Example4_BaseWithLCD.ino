@@ -67,8 +67,9 @@ void setup()
   lcd.setCursor(0, 1);
   lcd.print("GPS Detected");
 
-  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfiguration();        //Save the current settings to flash and BBR
+  //myGPS.setI2COutput(COM_TYPE_RTCM3); //Set the I2C port to output RTCM3 sentences (turn off NMEA noise)
+  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX sentences (turn off NMEA noise)
+  myGPS.saveConfiguration();                         //Save the current settings to flash and BBR
 
   boolean response = true;
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
@@ -83,7 +84,7 @@ void setup()
   }
   else
   {
-    Serial.println(F("RTCM failed to enable. Are you sure you have an NEO-M8P?"));
+    Serial.println(F("RTCM failed to enable. Are you sure you have an ZED-F9P? Freezing."));
     while (1)
       ; //Freeze
   }
@@ -92,7 +93,7 @@ void setup()
   response = myGPS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (request can take a long time)
   if (response == false)
   {
-    Serial.println(F("Failed to get Survey In status"));
+    Serial.println(F("Failed to get Survey In status. Freezing."));
     while (1)
       ; //Freeze
   }
@@ -111,7 +112,7 @@ void setup()
     {
       Serial.println(F("Survey start failed"));
       lcd.setCursor(0, 3);
-      lcd.print(F("Survey start failed"));
+      lcd.print(F("Survey start failed. Freezing."));
       while (1)
         ;
     }
@@ -170,13 +171,16 @@ void setup()
   Serial.println(F("Base survey complete! RTCM now broadcasting."));
   lcd.clear();
   lcd.print(F("Transmitting RTCM"));
+
+  myGPS.setI2COutput(COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the I2C port to output UBX and RTCM sentences (not really an option, turns on NMEA as well)
+  
 }
 
 void loop()
 {
   myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
-  //Do anything you want. Call checkUblox() every second. NEO-M8P-2 has TX buffer of 4k bytes.
+  //Do anything you want. Call checkUblox() every second. ZED-F9P has TX buffer of 4k bytes.
 
   delay(250); //Don't pound too hard on the I2C bus
 }

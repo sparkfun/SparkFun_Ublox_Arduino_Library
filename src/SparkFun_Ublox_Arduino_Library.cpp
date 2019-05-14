@@ -329,7 +329,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
   }
   else if (currentSentence == RTCM)
   {
-    processRTCM(incoming); //Deal with RTCM bytes
+    processRTCMframe(incoming); //Deal with RTCM bytes
   }
 }
 

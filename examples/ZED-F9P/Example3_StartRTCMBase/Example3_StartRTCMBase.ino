@@ -137,6 +137,8 @@ void setup()
   Serial.println("Survey valid!");
 
   Serial.println("Base survey complete! RTCM now broadcasting.");
+
+  myGPS.setI2COutput(COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the I2C port to output UBX and RTCM sentences (not really an option, turns on NMEA as well)
 }
 
 void loop()
