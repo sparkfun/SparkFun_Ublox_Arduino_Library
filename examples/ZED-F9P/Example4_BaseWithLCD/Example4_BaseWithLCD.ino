@@ -110,7 +110,7 @@ void setup()
       lcd.print(F("Survey start failed"));
       while (1);
     }
-    Serial.println(F("Survey started. This will run until 300s has passed and less than 2m accuracy is achieved."));
+    Serial.println(F("Survey started. This will run until 300s has passed and less than 5m accuracy is achieved."));
   }
 
   while (Serial.available()) Serial.read(); //Clear buffer
