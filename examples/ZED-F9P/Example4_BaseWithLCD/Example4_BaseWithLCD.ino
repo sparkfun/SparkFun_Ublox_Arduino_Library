@@ -33,12 +33,13 @@
 SFE_UBLOX_GPS myGPS;
 
 #include <SerLCD.h> //Click here to get the library: http://librarymanager/All#SparkFun_SerLCD
-SerLCD lcd; // Initialize the library with default I2C address 0x72
+SerLCD lcd;         // Initialize the library with default I2C address 0x72
 
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial); //Wait for user to open terminal
+  while (!Serial)
+    ; //Wait for user to open terminal
   Serial.println("Ublox GPS I2C Test");
 
   Wire.begin();
@@ -46,7 +47,7 @@ void setup()
   pinMode(STAT_LED, OUTPUT);
   digitalWrite(STAT_LED, LOW);
 
-  lcd.begin(Wire); //Set up the LCD for Serial communication at 9600bps
+  lcd.begin(Wire);            //Set up the LCD for Serial communication at 9600bps
   lcd.setBacklight(0x4B0082); //indigo, a kind of dark purplish blue
   lcd.clear();
   lcd.print(F("LCD Ready"));
@@ -57,7 +58,8 @@ void setup()
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     lcd.setCursor(0, 1);
     lcd.print(F("No GPS detected"));
-    while (1);
+    while (1)
+      ;
   }
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
@@ -66,7 +68,7 @@ void setup()
   lcd.print("GPS Detected");
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  myGPS.saveConfiguration();        //Save the current settings to flash and BBR
 
   boolean response = true;
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
@@ -82,7 +84,8 @@ void setup()
   else
   {
     Serial.println(F("RTCM failed to enable. Are you sure you have an NEO-M8P?"));
-    while (1); //Freeze
+    while (1)
+      ; //Freeze
   }
 
   //Check if Survey is in Progress before initiating one
@@ -90,7 +93,8 @@ void setup()
   if (response == false)
   {
     Serial.println(F("Failed to get Survey In status"));
-    while (1); //Freeze
+    while (1)
+      ; //Freeze
   }
 
   if (myGPS.svin.active == true)
@@ -108,12 +112,14 @@ void setup()
       Serial.println(F("Survey start failed"));
       lcd.setCursor(0, 3);
       lcd.print(F("Survey start failed"));
-      while (1);
+      while (1)
+        ;
     }
-    Serial.println(F("Survey started. This will run until 300s has passed and less than 5m accuracy is achieved."));
+    Serial.println(F("Survey started. This will run until 60s has passed and less than 5m accuracy is achieved."));
   }
 
-  while (Serial.available()) Serial.read(); //Clear buffer
+  while (Serial.available())
+    Serial.read(); //Clear buffer
 
   lcd.clear();
   lcd.print(F("Survey in progress"));
@@ -171,7 +177,7 @@ void loop()
   myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
   //Do anything you want. Call checkUblox() every second. NEO-M8P-2 has TX buffer of 4k bytes.
-  
+
   delay(250); //Don't pound too hard on the I2C bus
 }
 
@@ -181,8 +187,10 @@ void loop()
 void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 {
   //Let's just pretty-print the HEX values for now
-  if (myGPS.rtcmFrameCounter % 16 == 0) Serial.println();
+  if (myGPS.rtcmFrameCounter % 16 == 0)
+    Serial.println();
   Serial.print(" ");
-  if (incoming < 0x10) Serial.print("0");
+  if (incoming < 0x10)
+    Serial.print("0");
   Serial.print(incoming, HEX);
 }
