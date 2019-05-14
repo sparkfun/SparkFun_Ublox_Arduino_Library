@@ -87,6 +87,13 @@ disableDebugging    KEYWORD2
 factoryReset    KEYWORD2
 setAutoPVT  KEYWORD2
 
+getYear KEYWORD2
+getMonth KEYWORD2
+getDay KEYWORD2
+getHour KEYWORD2
+getMinute KEYWORD2
+getSecond KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
