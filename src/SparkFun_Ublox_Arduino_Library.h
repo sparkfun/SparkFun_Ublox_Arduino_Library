@@ -17,6 +17,10 @@
   Development environment specifics:
   Arduino IDE 1.8.5
 
+  Modified by David Mann @ Loggerhead Instruments, 16 April 2019
+  - Added support for parsing date and time
+  - Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -83,10 +87,10 @@ const uint8_t UBX_CLASS_LOG = 0x21;
 const uint8_t UBX_CLASS_SEC = 0x27;
 const uint8_t UBX_CLASS_HNR = 0x28;
 
-const uint8_t UBX_CFG_PRT = 0x00;		 //Used to configure port specifics
-const uint8_t UBX_CFG_RST = 0x04;		 //Used to reset device
-const uint8_t UBX_CFG_RATE = 0x08;	 //Used to set port baud rates
-const uint8_t UBX_CFG_CFG = 0x09;		 //Used to save current configuration
+const uint8_t UBX_CFG_PRT = 0x00;	//Used to configure port specifics
+const uint8_t UBX_CFG_RST = 0x04;	//Used to reset device
+const uint8_t UBX_CFG_RATE = 0x08;   //Used to set port baud rates
+const uint8_t UBX_CFG_CFG = 0x09;	//Used to save current configuration
 const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALGET = 0x8B; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALDEL = 0x8C; //Used for config of higher version Ublox modules (ie protocol v27 and above)
@@ -95,18 +99,18 @@ const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
 const uint8_t SVIN_MODE_DISABLE = 0x00;
 const uint8_t SVIN_MODE_ENABLE = 0x01;
 
-const uint8_t UBX_NAV_PVT = 0x07;				//All the things! Position, velocity, time, PDOP, height, h/v accuracies, number of satellites
+const uint8_t UBX_NAV_PVT = 0x07;		//All the things! Position, velocity, time, PDOP, height, h/v accuracies, number of satellites
 const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high precision)
-const uint8_t UBX_NAV_HPPOSLLH = 0x14;	//Used for obtaining lat/long/alt in high precision
-const uint8_t UBX_NAV_SVIN = 0x3B;			//Used for checking Survey In status
+const uint8_t UBX_NAV_HPPOSLLH = 0x14;  //Used for obtaining lat/long/alt in high precision
+const uint8_t UBX_NAV_SVIN = 0x3B;		//Used for checking Survey In status
 const uint8_t UBX_NAV_RELPOSNED = 0x3C; //Relative Positioning Information in NED frame
 
-const uint8_t UBX_MON_VER = 0x04;		//Used for obtaining Protocol Version
+const uint8_t UBX_MON_VER = 0x04;   //Used for obtaining Protocol Version
 const uint8_t UBX_MON_TXBUF = 0x08; //Used for query tx buffer size/state
 
 //The following are used to enable RTCM messages
 const uint8_t UBX_CFG_MSG = 0x01;
-const uint8_t UBX_RTCM_MSB = 0xF5;	//All RTCM enable commands have 0xF5 as MSB
+const uint8_t UBX_RTCM_MSB = 0xF5;  //All RTCM enable commands have 0xF5 as MSB
 const uint8_t UBX_RTCM_1005 = 0x05; //Stationary RTK reference ARP
 const uint8_t UBX_RTCM_1074 = 0x4A; //GPS MSM4
 const uint8_t UBX_RTCM_1077 = 0x4D; //GPS MSM7
@@ -131,8 +135,8 @@ const uint8_t COM_TYPE_NMEA = (1 << 1);
 const uint8_t COM_TYPE_RTCM3 = (1 << 5);
 
 //The following consts are used to generate KEY values for the advanced protocol functions of VELGET/SET/DEL
-const uint8_t VAL_SIZE_1 = 0x01;	//One bit
-const uint8_t VAL_SIZE_8 = 0x02;	//One byte
+const uint8_t VAL_SIZE_1 = 0x01;  //One bit
+const uint8_t VAL_SIZE_8 = 0x02;  //One byte
 const uint8_t VAL_SIZE_16 = 0x03; //Two bytes
 const uint8_t VAL_SIZE_32 = 0x04; //Four bytes
 const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
@@ -167,8 +171,8 @@ typedef struct
 {
 	uint8_t cls;
 	uint8_t id;
-	uint16_t len;					 //Length of the payload. Does not include cls, id, or checksum bytes
-	uint16_t counter;			 //Keeps track of number of overall bytes received. Some responses are larger than 255 bytes.
+	uint16_t len;		   //Length of the payload. Does not include cls, id, or checksum bytes
+	uint16_t counter;	  //Keeps track of number of overall bytes received. Some responses are larger than 255 bytes.
 	uint16_t startingSpot; //The counter value needed to go past before we begin recording into payload array
 	uint8_t *payload;
 	uint8_t checksumA; //Given to us from module. Checked against the rolling calculated A/B checksums.
@@ -188,19 +192,19 @@ public:
 
 	boolean isConnected(); //Returns turn if device answers on _gpsI2Caddress address
 
-	boolean checkUblox();				//Checks module with user selected commType
-	boolean checkUbloxI2C();		//Method for I2C polling of data, passing any new bytes to process()
+	boolean checkUblox();		//Checks module with user selected commType
+	boolean checkUbloxI2C();	//Method for I2C polling of data, passing any new bytes to process()
 	boolean checkUbloxSerial(); //Method for serial polling of data, passing any new bytes to process()
 
-	void process(uint8_t incoming);														 //Processes NMEA and UBX binary sentences one byte at a time
+	void process(uint8_t incoming);							   //Processes NMEA and UBX binary sentences one byte at a time
 	void processUBX(uint8_t incoming, ubxPacket *incomingUBX); //Given a character, file it away into the uxb packet structure
-	void processRTCMframe(uint8_t incoming);									 //Monitor the incoming bytes for start and length bytes
-	void processRTCM(uint8_t incoming) __attribute__((weak));	//Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
+	void processRTCMframe(uint8_t incoming);				   //Monitor the incoming bytes for start and length bytes
+	void processRTCM(uint8_t incoming) __attribute__((weak));  //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
 
-	void processUBXpacket(ubxPacket *msg);								 //Once a packet has been received and validated, identify this packet's class/id and update internal flags
+	void processUBXpacket(ubxPacket *msg);				   //Once a packet has been received and validated, identify this packet's class/id and update internal flags
 	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
 
-	void calcChecksum(ubxPacket *msg);																	//Sets the checksumA and checksumB of a given messages
+	void calcChecksum(ubxPacket *msg);									//Sets the checksumA and checksumB of a given messages
 	boolean sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
 	boolean sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250);
 	void sendSerialCommand(ubxPacket outgoingUBX);
@@ -208,64 +212,70 @@ public:
 	void printPacket(ubxPacket *packet); //Useful for debugging
 
 	void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration and perform hardReset)
-	void hardReset();		 //Perform a reset leading to a cold start (zero info start-up)
+	void hardReset();	//Perform a reset leading to a cold start (zero info start-up)
 
-	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250);															//Changes the I2C address of the Ublox module
+	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250);							  //Changes the I2C address of the Ublox module
 	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = 250); //Changes the serial baud rate of the Ublox module, uartPort should be COM_PORT_UART1/2
-	void setNMEAOutputPort(Stream &nmeaOutputPort);																										//Sets the internal variable for the port to direct NMEA characters to
+	void setNMEAOutputPort(Stream &nmeaOutputPort);													  //Sets the internal variable for the port to direct NMEA characters to
 
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = 250); //Set the number of nav solutions sent per second
-	uint8_t getNavigationFrequency(uint16_t maxWait = 250);									 //Get the number of nav solutions sent per second currently being output by module
-	boolean saveConfiguration(uint16_t maxWait = 250);											 //Save current configuration to flash and BBR (battery backed RAM)
-	boolean factoryDefault(uint16_t maxWait = 250);													 //Reset module to factory defaults
+	uint8_t getNavigationFrequency(uint16_t maxWait = 250);					 //Get the number of nav solutions sent per second currently being output by module
+	boolean saveConfiguration(uint16_t maxWait = 250);						 //Save current configuration to flash and BBR (battery backed RAM)
+	boolean factoryDefault(uint16_t maxWait = 250);							 //Reset module to factory defaults
 
 	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
 
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency
-	boolean getPVT(uint16_t maxWait = 1000);										 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+	boolean getPVT(uint16_t maxWait = 1000);					 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 
-	int32_t getLatitude(uint16_t maxWait = 250);						//Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getLongitude(uint16_t maxWait = 250);						//Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getAltitude(uint16_t maxWait = 250);						//Returns the current altitude in mm above ellipsoid
-	int32_t getAltitudeMSL(uint16_t maxWait = 250);					//Returns the current altitude in mm above mean sea level
-	uint8_t getSIV(uint16_t maxWait = 250);									//Returns number of sats used in fix
-	uint8_t getFixType(uint16_t maxWait = 250);							//Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
+	int32_t getLatitude(uint16_t maxWait = 250);			//Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getLongitude(uint16_t maxWait = 250);			//Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getAltitude(uint16_t maxWait = 250);			//Returns the current altitude in mm above ellipsoid
+	int32_t getAltitudeMSL(uint16_t maxWait = 250);			//Returns the current altitude in mm above mean sea level
+	uint8_t getSIV(uint16_t maxWait = 250);					//Returns number of sats used in fix
+	uint8_t getFixType(uint16_t maxWait = 250);				//Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 	uint8_t getCarrierSolutionType(uint16_t maxWait = 250); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
-	int32_t getGroundSpeed(uint16_t maxWait = 250);					//Returns speed in mm/s
-	int32_t getHeading(uint16_t maxWait = 250);							//Returns heading in degrees * 10^-7
-	uint16_t getPDOP(uint16_t maxWait = 250);								//Returns positional dillution of precision * 10^-2
+	int32_t getGroundSpeed(uint16_t maxWait = 250);			//Returns speed in mm/s
+	int32_t getHeading(uint16_t maxWait = 250);				//Returns heading in degrees * 10^-7
+	uint16_t getPDOP(uint16_t maxWait = 250);				//Returns positional dillution of precision * 10^-2
+	uint16_t getYear(uint16_t maxWait = 250);
+	uint8_t getMonth(uint16_t maxWait = 250);
+	uint8_t getDay(uint16_t maxWait = 250);
+	uint8_t getHour(uint16_t maxWait = 250);
+	uint8_t getMinute(uint16_t maxWait = 250);
+	uint8_t getSecond(uint16_t maxWait = 250);
 
 	//Port configurations
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250);	//Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
-	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250);										//Returns the current protocol bits in the UBX-CFG-PRT command for a given port
+	boolean setPortInput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250);  //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
+	boolean getPortSettings(uint8_t portID, uint16_t maxWait = 250);					//Returns the current protocol bits in the UBX-CFG-PRT command for a given port
 
-	boolean setI2COutput(uint8_t comSettings, uint16_t maxWait = 250);	 //Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setI2COutput(uint8_t comSettings, uint16_t maxWait = 250);   //Configure I2C port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setUART1Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART1 port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setUART2Output(uint8_t comSettings, uint16_t maxWait = 250); //Configure UART2 port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = 250);	 //Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
-	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250);	 //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = 250);   //Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
+	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250);   //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
-	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);														 //Returns the value at a given group/id/size location
-	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);						 //Returns the value at a given group/id/size location
+	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);							   //Returns the value at a given group/id/size location
+	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);			   //Returns the value at a given group/id/size location
 
 	//Functions used for RTK and base station setup
-	boolean getSurveyMode(uint16_t maxWait = 250);																																 //Get the current TimeMode3 settings
+	boolean getSurveyMode(uint16_t maxWait = 250);																   //Get the current TimeMode3 settings
 	boolean setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250); //Control survey in mode
-	boolean enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);						 //Begin Survey-In for NEO-M8P
-	boolean disableSurveyMode(uint16_t maxWait = 250);																														 //Stop Survey-In mode
+	boolean enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);			   //Begin Survey-In for NEO-M8P
+	boolean disableSurveyMode(uint16_t maxWait = 250);															   //Stop Survey-In mode
 
-	boolean getSurveyStatus(uint16_t maxWait);																																								//Reads survey in status and sets the global variables
+	boolean getSurveyStatus(uint16_t maxWait);																				  //Reads survey in status and sets the global variables
 	boolean enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t secondsBetweenMessages, uint16_t maxWait = 250); //Given a message number turns on a message ID for output over given PortID
-	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250);																//Turn off given RTCM message from a given port
+	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250);								  //Turn off given RTCM message from a given port
 
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 1000); //Returns the PROTVER XX.00 from UBX-MON-VER register
-	uint8_t getProtocolVersionLow(uint16_t maxWait = 1000);	//Returns the PROTVER 00.XX from UBX-MON-VER register
-	boolean getProtocolVersion(uint16_t maxWait = 1000);		 //Queries module, loads low/high bytes
+	uint8_t getProtocolVersionLow(uint16_t maxWait = 1000);  //Returns the PROTVER 00.XX from UBX-MON-VER register
+	boolean getProtocolVersion(uint16_t maxWait = 1000);	 //Queries module, loads low/high bytes
 
 	boolean getRELPOSNED(uint16_t maxWait = 1000); //Get Relative Positioning Information of the NED frame
 
@@ -312,17 +322,24 @@ public:
 	} relPosInfo;
 
 	//The major datums we want to globally store
-	int32_t latitude;				 //Degrees * 10^-7 (more accurate than floats)
-	int32_t longitude;			 //Degrees * 10^-7 (more accurate than floats)
-	int32_t altitude;				 //Number of mm above ellipsoid
-	int32_t altitudeMSL;		 //Number of mm above Mean Sea Level
-	uint8_t SIV;						 //Number of satellites used in position solution
-	uint8_t fixType;				 //Tells us when we have a solution aka lock
+	uint16_t gpsYear;
+	uint8_t gpsMonth;
+	uint8_t gpsDay;
+	uint8_t gpsHour;
+	uint8_t gpsMinute;
+	uint8_t gpsSecond;
+
+	int32_t latitude;		 //Degrees * 10^-7 (more accurate than floats)
+	int32_t longitude;		 //Degrees * 10^-7 (more accurate than floats)
+	int32_t altitude;		 //Number of mm above ellipsoid
+	int32_t altitudeMSL;	 //Number of mm above Mean Sea Level
+	uint8_t SIV;			 //Number of satellites used in position solution
+	uint8_t fixType;		 //Tells us when we have a solution aka lock
 	uint8_t carrierSolution; //Tells us when we have an RTK float/fixed solution
-	int32_t groundSpeed;		 //mm/s
+	int32_t groundSpeed;	 //mm/s
 	int32_t headingOfMotion; //degrees * 10^-5
-	uint16_t pDOP;					 //Positional dilution of precision
-	uint8_t versionLow;			 //Loaded from getProtocolVersion().
+	uint16_t pDOP;			 //Positional dilution of precision
+	uint8_t versionLow;		 //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
@@ -354,15 +371,15 @@ private:
 
 	//Functions
 	uint32_t extractLong(uint8_t spotToStart); //Combine four bytes from payload into long
-	uint16_t extractInt(uint8_t spotToStart);	//Combine two bytes from payload into int
-	uint8_t extractByte(uint8_t spotToStart);	//Get byte from payload
-	void addToChecksum(uint8_t incoming);			 //Given an incoming byte, adjust rollingChecksumA/B
+	uint16_t extractInt(uint8_t spotToStart);  //Combine two bytes from payload into int
+	uint8_t extractByte(uint8_t spotToStart);  //Get byte from payload
+	void addToChecksum(uint8_t incoming);	  //Given an incoming byte, adjust rollingChecksumA/B
 
 	//Variables
-	TwoWire *_i2cPort;							//The generic connection to user's chosen I2C hardware
-	Stream *_serialPort;						//The generic connection to user's chosen Serial hardware
+	TwoWire *_i2cPort;				//The generic connection to user's chosen I2C hardware
+	Stream *_serialPort;			//The generic connection to user's chosen Serial hardware
 	Stream *_nmeaOutputPort = NULL; //The user can assign an output port to print NMEA sentences if they wish
-	Stream *_debugSerial;						//The stream to send debug messages to if enabled
+	Stream *_debugSerial;			//The stream to send debug messages to if enabled
 
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software
@@ -379,7 +396,7 @@ private:
 
 	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
 	unsigned long lastCheck = 0;
-	boolean autoPVT = false;		//Whether autoPVT is enabled or not
+	boolean autoPVT = false;	//Whether autoPVT is enabled or not
 	boolean commandAck = false; //This goes true after we send a command and it's ack'd
 	uint8_t ubxFrameCounter;
 
@@ -392,6 +409,13 @@ private:
 	//depending on update rate
 	struct
 	{
+		uint16_t gpsYear : 1;
+		uint16_t gpsMonth : 1;
+		uint16_t gpsDay : 1;
+		uint16_t gpsHour : 1;
+		uint16_t gpsMinute : 1;
+		uint16_t gpsSecond : 1;
+
 		uint16_t all : 1;
 		uint16_t longitude : 1;
 		uint16_t latitude : 1;
