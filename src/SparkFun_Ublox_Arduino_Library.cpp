@@ -1207,7 +1207,8 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
 
   bool ok = sendCommand(packetCfg, maxWait);
-  if (ok){
+  if (ok)
+  {
     autoPVT = enable;
     autoPVTImplicitUpdate = implicitUpdate;
   }
@@ -1344,22 +1345,6 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
   return (tempAccuracy);
 }
 
-//Get the current 3D high precision positional accuracy - a fun thing to watch
-//Returns a long representing the 3D accuracy in cm
-uint32_t SFE_UBLOX_GPS::getPositionAccuracyNormal(uint16_t maxWait)
-{
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_POSECEF;
-  packetCfg.len = 0;
-  packetCfg.startingSpot = 0;
-
-  if (sendCommand(packetCfg, maxWait) == false)
-    return (0); //If command send fails then bail
-
-  uint32_t tempAccuracy = extractLong(16); //We got a response, now extract a long beginning at a given position
-
-  return (tempAccuracy);
-}
 //Get the current latitude in degrees
 //Returns a long representing the number of degrees *10^-7
 int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)

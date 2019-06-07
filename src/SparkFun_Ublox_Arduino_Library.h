@@ -104,7 +104,6 @@ const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high pre
 const uint8_t UBX_NAV_HPPOSLLH = 0x14;  //Used for obtaining lat/long/alt in high precision
 const uint8_t UBX_NAV_SVIN = 0x3B;		//Used for checking Survey In status
 const uint8_t UBX_NAV_RELPOSNED = 0x3C; //Relative Positioning Information in NED frame
-const uint8_t UBX_NAV_POSECEF = 0x01;
 
 const uint8_t UBX_MON_VER = 0x04;   //Used for obtaining Protocol Version
 const uint8_t UBX_MON_TXBUF = 0x08; //Used for query tx buffer size/state
@@ -275,7 +274,6 @@ public:
 	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250);								  //Turn off given RTCM message from a given port
 
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
-	uint32_t getPositionAccuracyNormal(uint16_t maxWait = 500);
 
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 1000); //Returns the PROTVER XX.00 from UBX-MON-VER register
 	uint8_t getProtocolVersionLow(uint16_t maxWait = 1000);  //Returns the PROTVER 00.XX from UBX-MON-VER register
