@@ -1,0 +1,100 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SFE_UBLOX_GPS	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+isConnected	KEYWORD2
+checkUblox	KEYWORD2
+checkUbloxI2C	KEYWORD2
+checkUbloxSerial	KEYWORD2
+
+process	KEYWORD2
+processUBX	KEYWORD2
+processRTCMframe	KEYWORD2
+processRTCM	KEYWORD2
+processUBXpacket	KEYWORD2
+processNMEA	KEYWORD2
+
+calcChecksum	KEYWORD2
+sendCommand	KEYWORD2
+printPacket	KEYWORD2
+setI2CAddress	KEYWORD2
+setNMEAOutputPort	KEYWORD2
+
+setNavigationFrequency	KEYWORD2
+getNavigationFrequency	KEYWORD2
+
+saveConfiguration	KEYWORD2
+factoryDefault	KEYWORD2
+
+waitForResponse	KEYWORD2
+
+getPVT	KEYWORD2
+getLatitude	KEYWORD2
+getLongitude	KEYWORD2
+getAltitude	KEYWORD2
+getAltitudeMSL	KEYWORD2
+getSIV	KEYWORD2
+getFixType	KEYWORD2
+getCarrierSolutionType	KEYWORD2
+getGroundSpeed	KEYWORD2
+getHeading	KEYWORD2
+getPDOP	KEYWORD2
+
+setPortOutput	KEYWORD2
+setPortInput	KEYWORD2
+getPortSettings	KEYWORD2
+
+setI2COutput	KEYWORD2
+setUART1Output	KEYWORD2
+setUART2Output	KEYWORD2
+setUSBOutput	KEYWORD2
+setSPIOutput	KEYWORD2
+
+getVal8	KEYWORD2
+setVal  KEYWORD2
+
+getSurveyMode	KEYWORD2
+setSurveyMode	KEYWORD2
+enableSurveyMode	KEYWORD2
+disableSurveyMode	KEYWORD2
+getSurveyStatus	KEYWORD2
+
+enableRTCMmessage	KEYWORD2
+disableRTCMmessage	KEYWORD2
+
+getPositionAccuracy	KEYWORD2
+
+getProtocolVersionHigh	KEYWORD2
+getProtocolVersionLow	KEYWORD2
+getProtocolVersion  KEYWORD2
+
+getRELPOSNED    KEYWORD2
+
+enableDebugging KEYWORD2
+disableDebugging    KEYWORD2
+
+factoryReset    KEYWORD2
+setAutoPVT  KEYWORD2
+
+getYear KEYWORD2
+getMonth KEYWORD2
+getDay KEYWORD2
+getHour KEYWORD2
+getMinute KEYWORD2
+getSecond KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
