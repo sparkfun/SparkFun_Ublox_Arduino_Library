@@ -17,6 +17,17 @@
   Development environment specifics:
   Arduino IDE 1.8.5
 
+  Modified by David Mann @ Loggerhead Instruments, 16 April 2019
+  - Added support for parsing date and time
+  - Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
+
+  Modified by Steven Rowland, June 11th, 2019
+  - Added functionality for reading HPPOSLLH (High Precision Geodetic Position)
+  - Added getTimeOfWeek(), getHighResLatitude(). getHighResLongitude(), getElipsoid(), 
+    getMeanSeaLevel(), getHorizontalAccuracy(), getVerticalAccuracy(), getHPPOSLLH()
+  - Modified ProcessUBXPacket to parse HPPOSLLH packet
+  - Added query staleness verification for HPPOSLLH data 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -541,6 +552,38 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.headingOfMotion = true;
       moduleQueried.pDOP = true;
     }
+    else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36){
+      timeOfWeek = extractLong(4);
+      highResLatitude = extractLong(8);
+      highResLongitude = extractLong(12);
+      elipsoid = extractLong(16);
+      meanSeaLevel = extractLong(20);
+      geoidSeparation = extractLong(24);
+      horizontalAccuracy = extractLong(28);
+      verticalAccuracy = extractLong(32);
+      
+      highResModuleQueried.all = true;
+      highResModuleQueried.timeOfWeek = true;
+      highResModuleQueried.highResLatitude = true;
+      highResModuleQueried.highResLongitude = true;
+      highResModuleQueried.elipsoid = true;
+      highResModuleQueried.meanSeaLevel = true;
+      highResModuleQueried.geoidSeparation = true;
+      highResModuleQueried.horizontalAccuracy = true;
+      highResModuleQueried.verticalAccuracy = true;
+
+      if (_printDebug == true)
+      {
+        Serial.print("Sec: "); Serial.print(((float)extractLong(4)) / 1000.0f); Serial.print(" ");
+        Serial.print("LON: "); Serial.print(((float)(int32_t)extractLong(8)) / 10000000.0f); Serial.print(" ");
+        Serial.print("LAT: "); Serial.print(((float)(int32_t)extractLong(12)) / 10000000.0f); Serial.print(" ");
+        Serial.print("ELI M: "); Serial.print(((float)(int32_t)extractLong(16)) / 1000.0f); Serial.print(" ");
+        Serial.print("MSL M: "); Serial.print(((float)(int32_t)extractLong(20)) / 1000.0f); Serial.print(" ");
+        Serial.print("GEO: "); Serial.print(((float)(int32_t)extractLong(24))/ 1000.0f); Serial.print(" ");
+        Serial.print("HA 2D M: "); Serial.print(((float)extractLong(28)) / 1000.0f); Serial.print(" ");
+        Serial.print("VERT M: "); Serial.print(((float)extractLong(32)) / 1000.0f); Serial.print(" ");
+      }
+    }
     break;
   }
 }
@@ -721,8 +764,8 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
     _debugSerial->print(" ID:");
     _debugSerial->print(packet->id, HEX);
 
-    //_debugSerial->print(" Len: 0x");
-    //_debugSerial->print(packet->len, HEX);
+    _debugSerial->print(" Len: 0x");
+    _debugSerial->print(packet->len, HEX);
 
     _debugSerial->print(" Payload:");
 
@@ -1197,10 +1240,10 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {
   uint32_t val = 0;
-  val |= (int32_t)payloadCfg[spotToStart + 0] << 8 * 0;
-  val |= (int32_t)payloadCfg[spotToStart + 1] << 8 * 1;
-  val |= (int32_t)payloadCfg[spotToStart + 2] << 8 * 2;
-  val |= (int32_t)payloadCfg[spotToStart + 3] << 8 * 3;
+  val |= (uint32_t)payloadCfg[spotToStart + 0] << 8 * 0;
+  val |= (uint32_t)payloadCfg[spotToStart + 1] << 8 * 1;
+  val |= (uint32_t)payloadCfg[spotToStart + 2] << 8 * 2;
+  val |= (uint32_t)payloadCfg[spotToStart + 3] << 8 * 3;
   return (val);
 }
 
@@ -1208,8 +1251,8 @@ uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
 {
   uint16_t val = 0;
-  val |= (int16_t)payloadCfg[spotToStart + 0] << 8 * 0;
-  val |= (int16_t)payloadCfg[spotToStart + 1] << 8 * 1;
+  val |= (uint16_t)payloadCfg[spotToStart + 0] << 8 * 0;
+  val |= (uint16_t)payloadCfg[spotToStart + 1] << 8 * 1;
   return (val);
 }
 
@@ -1295,6 +1338,74 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     return (false); //If command send fails then bail
   }
 }
+
+uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.timeOfWeek == false)
+    getHPPOSLLH();
+  highResModuleQueried.timeOfWeek = false; //Since we are about to give this to user, mark this data as stale
+  return (timeOfWeek);
+}
+
+int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.highResLatitude == false)
+    getHPPOSLLH();
+  highResModuleQueried.highResLatitude = false; //Since we are about to give this to user, mark this data as stale
+  return (highResLatitude);
+}
+
+int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.highResLongitude == false)
+    getHPPOSLLH();
+  highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
+  return (highResLongitude);
+}
+
+int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.elipsoid == false)
+    getHPPOSLLH();
+  highResModuleQueried.elipsoid = false; //Since we are about to give this to user, mark this data as stale
+  return (elipsoid);
+}
+
+int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.meanSeaLevel == false)
+    getHPPOSLLH();
+  highResModuleQueried.meanSeaLevel = false; //Since we are about to give this to user, mark this data as stale
+  return (meanSeaLevel);
+}
+
+int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.geoidSeparation == false)
+    getHPPOSLLH();
+  highResModuleQueried.geoidSeparation = false; //Since we are about to give this to user, mark this data as stale
+  return (geoidSeparation);
+}
+
+uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.horizontalAccuracy == false)
+    getHPPOSLLH();
+  highResModuleQueried.horizontalAccuracy = false; //Since we are about to give this to user, mark this data as stale
+  return (horizontalAccuracy);
+}
+
+uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait/* = 250*/){
+  if (highResModuleQueried.verticalAccuracy == false)
+    getHPPOSLLH();
+  highResModuleQueried.verticalAccuracy = false; //Since we are about to give this to user, mark this data as stale
+  return (verticalAccuracy);
+}
+
+boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
+{
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_HPPOSLLH;
+    packetCfg.len = 0;
+
+    return sendCommand(packetCfg, maxWait);
+    return (false); //If command send fails then bail
+}
+
 
 //Get the current 3D high precision positional accuracy - a fun thing to watch
 //Returns a long representing the 3D accuracy in millimeters
