@@ -405,14 +405,14 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 {
   //Radio.sendReliable((String)incoming); //An example of passing this byte to a radio
 
-  //Serial.write(incoming); //An example of passing this byte out the serial port
+  //_debugSerial->write(incoming); //An example of passing this byte out the serial port
 
   //Debug printing
-  //  Serial.print(" ");
-  //  if(incoming < 0x10) Serial.print("0");
-  //  if(incoming < 0x10) Serial.print("0");
-  //  Serial.print(incoming, HEX);
-  //  if(rtcmFrameCounter % 16 == 0) Serial.println();
+  //  _debugSerial->print(" ");
+  //  if(incoming < 0x10) _debugSerial->print("0");
+  //  if(incoming < 0x10) _debugSerial->print("0");
+  //  _debugSerial->print(incoming, HEX);
+  //  if(rtcmFrameCounter % 16 == 0) _debugSerial->println();
 }
 
 //Given a character, file it away into the uxb packet structure
@@ -552,7 +552,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.headingOfMotion = true;
       moduleQueried.pDOP = true;
     }
-    else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36){
+    else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
+    {
       timeOfWeek = extractLong(4);
       highResLatitude = extractLong(8);
       highResLongitude = extractLong(12);
@@ -561,7 +562,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       geoidSeparation = extractLong(24);
       horizontalAccuracy = extractLong(28);
       verticalAccuracy = extractLong(32);
-      
+
       highResModuleQueried.all = true;
       highResModuleQueried.timeOfWeek = true;
       highResModuleQueried.highResLatitude = true;
@@ -574,14 +575,30 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
       if (_printDebug == true)
       {
-        Serial.print("Sec: "); Serial.print(((float)extractLong(4)) / 1000.0f); Serial.print(" ");
-        Serial.print("LON: "); Serial.print(((float)(int32_t)extractLong(8)) / 10000000.0f); Serial.print(" ");
-        Serial.print("LAT: "); Serial.print(((float)(int32_t)extractLong(12)) / 10000000.0f); Serial.print(" ");
-        Serial.print("ELI M: "); Serial.print(((float)(int32_t)extractLong(16)) / 1000.0f); Serial.print(" ");
-        Serial.print("MSL M: "); Serial.print(((float)(int32_t)extractLong(20)) / 1000.0f); Serial.print(" ");
-        Serial.print("GEO: "); Serial.print(((float)(int32_t)extractLong(24))/ 1000.0f); Serial.print(" ");
-        Serial.print("HA 2D M: "); Serial.print(((float)extractLong(28)) / 1000.0f); Serial.print(" ");
-        Serial.print("VERT M: "); Serial.print(((float)extractLong(32)) / 1000.0f); Serial.print(" ");
+        _debugSerial->print("Sec: ");
+        _debugSerial->print(((float)extractLong(4)) / 1000.0f);
+        _debugSerial->print(" ");
+        _debugSerial->print("LON: ");
+        _debugSerial->print(((float)(int32_t)extractLong(8)) / 10000000.0f);
+        _debugSerial->print(" ");
+        _debugSerial->print("LAT: ");
+        _debugSerial->print(((float)(int32_t)extractLong(12)) / 10000000.0f);
+        _debugSerial->print(" ");
+        _debugSerial->print("ELI M: ");
+        _debugSerial->print(((float)(int32_t)extractLong(16)) / 1000.0f);
+        _debugSerial->print(" ");
+        _debugSerial->print("MSL M: ");
+        _debugSerial->print(((float)(int32_t)extractLong(20)) / 1000.0f);
+        _debugSerial->print(" ");
+        _debugSerial->print("GEO: ");
+        _debugSerial->print(((float)(int32_t)extractLong(24)) / 1000.0f);
+        _debugSerial->print(" ");
+        _debugSerial->print("HA 2D M: ");
+        _debugSerial->print(((float)extractLong(28)) / 1000.0f);
+        _debugSerial->print(" ");
+        _debugSerial->print("VERT M: ");
+        _debugSerial->print(((float)extractLong(32)) / 1000.0f);
+        _debugSerial->print(" ");
       }
     }
     break;
@@ -1339,56 +1356,64 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
   }
 }
 
-uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait/* = 250*/){
+uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.timeOfWeek == false)
     getHPPOSLLH();
   highResModuleQueried.timeOfWeek = false; //Since we are about to give this to user, mark this data as stale
   return (timeOfWeek);
 }
 
-int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait/* = 250*/){
+int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.highResLatitude == false)
     getHPPOSLLH();
   highResModuleQueried.highResLatitude = false; //Since we are about to give this to user, mark this data as stale
   return (highResLatitude);
 }
 
-int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait/* = 250*/){
+int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.highResLongitude == false)
     getHPPOSLLH();
   highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
   return (highResLongitude);
 }
 
-int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait/* = 250*/){
+int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.elipsoid == false)
     getHPPOSLLH();
   highResModuleQueried.elipsoid = false; //Since we are about to give this to user, mark this data as stale
   return (elipsoid);
 }
 
-int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait/* = 250*/){
+int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.meanSeaLevel == false)
     getHPPOSLLH();
   highResModuleQueried.meanSeaLevel = false; //Since we are about to give this to user, mark this data as stale
   return (meanSeaLevel);
 }
 
-int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait/* = 250*/){
+int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.geoidSeparation == false)
     getHPPOSLLH();
   highResModuleQueried.geoidSeparation = false; //Since we are about to give this to user, mark this data as stale
   return (geoidSeparation);
 }
 
-uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait/* = 250*/){
+uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.horizontalAccuracy == false)
     getHPPOSLLH();
   highResModuleQueried.horizontalAccuracy = false; //Since we are about to give this to user, mark this data as stale
   return (horizontalAccuracy);
 }
 
-uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait/* = 250*/){
+uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait /* = 250*/)
+{
   if (highResModuleQueried.verticalAccuracy == false)
     getHPPOSLLH();
   highResModuleQueried.verticalAccuracy = false; //Since we are about to give this to user, mark this data as stale
@@ -1397,15 +1422,14 @@ uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait/* = 250*/){
 
 boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
 {
-    //The GPS is not automatically reporting navigation position so we have to poll explicitly
-    packetCfg.cls = UBX_CLASS_NAV;
-    packetCfg.id = UBX_NAV_HPPOSLLH;
-    packetCfg.len = 0;
+  //The GPS is not automatically reporting navigation position so we have to poll explicitly
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_HPPOSLLH;
+  packetCfg.len = 0;
 
-    return sendCommand(packetCfg, maxWait);
-    return (false); //If command send fails then bail
+  return sendCommand(packetCfg, maxWait);
+  return (false); //If command send fails then bail
 }
-
 
 //Get the current 3D high precision positional accuracy - a fun thing to watch
 //Returns a long representing the 3D accuracy in millimeters
@@ -1624,8 +1648,8 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
   //We got a response, now parse the bits
 
   uint16_t refStationID = extractInt(2);
-  Serial.print("refStationID: ");
-  Serial.println(refStationID);
+  //_debugSerial->print("refStationID: ");
+  //_debugSerial->println(refStationID);
 
   int32_t tempRelPos;
 
