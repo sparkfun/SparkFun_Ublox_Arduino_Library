@@ -94,6 +94,16 @@ getHour	KEYWORD2
 getMinute	KEYWORD2
 getSecond	KEYWORD2
 
+getHPPOSLLH KEYWORD2
+getTimeOfWeek KEYWORD2
+getHighResLatitude KEYWORD2
+getHighResLongitude KEYWORD2
+getElipsoid KEYWORD2
+getMeanSeaLevel KEYWORD2
+getGeoidSeparation KEYWORD2
+getHorizontalAccuracy KEYWORD2
+getVerticalAccuracy KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
