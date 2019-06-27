@@ -152,7 +152,6 @@ const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
 const uint8_t VAL_LAYER_RAM = (1 << 0);
 const uint8_t VAL_LAYER_BBR = (1 << 1);
 const uint8_t VAL_LAYER_FLASH = (1 << 2);
-const uint8_t VAL_LAYER_DEFAULT = 7;
 
 //Below are various Groups, IDs, and sizes for various settings
 //These can be used to call getVal/setVal/delVal
