@@ -148,9 +148,10 @@ const uint8_t VAL_SIZE_16 = 0x03; //Two bytes
 const uint8_t VAL_SIZE_32 = 0x04; //Four bytes
 const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
 
-const uint8_t VAL_LAYER_RAM = 0;
-const uint8_t VAL_LAYER_BBR = 1;
-const uint8_t VAL_LAYER_FLASH = 2;
+//These are the Bitfield layers definitions for the UBX-CFG-VALSET message (not to be confused with Bitfield deviceMask in UBX-CFG-CFG)
+const uint8_t VAL_LAYER_RAM = (1 << 0);
+const uint8_t VAL_LAYER_BBR = (1 << 1);
+const uint8_t VAL_LAYER_FLASH = (1 << 2);
 const uint8_t VAL_LAYER_DEFAULT = 7;
 
 //Below are various Groups, IDs, and sizes for various settings
