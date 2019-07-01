@@ -239,8 +239,8 @@ public:
 
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency
 	boolean getPVT(uint16_t maxWait = 1000);					 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
-	boolean getHPPOSLLH(uint16_t maxWait = 1000);				 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
-
+  boolean getHPPOSLLH(uint16_t maxWait = 1000);           //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+  
 	int32_t getLatitude(uint16_t maxWait = 250);			//Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = 250);			//Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getAltitude(uint16_t maxWait = 250);			//Returns the current altitude in mm above ellipsoid
@@ -258,14 +258,14 @@ public:
 	uint8_t getMinute(uint16_t maxWait = 250);
 	uint8_t getSecond(uint16_t maxWait = 250);
 
-	uint32_t getTimeOfWeek(uint16_t maxWait = 250);
-	int32_t getHighResLatitude(uint16_t maxWait = 250);
-	int32_t getHighResLongitude(uint16_t maxWait = 250);
-	int32_t getElipsoid(uint16_t maxWait = 250);
-	int32_t getMeanSeaLevel(uint16_t maxWait = 250);
-	int32_t getGeoidSeparation(uint16_t maxWait = 250);
-	uint32_t getHorizontalAccuracy(uint16_t maxWait = 250);
-	uint32_t getVerticalAccuracy(uint16_t maxWait = 250);
+  uint32_t getTimeOfWeek(uint16_t maxWait = 250);
+  int32_t getHighResLatitude(uint16_t maxWait = 250);
+  int32_t getHighResLongitude(uint16_t maxWait = 250);
+  int32_t getElipsoid(uint16_t maxWait = 250);
+  int32_t getMeanSeaLevel(uint16_t maxWait = 250);
+  int32_t getGeoidSeparation(uint16_t maxWait = 250);
+  uint32_t getHorizontalAccuracy(uint16_t maxWait = 250);
+  uint32_t getVerticalAccuracy(uint16_t maxWait = 250);
 
 	//Port configurations
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
@@ -376,14 +376,14 @@ public:
 	uint8_t versionLow;		 //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
 
-	uint32_t timeOfWeek;
-	int32_t highResLatitude;
-	int32_t highResLongitude;
-	int32_t elipsoid;
-	int32_t meanSeaLevel;
-	int32_t geoidSeparation;
-	uint32_t horizontalAccuracy;
-	uint32_t verticalAccuracy;
+  uint32_t timeOfWeek;
+  int32_t highResLatitude;
+  int32_t highResLongitude;
+  int32_t elipsoid;
+  int32_t meanSeaLevel;
+  int32_t geoidSeparation;
+  uint32_t horizontalAccuracy;
+  uint32_t verticalAccuracy;
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
@@ -473,18 +473,18 @@ private:
 		uint16_t versionNumber : 1;
 	} moduleQueried;
 
-	struct
-	{
-		uint16_t all : 1;
-		uint16_t timeOfWeek : 1;
-		uint16_t highResLatitude : 1;
-		uint16_t highResLongitude : 1;
-		uint16_t elipsoid : 1;
-		uint16_t meanSeaLevel : 1;
-		uint16_t geoidSeparation : 1;
-		uint16_t horizontalAccuracy : 1;
-		uint16_t verticalAccuracy : 1;
-	} highResModuleQueried;
+  struct
+  {
+    uint16_t all : 1;
+    uint16_t timeOfWeek : 1;
+    uint16_t highResLatitude : 1;
+    uint16_t highResLongitude : 1;
+    uint16_t elipsoid : 1;
+    uint16_t meanSeaLevel : 1;
+    uint16_t geoidSeparation : 1;
+    uint16_t horizontalAccuracy : 1;
+    uint16_t verticalAccuracy : 1;
+  } highResModuleQueried;
 
 	uint16_t rtcmLen = 0;
 };
