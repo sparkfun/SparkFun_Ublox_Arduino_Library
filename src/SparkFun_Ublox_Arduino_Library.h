@@ -422,7 +422,7 @@ private:
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, false};
 	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, false};
 
-	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
+	const uint8_t I2C_POLLING_WAIT_MS = 100; //Limit checking of new characters to every X ms
 	unsigned long lastCheck = 0;
 	boolean autoPVT = false;	//Whether autoPVT is enabled or not
 	boolean commandAck = false; //This goes true after we send a command and it's ack'd

@@ -208,6 +208,7 @@ boolean SFE_UBLOX_GPS::checkUblox()
 }
 
 //Polls I2C for data, passing any new bytes to process()
+//Returns true if new bytes are available
 boolean SFE_UBLOX_GPS::checkUbloxI2C()
 {
   if (millis() - lastCheck >= I2C_POLLING_WAIT_MS)
@@ -224,6 +225,12 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     {
       uint8_t msb = _i2cPort->read();
       uint8_t lsb = _i2cPort->read();
+      if (lsb == 0xFF)
+      {
+        debugPrintln("No bytes available");
+        lastCheck = millis(); //Put off checking to avoid I2C bus traffic
+        return (false);
+      }
       bytesAvailable = (uint16_t)msb << 8 | lsb;
     }
 
@@ -231,7 +238,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     {
       debugPrintln("Zero bytes available");
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
-      return (true);
+      return (false);
     }
 
     while (bytesAvailable)
