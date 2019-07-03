@@ -297,7 +297,9 @@ public:
 	boolean getRELPOSNED(uint16_t maxWait = 1000); //Get Relative Positioning Information of the NED frame
 
 	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages
-	void disableDebugging(void);
+	void disableDebugging(void);					  //Turn off debug statements
+	void debugPrint(char *message);					  //Safely print debug statements
+	void debugPrintln(char *message);				  //Safely print debug statements
 
 	//Survey-in specific controls
 	struct svinStructure

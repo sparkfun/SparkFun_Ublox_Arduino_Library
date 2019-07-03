@@ -85,6 +85,23 @@ void SFE_UBLOX_GPS::disableDebugging(void)
   _printDebug = false; //Turn off extra print statements
 }
 
+//Safely print messages
+void SFE_UBLOX_GPS::debugPrint(char *message)
+{
+  if (_printDebug == true)
+  {
+    _debugSerial->print(message);
+  }
+}
+//Safely print messages
+void SFE_UBLOX_GPS::debugPrintln(char *message)
+{
+  if (_printDebug == true)
+  {
+    _debugSerial->println(message);
+  }
+}
+
 void SFE_UBLOX_GPS::factoryReset()
 {
   // Copy default settings to permanent
@@ -184,9 +201,9 @@ void SFE_UBLOX_GPS::setNMEAOutputPort(Stream &nmeaOutputPort)
 boolean SFE_UBLOX_GPS::checkUblox()
 {
   if (commType == COMM_TYPE_I2C)
-    checkUbloxI2C();
+    return (checkUbloxI2C());
   else if (commType == COMM_TYPE_SERIAL)
-    checkUbloxSerial();
+    return (checkUbloxSerial());
   return false;
 }
 
@@ -212,12 +229,9 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
 
     if (bytesAvailable == 0)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println("No bytes available");
-      }
+      debugPrintln("Zero bytes available");
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
-      return true;
+      return (true);
     }
 
     while (bytesAvailable)
@@ -466,10 +480,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     }
     else
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println("Checksum failed. Response too big?");
-      }
+      debugPrintln("Checksum failed. Response too big?");
     }
   }
   else //Load this byte into the payload array
@@ -500,10 +511,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     if (msg->id == UBX_ACK_ACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
     {
       //The ack we just received matched the CLS/ID of last packetCfg sent
-      if (_printDebug == true)
-      {
-        _debugSerial->println("Command sent/ack'd successfully");
-      }
+      debugPrintln("Command sent/ack'd successfully");
       commandAck = true;
     }
     break;
@@ -807,27 +815,25 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    checkUblox(); //See if new data is available. Process bytes as they come in.
-
-    if (commandAck == true)
-      return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
-    if (packetCfg.valid == true)
+    if (checkUblox() == true) //See if new data is available. Process bytes as they come in.
     {
-      //Did we receive a config packet that matches the cls/id we requested?
-      if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
+      if (commandAck == true)
+        return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
+      if (packetCfg.valid == true)
       {
-        if (_printDebug == true)
+        //Did we receive a config packet that matches the cls/id we requested?
+        if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
         {
-          _debugSerial->println(F("CLS/ID match!"));
+          debugPrintln("CLS/ID match!");
+          return (true); //If the packet we just sent was a NAV packet then we'll just get data back
         }
-        return (true); //If the packet we just sent was a NAV packet then we'll just get data back
-      }
-      else
-      {
-        if (_printDebug == true)
+        else
         {
-          _debugSerial->print(F("Packet didn't match CLS/ID"));
-          printPacket(&packetCfg);
+          if (_printDebug == true)
+          {
+            _debugSerial->print("Packet didn't match CLS/ID");
+            printPacket(&packetCfg);
+          }
         }
       }
     }
@@ -835,10 +841,7 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
     delay(1);
   }
 
-  if (_printDebug == true)
-  {
-    _debugSerial->println(F("waitForResponse timeout"));
-  }
+  debugPrintln("waitForResponse timeout");
 
   return (false);
 }

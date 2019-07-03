@@ -83,6 +83,8 @@ getRELPOSNED	KEYWORD2
 
 enableDebugging	KEYWORD2
 disableDebugging	KEYWORD2
+debugPrint	KEYWORD2
+debugPrintln	KEYWORD2
 
 factoryReset	KEYWORD2
 setAutoPVT	KEYWORD2
