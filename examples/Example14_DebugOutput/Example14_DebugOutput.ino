@@ -76,5 +76,18 @@ void loop()
     Serial.print(SIV);
 
     Serial.println();
+    Serial.print(myGPS.getYear());
+    Serial.print("-");
+    Serial.print(myGPS.getMonth());
+    Serial.print("-");
+    Serial.print(myGPS.getDay());
+    Serial.print(" ");
+    Serial.print(myGPS.getHour());
+    Serial.print(":");
+    Serial.print(myGPS.getMinute());
+    Serial.print(":");
+    Serial.println(myGPS.getSecond());
+    
+    Serial.println();
   }
 }
