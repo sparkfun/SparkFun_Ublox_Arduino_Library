@@ -28,6 +28,11 @@
   - Modified ProcessUBXPacket to parse HPPOSLLH packet
   - Added query staleness verification for HPPOSLLH data 
 
+  Modified by Paul Clark, 1st July 2019
+  - Added 8 and 32 bit versions of setVal
+  - Added newCfgValset8/16/32, addCfgValset8/16/32 and sendCfgValset8/16/32
+    to support the setting of multiple keyID and value pairs simultaneously
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -951,40 +956,328 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
   return (extractByte(8));
 }
 
-//Given a key, set an 8-bit value
+//Given a key, set a 16-bit value
 //This function takes a full 32-bit key
 //Default layer is BBR
 //Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
 {
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_VALSET;
-  packetCfg.len = 4 + 4 + 2; //4 byte header, 4 byte key ID, 2 bytes of value
-  packetCfg.startingSpot = 0;
+	return setVal16(key, value, layer, maxWait);
+}
 
-  //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+//Given a key, set a 16-bit value
+//This function takes a full 32-bit key
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_VALSET;
+	packetCfg.len = 4 + 4 + 2; //4 byte header, 4 byte key ID, 2 bytes of value
+	packetCfg.startingSpot = 0;
 
-  payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the BBR layer
+	//Clear packet payload
+	for (uint16_t x = 0; x < packetCfg.len; x++)
+	packetCfg.payload[x] = 0;
 
-  //Load key into outgoing payload
-  payloadCfg[4] = key >> 8 * 0; //Key LSB
-  payloadCfg[5] = key >> 8 * 1;
-  payloadCfg[6] = key >> 8 * 2;
-  payloadCfg[7] = key >> 8 * 3;
+	payloadCfg[0] = 0;     //Message Version - set to 0
+	payloadCfg[1] = layer; //By default we ask for the BBR layer
 
-  //Load user's value
-  payloadCfg[8] = value >> 8 * 0; //Value LSB
-  payloadCfg[9] = value >> 8 * 1;
+	//Load key into outgoing payload
+	payloadCfg[4] = key >> 8 * 0; //Key LSB
+	payloadCfg[5] = key >> 8 * 1;
+	payloadCfg[6] = key >> 8 * 2;
+	payloadCfg[7] = key >> 8 * 3;
 
-  //Send VALSET command with this key and value
-  if (sendCommand(packetCfg, maxWait) == false)
-    return (false); //If command send fails then bail
+	//Load user's value
+	payloadCfg[8] = value >> 8 * 0; //Value LSB
+	payloadCfg[9] = value >> 8 * 1;
 
-  //All done
-  return (true);
+	//Send VALSET command with this key and value
+	if (sendCommand(packetCfg, maxWait) == false)
+	return (false); //If command send fails then bail
+
+	//All done
+	return (true);
+}
+
+//Given a key, set an 8-bit value
+//This function takes a full 32-bit key
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::setVal8(uint32_t key, uint8_t value, uint8_t layer, uint16_t maxWait)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_VALSET;
+	packetCfg.len = 4 + 4 + 1; //4 byte header, 4 byte key ID, 1 byte value
+	packetCfg.startingSpot = 0;
+
+	//Clear packet payload
+	for (uint16_t x = 0; x < packetCfg.len; x++)
+	packetCfg.payload[x] = 0;
+
+	payloadCfg[0] = 0;     //Message Version - set to 0
+	payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+	//Load key into outgoing payload
+	payloadCfg[4] = key >> 8 * 0; //Key LSB
+	payloadCfg[5] = key >> 8 * 1;
+	payloadCfg[6] = key >> 8 * 2;
+	payloadCfg[7] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[8] = value; //Value
+
+	//Send VALSET command with this key and value
+	if (sendCommand(packetCfg, maxWait) == false)
+	return (false); //If command send fails then bail
+
+	//All done
+	return (true);
+}
+
+//Given a key, set a 32-bit value
+//This function takes a full 32-bit key
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::setVal32(uint32_t key, uint32_t value, uint8_t layer, uint16_t maxWait)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_VALSET;
+	packetCfg.len = 4 + 4 + 4; //4 byte header, 4 byte key ID, 4 bytes of value
+	packetCfg.startingSpot = 0;
+
+	//Clear packet payload
+	for (uint16_t x = 0; x < packetCfg.len; x++)
+	packetCfg.payload[x] = 0;
+
+	payloadCfg[0] = 0;     //Message Version - set to 0
+	payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+	//Load key into outgoing payload
+	payloadCfg[4] = key >> 8 * 0; //Key LSB
+	payloadCfg[5] = key >> 8 * 1;
+	payloadCfg[6] = key >> 8 * 2;
+	payloadCfg[7] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[8] = value >> 8 * 0; //Value LSB
+	payloadCfg[9] = value >> 8 * 1;
+	payloadCfg[10] = value >> 8 * 2;
+	payloadCfg[11] = value >> 8 * 3;
+
+	//Send VALSET command with this key and value
+	if (sendCommand(packetCfg, maxWait) == false)
+	return (false); //If command send fails then bail
+
+	//All done
+	return (true);
+}
+
+//Start defining a new UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 32-bit value
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::newCfgValset32(uint32_t key, uint32_t value, uint8_t layer)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_VALSET;
+	packetCfg.len = 4 + 4 + 4; //4 byte header, 4 byte key ID, 4 bytes of value
+	packetCfg.startingSpot = 0;
+
+	//Clear packet payload
+	for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
+	packetCfg.payload[x] = 0;
+
+	payloadCfg[0] = 0;     //Message Version - set to 0
+	payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+	//Load key into outgoing payload
+	payloadCfg[4] = key >> 8 * 0; //Key LSB
+	payloadCfg[5] = key >> 8 * 1;
+	payloadCfg[6] = key >> 8 * 2;
+	payloadCfg[7] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[8] = value >> 8 * 0; //Value LSB
+	payloadCfg[9] = value >> 8 * 1;
+	payloadCfg[10] = value >> 8 * 2;
+	payloadCfg[11] = value >> 8 * 3;
+
+	//All done
+	return (true);
+}
+
+//Start defining a new UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 16-bit value
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::newCfgValset16(uint32_t key, uint16_t value, uint8_t layer)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_VALSET;
+	packetCfg.len = 4 + 4 + 2; //4 byte header, 4 byte key ID, 2 bytes of value
+	packetCfg.startingSpot = 0;
+
+	//Clear packet payload
+	for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
+	packetCfg.payload[x] = 0;
+
+	payloadCfg[0] = 0;     //Message Version - set to 0
+	payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+	//Load key into outgoing payload
+	payloadCfg[4] = key >> 8 * 0; //Key LSB
+	payloadCfg[5] = key >> 8 * 1;
+	payloadCfg[6] = key >> 8 * 2;
+	payloadCfg[7] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[8] = value >> 8 * 0; //Value LSB
+	payloadCfg[9] = value >> 8 * 1;
+
+	//All done
+	return (true);
+}
+
+//Start defining a new UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 8-bit value
+//Default layer is BBR
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer)
+{
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_VALSET;
+	packetCfg.len = 4 + 4 + 1; //4 byte header, 4 byte key ID, 1 byte value
+	packetCfg.startingSpot = 0;
+
+	//Clear packet payload
+	for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
+	packetCfg.payload[x] = 0;
+
+	payloadCfg[0] = 0;     //Message Version - set to 0
+	payloadCfg[1] = layer; //By default we ask for the BBR layer
+
+	//Load key into outgoing payload
+	payloadCfg[4] = key >> 8 * 0; //Key LSB
+	payloadCfg[5] = key >> 8 * 1;
+	payloadCfg[6] = key >> 8 * 2;
+	payloadCfg[7] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[8] = value; //Value
+
+	//All done
+	return (true);
+}
+
+//Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 32-bit value
+uint8_t SFE_UBLOX_GPS::addCfgValset32(uint32_t key, uint32_t value)
+{
+	//Load key into outgoing payload
+	payloadCfg[packetCfg.len + 0] = key >> 8 * 0; //Key LSB
+	payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
+	payloadCfg[packetCfg.len + 2] = key >> 8 * 2;
+	payloadCfg[packetCfg.len + 3] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[packetCfg.len + 4] = value >> 8 * 0; //Value LSB
+	payloadCfg[packetCfg.len + 5] = value >> 8 * 1;
+	payloadCfg[packetCfg.len + 6] = value >> 8 * 2;
+	payloadCfg[packetCfg.len + 7] = value >> 8 * 3;
+
+	//Update packet length: 4 byte key ID, 4 bytes of value
+	packetCfg.len = packetCfg.len + 4 + 4;
+
+	//All done
+	return (true);
+}
+
+//Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 16-bit value
+uint8_t SFE_UBLOX_GPS::addCfgValset16(uint32_t key, uint16_t value)
+{
+	//Load key into outgoing payload
+	payloadCfg[packetCfg.len + 0] = key >> 8 * 0; //Key LSB
+	payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
+	payloadCfg[packetCfg.len + 2] = key >> 8 * 2;
+	payloadCfg[packetCfg.len + 3] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[packetCfg.len + 4] = value >> 8 * 0; //Value LSB
+	payloadCfg[packetCfg.len + 5] = value >> 8 * 1;
+
+	//Update packet length: 4 byte key ID, 2 bytes of value
+	packetCfg.len = packetCfg.len + 4 + 2;
+
+	//All done
+	return (true);
+}
+
+//Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
+//This function takes a full 32-bit key and 8-bit value
+uint8_t SFE_UBLOX_GPS::addCfgValset8(uint32_t key, uint8_t value)
+{
+	//Load key into outgoing payload
+	payloadCfg[packetCfg.len + 0] = key >> 8 * 0; //Key LSB
+	payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
+	payloadCfg[packetCfg.len + 2] = key >> 8 * 2;
+	payloadCfg[packetCfg.len + 3] = key >> 8 * 3;
+
+	//Load user's value
+	payloadCfg[packetCfg.len + 4] = value; //Value
+
+	//Update packet length: 4 byte key ID, 1 byte value
+	packetCfg.len = packetCfg.len + 4 + 1;
+
+	//All done
+	return (true);
+}
+
+//Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
+//This function takes a full 32-bit key and 32-bit value
+uint8_t SFE_UBLOX_GPS::sendCfgValset32(uint32_t key, uint32_t value, uint16_t maxWait)
+{
+	//Load keyID and value into outgoing payload
+	addCfgValset32(key, value);
+	
+	//Send VALSET command with this key and value
+	if (sendCommand(packetCfg, maxWait) == false)
+	return (false); //If command send fails then bail
+
+	//All done
+	return (true);
+}
+
+//Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
+//This function takes a full 32-bit key and 16-bit value
+uint8_t SFE_UBLOX_GPS::sendCfgValset16(uint32_t key, uint16_t value, uint16_t maxWait)
+{
+	//Load keyID and value into outgoing payload
+	addCfgValset16(key, value);
+	
+	//Send VALSET command with this key and value
+	if (sendCommand(packetCfg, maxWait) == false)
+	return (false); //If command send fails then bail
+
+	//All done
+	return (true);
+}
+
+//Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
+//This function takes a full 32-bit key and 8-bit value
+uint8_t SFE_UBLOX_GPS::sendCfgValset8(uint32_t key, uint8_t value, uint16_t maxWait)
+{
+	//Load keyID and value into outgoing payload
+	addCfgValset8(key, value);
+	
+	//Send VALSET command with this key and value
+	if (sendCommand(packetCfg, maxWait) == false)
+	return (false); //If command send fails then bail
+
+	//All done
+	return (true);
 }
 
 //Get the current TimeMode3 settings - these contain survey in statuses
