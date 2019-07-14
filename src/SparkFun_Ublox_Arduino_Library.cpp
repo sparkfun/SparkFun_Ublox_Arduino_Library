@@ -535,7 +535,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gpsHour = extractByte(8);
       gpsMinute = extractByte(9);
       gpsSecond = extractByte(10);
-      gpsNanosecond = extractLong(16);
+      gpsMillisecond = extractLong(0) % 1000; //Get last three digits of iTOW
+      gpsNanosecond = extractLong(16);        //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
@@ -1345,7 +1346,16 @@ uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
   return (gpsSecond);
 }
 
-//Get the current nanosecond
+//Get the current millisecond
+uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
+{
+  if (moduleQueried.gpsiTOW == false)
+    getPVT();
+  moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
+  return (gpsMillisecond);
+}
+
+//Get the current nanoseconds - includes milliseconds
 int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsNanosecond == false)
