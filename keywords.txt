@@ -95,6 +95,7 @@ getDay	KEYWORD2
 getHour	KEYWORD2
 getMinute	KEYWORD2
 getSecond	KEYWORD2
+getNanosecond   KEYWORD2
 
 getHPPOSLLH KEYWORD2
 getTimeOfWeek KEYWORD2

@@ -535,6 +535,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gpsHour = extractByte(8);
       gpsMinute = extractByte(9);
       gpsSecond = extractByte(10);
+      gpsNanosecond = extractLong(16);
 
       fixType = extractByte(20 - startingSpot);
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
@@ -554,6 +555,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.gpsHour = true;
       moduleQueried.gpsMinute = true;
       moduleQueried.gpsSecond = true;
+      moduleQueried.gpsNanosecond = true;
 
       moduleQueried.all = true;
       moduleQueried.longitude = true;
@@ -1307,7 +1309,7 @@ uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
   return (gpsMonth);
 }
 
-//Get the current year
+//Get the current day
 uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 {
   if (moduleQueried.gpsDay == false)
@@ -1316,7 +1318,7 @@ uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
   return (gpsDay);
 }
 
-//Get the current year
+//Get the current hour
 uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 {
   if (moduleQueried.gpsHour == false)
@@ -1325,7 +1327,7 @@ uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
   return (gpsHour);
 }
 
-//Get the current year
+//Get the current minute
 uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 {
   if (moduleQueried.gpsMinute == false)
@@ -1334,13 +1336,22 @@ uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
   return (gpsMinute);
 }
 
-//Get the current year
+//Get the current second
 uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsSecond == false)
     getPVT();
   moduleQueried.gpsSecond = false; //Since we are about to give this to user, mark this data as stale
   return (gpsSecond);
+}
+
+//Get the current nanosecond
+int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
+{
+  if (moduleQueried.gpsNanosecond == false)
+    getPVT();
+  moduleQueried.gpsNanosecond = false; //Since we are about to give this to user, mark this data as stale
+  return (gpsNanosecond);
 }
 
 //Get the latest Position/Velocity/Time solution and fill all global variables
