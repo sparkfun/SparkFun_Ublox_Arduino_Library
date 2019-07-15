@@ -71,6 +71,7 @@
 
 //The catch-all default is 32
 #define I2C_BUFFER_LENGTH 32
+//#define I2C_BUFFER_LENGTH 16 //For testing on Artemis
 
 #endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -169,7 +170,8 @@ const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
 #ifndef MAX_PAYLOAD_SIZE
 
-#define MAX_PAYLOAD_SIZE 64 //Some commands are larger than 64 bytes but this covers most
+//Payload size must be big enough to cover the commands we want to get responses from
+#define MAX_PAYLOAD_SIZE 128 //Increased to 128 to cover the PVT packet
 
 #endif
 
@@ -252,6 +254,8 @@ public:
 	uint8_t getHour(uint16_t maxWait = 250);
 	uint8_t getMinute(uint16_t maxWait = 250);
 	uint8_t getSecond(uint16_t maxWait = 250);
+	uint16_t getMillisecond(uint16_t maxWait = 250);
+	int32_t getNanosecond(uint16_t maxWait = 250);
 
 	uint32_t getTimeOfWeek(uint16_t maxWait = 250);
 	int32_t getHighResLatitude(uint16_t maxWait = 250);
@@ -347,6 +351,8 @@ public:
 	uint8_t gpsHour;
 	uint8_t gpsMinute;
 	uint8_t gpsSecond;
+	uint16_t gpsMillisecond;
+	int32_t gpsNanosecond;
 
 	int32_t latitude;		 //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude;		 //Degrees * 10^-7 (more accurate than floats)
@@ -437,25 +443,27 @@ private:
 	//depending on update rate
 	struct
 	{
-		uint16_t gpsYear : 1;
-		uint16_t gpsMonth : 1;
-		uint16_t gpsDay : 1;
-		uint16_t gpsHour : 1;
-		uint16_t gpsMinute : 1;
-		uint16_t gpsSecond : 1;
+		uint32_t gpsiTOW : 1;
+		uint32_t gpsYear : 1;
+		uint32_t gpsMonth : 1;
+		uint32_t gpsDay : 1;
+		uint32_t gpsHour : 1;
+		uint32_t gpsMinute : 1;
+		uint32_t gpsSecond : 1;
+		uint32_t gpsNanosecond : 1;
 
-		uint16_t all : 1;
-		uint16_t longitude : 1;
-		uint16_t latitude : 1;
-		uint16_t altitude : 1;
-		uint16_t altitudeMSL : 1;
-		uint16_t SIV : 1;
-		uint16_t fixType : 1;
-		uint16_t carrierSolution : 1;
-		uint16_t groundSpeed : 1;
-		uint16_t headingOfMotion : 1;
-		uint16_t pDOP : 1;
-		uint16_t versionNumber : 1;
+		uint32_t all : 1;
+		uint32_t longitude : 1;
+		uint32_t latitude : 1;
+		uint32_t altitude : 1;
+		uint32_t altitudeMSL : 1;
+		uint32_t SIV : 1;
+		uint32_t fixType : 1;
+		uint32_t carrierSolution : 1;
+		uint32_t groundSpeed : 1;
+		uint32_t headingOfMotion : 1;
+		uint32_t pDOP : 1;
+		uint32_t versionNumber : 1;
 	} moduleQueried;
 
 	struct
