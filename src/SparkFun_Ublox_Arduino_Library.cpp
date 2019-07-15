@@ -509,9 +509,10 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
       {
         debugPrintln("Checksum failed. Response too big?");
 
-        digitalWrite(2, LOW);
-        delay(10);
-        digitalWrite(2, HIGH);
+        //Drive an external pin to allow for easier logic analyzation
+        // digitalWrite(2, LOW);
+        // delay(10);
+        // digitalWrite(2, HIGH);
 
         _debugSerial->print("Received: ");
         printPacket(incomingUBX);
@@ -591,6 +592,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       pDOP = extractLong(76 - startingSpot);
 
       //Mark all datums as fresh (not read before)
+      moduleQueried.gpsiTOW = true;
       moduleQueried.gpsYear = true;
       moduleQueried.gpsMonth = true;
       moduleQueried.gpsDay = true;
