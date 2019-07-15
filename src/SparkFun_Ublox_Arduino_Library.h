@@ -71,6 +71,7 @@
 
 //The catch-all default is 32
 #define I2C_BUFFER_LENGTH 32
+//#define I2C_BUFFER_LENGTH 16 //For testing on Artemis
 
 #endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -169,7 +170,8 @@ const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
 #ifndef MAX_PAYLOAD_SIZE
 
-#define MAX_PAYLOAD_SIZE 64 //Some commands are larger than 64 bytes but this covers most
+//Payload size must be big enough to cover the commands we want to get responses from
+#define MAX_PAYLOAD_SIZE 128 //Increased to 128 to cover the PVT packet
 
 #endif
 

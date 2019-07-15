@@ -244,7 +244,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     while (bytesAvailable)
     {
       _i2cPort->beginTransmission(_gpsI2Caddress);
-      _i2cPort->write(0xFF);                     //0xFF is the register to read general NMEA data from
+      _i2cPort->write(0xFF);                     //0xFF is the register to read data from
       if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
         return (false);                          //Sensor did not ACK
 
@@ -253,12 +253,28 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       if (bytesToRead > I2C_BUFFER_LENGTH)
         bytesToRead = I2C_BUFFER_LENGTH;
 
+    TRY_AGAIN:
+
       _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead);
       if (_i2cPort->available())
       {
         for (uint16_t x = 0; x < bytesToRead; x++)
         {
-          process(_i2cPort->read()); //Grab the actual character and process it
+          uint8_t incoming = _i2cPort->read(); //Grab the actual character
+
+          //Check to see if the first read is 0x7F. If it is, the module is not ready
+          //to respond. Stop, wait, and try again
+          if (x == 0)
+          {
+            if (incoming == 0x7F)
+            {
+              debugPrintln("Module not ready with data");
+              delay(5); //In logic analyzation, the module starting responding after 1.48ms
+              goto TRY_AGAIN;
+            }
+          }
+
+          process(incoming); //Process this valid character
         }
       }
       else
@@ -479,7 +495,9 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        _debugSerial->print("Received: ");
+        _debugSerial->print("Size: ");
+        _debugSerial->print(incomingUBX->len);
+        _debugSerial->print(" Received: ");
         printPacket(incomingUBX);
       }
       incomingUBX->valid = true;
@@ -487,7 +505,30 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     }
     else
     {
-      debugPrintln("Checksum failed. Response too big?");
+      if (_printDebug == true)
+      {
+        debugPrintln("Checksum failed. Response too big?");
+
+        digitalWrite(2, LOW);
+        delay(10);
+        digitalWrite(2, HIGH);
+
+        _debugSerial->print("Received: ");
+        printPacket(incomingUBX);
+
+        _debugSerial->print("Size: ");
+        _debugSerial->print(incomingUBX->len);
+        _debugSerial->print(" checksumA: ");
+        _debugSerial->print(incomingUBX->checksumA);
+        _debugSerial->print(" checksumB: ");
+        _debugSerial->print(incomingUBX->checksumB);
+
+        _debugSerial->print(" rollingChecksumA: ");
+        _debugSerial->print(rollingChecksumA);
+        _debugSerial->print(" rollingChecksumB: ");
+        _debugSerial->print(rollingChecksumB);
+        _debugSerial->println();
+      }
     }
   }
   else //Load this byte into the payload array
@@ -529,14 +570,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into global vars
       constexpr int startingSpot = 0; //fixed value used in processUBX
 
+      gpsMillisecond = extractLong(0) % 1000; //Get last three digits of iTOW
       gpsYear = extractInt(4);
       gpsMonth = extractByte(6);
       gpsDay = extractByte(7);
       gpsHour = extractByte(8);
       gpsMinute = extractByte(9);
       gpsSecond = extractByte(10);
-      gpsMillisecond = extractLong(0) % 1000; //Get last three digits of iTOW
-      gpsNanosecond = extractLong(16);        //Includes milliseconds
+      gpsNanosecond = extractLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
