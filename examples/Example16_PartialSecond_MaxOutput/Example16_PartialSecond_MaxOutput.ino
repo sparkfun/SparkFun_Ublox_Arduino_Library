@@ -1,12 +1,12 @@
 /*
   Getting time and date using Ublox commands
-  By: davidallenmann
+  By: Nathan Seidle
   SparkFun Electronics
   Date: April 16th, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to use the Nanosecond output as well as increase the
+  This example shows how to use the Millisecond and Nanosecond output as well as increase the
   I2C speed (100 to 400kHz), and serial output (115200 to 500kbps).
 
   Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
