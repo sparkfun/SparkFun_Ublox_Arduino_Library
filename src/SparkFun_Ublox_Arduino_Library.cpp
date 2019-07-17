@@ -211,7 +211,7 @@ boolean SFE_UBLOX_GPS::checkUblox()
 //Returns true if new bytes are available
 boolean SFE_UBLOX_GPS::checkUbloxI2C()
 {
-  if (millis() - lastCheck >= I2C_POLLING_WAIT_MS)
+  if (millis() - lastCheck >= i2cPollingWait)
   {
     //Get the number of bytes available from the module
     uint16_t bytesAvailable = 0;
@@ -239,6 +239,31 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       debugPrintln("Zero bytes available");
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
       return (false);
+    }
+
+    //Check for bit error
+    //This error is rare but if we incorrectly interpret the first bit of the two 'data available' bytes as 1
+    //then we have far too many bytes to check
+    //Correct back down to
+    if (bytesAvailable & ((uint16_t)1 << 15))
+    {
+      //Clear the MSbit
+      bytesAvailable &= ~((uint16_t)1 << 15);
+
+      if (_printDebug == true)
+      {
+        _debugSerial->print("Bytes available error:");
+        _debugSerial->println(bytesAvailable);
+      }
+    }
+
+    if (bytesAvailable > 100)
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->print("Bytes available:");
+        _debugSerial->println(bytesAvailable);
+      }
     }
 
     while (bytesAvailable)
@@ -303,16 +328,6 @@ boolean SFE_UBLOX_GPS::checkUbloxSerial()
 //Take a given byte and file it into the proper array
 void SFE_UBLOX_GPS::process(uint8_t incoming)
 {
-
-  if (_printDebug == true)
-  {
-    //if (currentSentence == NONE && incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
-    //	_debugSerial->println(); //Show new packet start
-
-    //_debugSerial->print(" ");
-    //_debugSerial->print(incoming, HEX);
-  }
-
   if (currentSentence == NONE || currentSentence == NMEA)
   {
     if (incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
@@ -510,15 +525,15 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
         debugPrintln("Checksum failed. Response too big?");
 
         //Drive an external pin to allow for easier logic analyzation
-        // digitalWrite(2, LOW);
-        // delay(10);
-        // digitalWrite(2, HIGH);
-
-        _debugSerial->print("Received: ");
-        printPacket(incomingUBX);
+        digitalWrite(2, LOW);
+        delay(10);
+        digitalWrite(2, HIGH);
 
         _debugSerial->print("Size: ");
         _debugSerial->print(incomingUBX->len);
+        _debugSerial->print(" Received: ");
+        printPacket(incomingUBX);
+
         _debugSerial->print(" checksumA: ");
         _debugSerial->print(incomingUBX->checksumA);
         _debugSerial->print(" checksumB: ");
@@ -891,7 +906,7 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
       }
     }
 
-    delay(1);
+    delayMicroseconds(500);
   }
 
   debugPrintln("waitForResponse timeout");
@@ -1250,6 +1265,9 @@ boolean SFE_UBLOX_GPS::setSPIOutput(uint8_t comSettings, uint16_t maxWait)
 boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 {
   //if(updateRate > 40) updateRate = 40; //Not needed: module will correct out of bounds values
+
+  //Adjust the I2C polling timeout based on update rate
+  i2cPollingWait = 1000 / (navFreq * 4); //This is the number of ms to wait between checks for new I2C data
 
   //Query the module for the latest lat/long
   packetCfg.cls = UBX_CLASS_CFG;

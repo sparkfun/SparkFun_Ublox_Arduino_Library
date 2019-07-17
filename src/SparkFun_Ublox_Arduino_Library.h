@@ -428,7 +428,11 @@ private:
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, false};
 	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, false};
 
-	const uint8_t I2C_POLLING_WAIT_MS = 100; //Limit checking of new characters to every X ms
+	//Limit checking of new data to every X ms
+	//If we are expecting an update every X Hz then we should check every half that amount of time
+	//Otherwise we may block ourselves from seeing new data
+	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency()
+
 	unsigned long lastCheck = 0;
 	boolean autoPVT = false;	//Whether autoPVT is enabled or not
 	boolean commandAck = false; //This goes true after we send a command and it's ack'd
