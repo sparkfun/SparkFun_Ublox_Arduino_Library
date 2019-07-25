@@ -88,6 +88,7 @@ debugPrintln	KEYWORD2
 
 factoryReset	KEYWORD2
 setAutoPVT	KEYWORD2
+assumeAutoPVT	KEYWORD2
 
 getYear	KEYWORD2
 getMonth	KEYWORD2

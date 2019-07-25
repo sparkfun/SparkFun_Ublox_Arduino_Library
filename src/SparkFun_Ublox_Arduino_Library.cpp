@@ -1308,9 +1308,29 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
   return (measurementRate);
 }
 
+//In case no config access to the GPS is possible and PVT is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoPVT(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoPVT != enabled || autoPVTImplicitUpdate != implicitUpdate;
+  if(changes)
+  {
+    autoPVT = enabled;
+    autoPVTImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
 //Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
+{
+  return setAutoPVT(enable, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
+//works.
+boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_MSG;
@@ -1322,7 +1342,10 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
 
   bool ok = sendCommand(packetCfg, maxWait);
   if (ok)
+  {
     autoPVT = enable;
+    autoPVTImplicitUpdate = implicitUpdate;
+  }
   moduleQueried.all = false;
   return ok;
 }
@@ -1428,11 +1451,16 @@ int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
 //Get the latest Position/Velocity/Time solution and fill all global variables
 boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 {
-  if (autoPVT)
+  if (autoPVT && autoPVTImplicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUblox();
     return moduleQueried.all;
+  }
+  else if(autoPVT && !autoPVTImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    return (false);
   }
   else
   {
@@ -1543,6 +1571,7 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 
   return (tempAccuracy);
 }
+
 //Get the current latitude in degrees
 //Returns a long representing the number of degrees *10^-7
 int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
