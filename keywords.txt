@@ -62,7 +62,7 @@ setUSBOutput	KEYWORD2
 setSPIOutput	KEYWORD2
 
 getVal8	KEYWORD2
-setVal  KEYWORD2
+setVal	KEYWORD2
 
 getSurveyMode	KEYWORD2
 setSurveyMode	KEYWORD2
@@ -77,24 +77,37 @@ getPositionAccuracy	KEYWORD2
 
 getProtocolVersionHigh	KEYWORD2
 getProtocolVersionLow	KEYWORD2
-getProtocolVersion  KEYWORD2
+getProtocolVersion	KEYWORD2
 
-getRELPOSNED    KEYWORD2
+getRELPOSNED	KEYWORD2
 
-enableDebugging KEYWORD2
-disableDebugging    KEYWORD2
+enableDebugging	KEYWORD2
+disableDebugging	KEYWORD2
+debugPrint	KEYWORD2
+debugPrintln	KEYWORD2
 
-factoryReset    KEYWORD2
+factoryReset	KEYWORD2
+setAutoPVT	KEYWORD2
+assumeAutoPVT	KEYWORD2
 
-setAutoPVT     KEYWORD2
-assumeAutoPVT  KEYWORD2
+getYear	KEYWORD2
+getMonth	KEYWORD2
+getDay	KEYWORD2
+getHour	KEYWORD2
+getMinute	KEYWORD2
+getSecond	KEYWORD2
+getMillisecond   KEYWORD2
+getNanosecond   KEYWORD2
 
-getYear KEYWORD2
-getMonth KEYWORD2
-getDay KEYWORD2
-getHour KEYWORD2
-getMinute KEYWORD2
-getSecond KEYWORD2
+getHPPOSLLH KEYWORD2
+getTimeOfWeek KEYWORD2
+getHighResLatitude KEYWORD2
+getHighResLongitude KEYWORD2
+getElipsoid KEYWORD2
+getMeanSeaLevel KEYWORD2
+getGeoidSeparation KEYWORD2
+getHorizontalAccuracy KEYWORD2
+getVerticalAccuracy KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

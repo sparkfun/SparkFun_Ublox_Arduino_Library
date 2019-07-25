@@ -1,16 +1,14 @@
 /*
-  Getting time and date using Ublox commands
-  By: davidallenmann
+  Get the high precision geodetic solution for latituude and longitude
+  By: Nathan Seidle
+  Modified by: Steven Rowland
   SparkFun Electronics
-  Date: April 16th, 2019
+  Date: January 3rd, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to query a Ublox module for the current time and date. We also
-  turn off the NMEA output on the I2C port. This decreases the amount of I2C traffic
-  dramatically.
-
-  Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
+  This example shows how to inspect the accuracy of the high-precision
+  positional solution.
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -34,21 +32,26 @@ long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox m
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial)
-    ; //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  while (!Serial); //Wait for user to open terminal
 
   Wire.begin();
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1)
-      ;
+    while (1);
   }
 
+  //myGPS.enableDebugging(Serial);
+
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfiguration();        //Save the current settings to flash and BBR
+  myGPS.setNavigationFrequency(20); //Set output to 20 times a second
+
+  byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
+  Serial.print("Current update rate:");
+  Serial.println(rate);
+  
+  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 }
 
 void loop()
@@ -58,38 +61,17 @@ void loop()
   if (millis() - lastTime > 1000)
   {
     lastTime = millis(); //Update the timer
-
-    long latitude = myGPS.getLatitude();
-    Serial.print(F("Lat: "));
+    Serial.print("HP Lat: ");
+    int32_t latitude = myGPS.getHighResLatitude();
     Serial.print(latitude);
+    Serial.print(", HP Lon: ");
 
-    long longitude = myGPS.getLongitude();
-    Serial.print(F(" Long: "));
+    int32_t longitude = myGPS.getHighResLongitude();
     Serial.print(longitude);
-    Serial.print(F(" (degrees * 10^-7)"));
+    Serial.print(", Accuracy: ");
 
-    long altitude = myGPS.getAltitude();
-    Serial.print(F(" Alt: "));
-    Serial.print(altitude);
-    Serial.print(F(" (mm)"));
-
-    byte SIV = myGPS.getSIV();
-    Serial.print(F(" SIV: "));
-    Serial.print(SIV);
-
-    Serial.println();
-    Serial.print(myGPS.getYear());
-    Serial.print("-");
-    Serial.print(myGPS.getMonth());
-    Serial.print("-");
-    Serial.print(myGPS.getDay());
-    Serial.print(" ");
-    Serial.print(myGPS.getHour());
-    Serial.print(":");
-    Serial.print(myGPS.getMinute());
-    Serial.print(":");
-    Serial.println(myGPS.getSecond());
-
-    Serial.println();
+    uint32_t accuracy = myGPS.getHorizontalAccuracy();
+    Serial.println(accuracy);
   }
+
 }

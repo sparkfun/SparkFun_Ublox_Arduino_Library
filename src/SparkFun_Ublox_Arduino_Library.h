@@ -21,6 +21,13 @@
   - Added support for parsing date and time
   - Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
 
+  Modified by Steven Rowland, June 11th, 2019
+  - Added functionality for reading HPPOSLLH (High Precision Geodetic Position)
+  - Added getTimeOfWeek(), getHighResLatitude(). getHighResLongitude(), getElipsoid(), 
+    getMeanSeaLevel(), getHorizontalAccuracy(), getVerticalAccuracy(), getHPPOSLLH()
+  - Modified ProcessUBXPacket to parse HPPOSLLH packet
+  - Added query staleness verification for HPPOSLLH data 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -64,6 +71,7 @@
 
 //The catch-all default is 32
 #define I2C_BUFFER_LENGTH 32
+//#define I2C_BUFFER_LENGTH 16 //For testing on Artemis
 
 #endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -141,10 +149,10 @@ const uint8_t VAL_SIZE_16 = 0x03; //Two bytes
 const uint8_t VAL_SIZE_32 = 0x04; //Four bytes
 const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
 
-const uint8_t VAL_LAYER_RAM = 0;
-const uint8_t VAL_LAYER_BBR = 1;
-const uint8_t VAL_LAYER_FLASH = 2;
-const uint8_t VAL_LAYER_DEFAULT = 7;
+//These are the Bitfield layers definitions for the UBX-CFG-VALSET message (not to be confused with Bitfield deviceMask in UBX-CFG-CFG)
+const uint8_t VAL_LAYER_RAM = (1 << 0);
+const uint8_t VAL_LAYER_BBR = (1 << 1);
+const uint8_t VAL_LAYER_FLASH = (1 << 2);
 
 //Below are various Groups, IDs, and sizes for various settings
 //These can be used to call getVal/setVal/delVal
@@ -162,7 +170,8 @@ const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
 #ifndef MAX_PAYLOAD_SIZE
 
-#define MAX_PAYLOAD_SIZE 64 //Some commands are larger than 64 bytes but this covers most
+//Payload size must be big enough to cover the commands we want to get responses from
+#define MAX_PAYLOAD_SIZE 128 //Increased to 128 to cover the PVT packet
 
 #endif
 
@@ -227,8 +236,9 @@ public:
 
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and PVT is send cyclically already 
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency
+	boolean getPVT(uint16_t maxWait = 1000);					 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update 
-	boolean getPVT(uint16_t maxWait = 1000);			 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+	boolean getHPPOSLLH(uint16_t maxWait = 1000);				 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 
 	int32_t getLatitude(uint16_t maxWait = 250);			//Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = 250);			//Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
@@ -246,6 +256,17 @@ public:
 	uint8_t getHour(uint16_t maxWait = 250);
 	uint8_t getMinute(uint16_t maxWait = 250);
 	uint8_t getSecond(uint16_t maxWait = 250);
+	uint16_t getMillisecond(uint16_t maxWait = 250);
+	int32_t getNanosecond(uint16_t maxWait = 250);
+
+	uint32_t getTimeOfWeek(uint16_t maxWait = 250);
+	int32_t getHighResLatitude(uint16_t maxWait = 250);
+	int32_t getHighResLongitude(uint16_t maxWait = 250);
+	int32_t getElipsoid(uint16_t maxWait = 250);
+	int32_t getMeanSeaLevel(uint16_t maxWait = 250);
+	int32_t getGeoidSeparation(uint16_t maxWait = 250);
+	uint32_t getHorizontalAccuracy(uint16_t maxWait = 250);
+	uint32_t getVerticalAccuracy(uint16_t maxWait = 250);
 
 	//Port configurations
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
@@ -282,7 +303,9 @@ public:
 	boolean getRELPOSNED(uint16_t maxWait = 1000); //Get Relative Positioning Information of the NED frame
 
 	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages
-	void disableDebugging(void);
+	void disableDebugging(void);					  //Turn off debug statements
+	void debugPrint(char *message);					  //Safely print debug statements
+	void debugPrintln(char *message);				  //Safely print debug statements
 
 	//Survey-in specific controls
 	struct svinStructure
@@ -330,6 +353,8 @@ public:
 	uint8_t gpsHour;
 	uint8_t gpsMinute;
 	uint8_t gpsSecond;
+	uint16_t gpsMillisecond;
+	int32_t gpsNanosecond;
 
 	int32_t latitude;		 //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude;		 //Degrees * 10^-7 (more accurate than floats)
@@ -343,6 +368,15 @@ public:
 	uint16_t pDOP;			 //Positional dilution of precision
 	uint8_t versionLow;		 //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
+
+	uint32_t timeOfWeek;
+	int32_t highResLatitude;
+	int32_t highResLongitude;
+	int32_t elipsoid;
+	int32_t meanSeaLevel;
+	int32_t geoidSeparation;
+	uint32_t horizontalAccuracy;
+	uint32_t verticalAccuracy;
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
@@ -396,7 +430,11 @@ private:
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, false};
 	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, false};
 
-	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
+	//Limit checking of new data to every X ms
+	//If we are expecting an update every X Hz then we should check every half that amount of time
+	//Otherwise we may block ourselves from seeing new data
+	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency()
+
 	unsigned long lastCheck = 0;
 	boolean autoPVT = false;	//Whether autoPVT is enabled or not
 	boolean autoPVTImplicitUpdate = true; // Whether autoPVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false) 
@@ -412,26 +450,41 @@ private:
 	//depending on update rate
 	struct
 	{
-		uint16_t gpsYear : 1;
-		uint16_t gpsMonth : 1;
-		uint16_t gpsDay : 1;
-		uint16_t gpsHour : 1;
-		uint16_t gpsMinute : 1;
-		uint16_t gpsSecond : 1;
+		uint32_t gpsiTOW : 1;
+		uint32_t gpsYear : 1;
+		uint32_t gpsMonth : 1;
+		uint32_t gpsDay : 1;
+		uint32_t gpsHour : 1;
+		uint32_t gpsMinute : 1;
+		uint32_t gpsSecond : 1;
+		uint32_t gpsNanosecond : 1;
 
-		uint16_t all : 1;
-		uint16_t longitude : 1;
-		uint16_t latitude : 1;
-		uint16_t altitude : 1;
-		uint16_t altitudeMSL : 1;
-		uint16_t SIV : 1;
-		uint16_t fixType : 1;
-		uint16_t carrierSolution : 1;
-		uint16_t groundSpeed : 1;
-		uint16_t headingOfMotion : 1;
-		uint16_t pDOP : 1;
-		uint16_t versionNumber : 1;
+		uint32_t all : 1;
+		uint32_t longitude : 1;
+		uint32_t latitude : 1;
+		uint32_t altitude : 1;
+		uint32_t altitudeMSL : 1;
+		uint32_t SIV : 1;
+		uint32_t fixType : 1;
+		uint32_t carrierSolution : 1;
+		uint32_t groundSpeed : 1;
+		uint32_t headingOfMotion : 1;
+		uint32_t pDOP : 1;
+		uint32_t versionNumber : 1;
 	} moduleQueried;
+
+	struct
+	{
+		uint16_t all : 1;
+		uint16_t timeOfWeek : 1;
+		uint16_t highResLatitude : 1;
+		uint16_t highResLongitude : 1;
+		uint16_t elipsoid : 1;
+		uint16_t meanSeaLevel : 1;
+		uint16_t geoidSeparation : 1;
+		uint16_t horizontalAccuracy : 1;
+		uint16_t verticalAccuracy : 1;
+	} highResModuleQueried;
 
 	uint16_t rtcmLen = 0;
 };
