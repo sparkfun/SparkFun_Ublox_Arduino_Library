@@ -22,13 +22,15 @@ This library can be installed via the Arduino Library manager. Search for **Spar
 
 Want to help? Please do! We are always looking for ways to improve and build out features of this library.
 
+* We are always interested in adding SPI support with a checkUbloxSPI() function
+
 Thanks to:
 
-* We are always interested in adding SPI support with a checkUbloxSPI() function
 * [trycoon](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/pull/7) for fixing the lack of I2C buffer length defines
 * [tve](https://github.com/tve) for building out serial additions and examples
 * [Redstoned](https://github.com/Redstoned) and [davidallenmann](https://github.com/davidallenmann) for adding PVT date and time
 * [wittend](https://forum.sparkfun.com/viewtopic.php?t=49874) for pointing out the RTCM print bug
+* Big thanks to [PaulZC] for implementing the combined key ValSet method
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
