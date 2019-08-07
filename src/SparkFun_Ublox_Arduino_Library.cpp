@@ -631,8 +631,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
     {
       timeOfWeek = extractLong(4);
-      highResLatitude = extractLong(8);
-      highResLongitude = extractLong(12);
+      highResLongitude = extractLong(8);
+      highResLatitude = extractLong(12);
       elipsoid = extractLong(16);
       meanSeaLevel = extractLong(20);
       geoidSeparation = extractLong(24);
