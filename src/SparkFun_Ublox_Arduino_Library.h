@@ -28,7 +28,12 @@
   - Modified ProcessUBXPacket to parse HPPOSLLH packet
   - Added query staleness verification for HPPOSLLH data 
 
-  This program is distributed in the hope that it will be useful,
+   Modified by Paul Clark, 1st July 2019
+   - Added 8 and 32 bit versions of setVal
+   - Added newCfgValset8/16/32, addCfgValset8/16/32 and sendCfgValset8/16/32
+     to support the setting of multiple keyID and value pairs simultaneously
+
+ This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
   GNU General Public License for more details.
@@ -170,8 +175,8 @@ const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
 #ifndef MAX_PAYLOAD_SIZE
 
-//Payload size must be big enough to cover the commands we want to get responses from
-#define MAX_PAYLOAD_SIZE 128 //Increased to 128 to cover the PVT packet
+#define MAX_PAYLOAD_SIZE 128
+//#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
 
 #endif
 
@@ -282,7 +287,19 @@ public:
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
 	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);							   //Returns the value at a given group/id/size location
-	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);			   //Returns the value at a given group/id/size location
+	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);		//Sets the 16-bit value at a given group/id/size location
+	uint8_t setVal8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);		//Sets the 8-bit value at a given group/id/size location
+	uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);	//Sets the 16-bit value at a given group/id/size location
+	uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);	//Sets the 32-bit value at a given group/id/size location
+	uint8_t newCfgValset8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_BBR);    //Define a new UBX-CFG-VALSET with the given KeyID and 8-bit value
+	uint8_t newCfgValset16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR);  //Define a new UBX-CFG-VALSET with the given KeyID and 16-bit value
+	uint8_t newCfgValset32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_BBR);  //Define a new UBX-CFG-VALSET with the given KeyID and 32-bit value
+	uint8_t addCfgValset8(uint32_t keyID, uint8_t value);      //Add a new KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket
+	uint8_t addCfgValset16(uint32_t keyID, uint16_t value);    //Add a new KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket
+	uint8_t addCfgValset32(uint32_t keyID, uint32_t value);    //Add a new KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket
+	uint8_t sendCfgValset8(uint32_t keyID, uint8_t value, uint16_t maxWait = 250);     //Add the final KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+	uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = 250);   //Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+	uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = 250);   //Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
 
 	//Functions used for RTK and base station setup
 	boolean getSurveyMode(uint16_t maxWait = 250);																   //Get the current TimeMode3 settings

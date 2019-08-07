@@ -63,6 +63,18 @@ setSPIOutput	KEYWORD2
 
 getVal8	KEYWORD2
 setVal	KEYWORD2
+setVal8	KEYWORD2
+setVal16	KEYWORD2
+setVal32	KEYWORD2
+newCfgValset8	KEYWORD2
+newCfgValset16	KEYWORD2
+newCfgValset32	KEYWORD2
+addCfgValset8	KEYWORD2
+addCfgValset16	KEYWORD2
+addCfgValset32	KEYWORD2
+sendCfgValset8	KEYWORD2
+sendCfgValset16	KEYWORD2
+sendCfgValset32	KEYWORD2
 
 getSurveyMode	KEYWORD2
 setSurveyMode	KEYWORD2
