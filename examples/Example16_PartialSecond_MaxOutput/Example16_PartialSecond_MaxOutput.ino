@@ -1,14 +1,15 @@
 /*
-  Reading lat and long via UBX binary commands using UART @38400 baud - free from I2C
-  By: Nathan Seidle, Adapted from Example3_GetPosition by Thorsten von Eicken
+  Getting time and date using Ublox commands
+  By: Nathan Seidle
   SparkFun Electronics
-  Date: January 28rd, 2019
+  Date: April 16th, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to configure the debug output from the library.
-  Debug shows various packet and status outputs. These prints can be directed
-  towards Serial (as in Serial.print) or any other port (Serial1, SerialUSB, etc).
+  This example shows how to use the Millisecond and Nanosecond output as well as increase the
+  I2C speed (100 to 400kHz), and serial output (115200 to 500kbps).
+
+  Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -17,10 +18,12 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Connect the U-Blox serial TX pin to Uno pin 10
-  Connect the U-Blox serial RX pin to Uno pin 11
+  Plug a Qwiic cable into the GPS and a BlackBoard
+  If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
+
+#include <Wire.h> //Needed for I2C to GPS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
@@ -29,34 +32,43 @@ long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox m
 
 void setup()
 {
-  Serial.begin(115200);
-  while (!Serial); //Wait for user to open terminal
+  Serial.begin(500000); //Increase serial speed to maximize 
+  while (!Serial)
+    ; //Wait for user to open terminal
   Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
-
+  Wire.setClock(400000);
+  
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
+    while (1)
+      ;
   }
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 
-  myGPS.enableDebugging(); //Enable debug messages over Serial (default)
-  //myGPS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
+  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
 
+  myGPS.setNavigationFrequency(10); //Set output to 10 times a second
+  byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
+  Serial.print("Current update rate:");
+  Serial.println(rate);
+  
+  myGPS.saveConfiguration();        //Save the current settings to flash and BBR
+
+  pinMode(2, OUTPUT); //For debug capture
+  digitalWrite(2, HIGH);
 }
 
 void loop()
 {
-  //Query module only every second. Doing it more often will just cause I2C traffic.
-  //The module only responds when a new position is available
-  if (millis() - lastTime > 1000)
+  //Query module very often to get max update rate
+  if (millis() - lastTime > 10)
   {
     lastTime = millis(); //Update the timer
-    
+
     long latitude = myGPS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
@@ -75,7 +87,7 @@ void loop()
     Serial.print(F(" SIV: "));
     Serial.print(SIV);
 
-    Serial.println();
+    Serial.print(" ");
     Serial.print(myGPS.getYear());
     Serial.print("-");
     Serial.print(myGPS.getMonth());
@@ -86,8 +98,17 @@ void loop()
     Serial.print(":");
     Serial.print(myGPS.getMinute());
     Serial.print(":");
-    Serial.println(myGPS.getSecond());
-    
+    Serial.print(myGPS.getSecond());
+    Serial.print(".");
+    //Pretty print leading zeros
+    int mseconds = myGPS.getMillisecond();
+    if(mseconds < 100) Serial.print("0");
+    if(mseconds < 10) Serial.print("0");
+    Serial.print(mseconds);
+
+    Serial.print(" nanoSeconds: ");    
+    Serial.print(myGPS.getNanosecond());
+
     Serial.println();
   }
 }

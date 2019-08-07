@@ -90,6 +90,23 @@ void SFE_UBLOX_GPS::disableDebugging(void)
   _printDebug = false; //Turn off extra print statements
 }
 
+//Safely print messages
+void SFE_UBLOX_GPS::debugPrint(char *message)
+{
+  if (_printDebug == true)
+  {
+    _debugSerial->print(message);
+  }
+}
+//Safely print messages
+void SFE_UBLOX_GPS::debugPrintln(char *message)
+{
+  if (_printDebug == true)
+  {
+    _debugSerial->println(message);
+  }
+}
+
 void SFE_UBLOX_GPS::factoryReset()
 {
   // Copy default settings to permanent
@@ -189,16 +206,17 @@ void SFE_UBLOX_GPS::setNMEAOutputPort(Stream &nmeaOutputPort)
 boolean SFE_UBLOX_GPS::checkUblox()
 {
   if (commType == COMM_TYPE_I2C)
-    checkUbloxI2C();
+    return (checkUbloxI2C());
   else if (commType == COMM_TYPE_SERIAL)
-    checkUbloxSerial();
+    return (checkUbloxSerial());
   return false;
 }
 
 //Polls I2C for data, passing any new bytes to process()
+//Returns true if new bytes are available
 boolean SFE_UBLOX_GPS::checkUbloxI2C()
 {
-  if (millis() - lastCheck >= I2C_POLLING_WAIT_MS)
+  if (millis() - lastCheck >= i2cPollingWait)
   {
     //Get the number of bytes available from the module
     uint16_t bytesAvailable = 0;
@@ -212,23 +230,51 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     {
       uint8_t msb = _i2cPort->read();
       uint8_t lsb = _i2cPort->read();
+      if (lsb == 0xFF)
+      {
+        debugPrintln("No bytes available");
+        lastCheck = millis(); //Put off checking to avoid I2C bus traffic
+        return (false);
+      }
       bytesAvailable = (uint16_t)msb << 8 | lsb;
     }
 
     if (bytesAvailable == 0)
     {
+      debugPrintln("Zero bytes available");
+      lastCheck = millis(); //Put off checking to avoid I2C bus traffic
+      return (false);
+    }
+
+    //Check for bit error
+    //This error is rare but if we incorrectly interpret the first bit of the two 'data available' bytes as 1
+    //then we have far too many bytes to check
+    //Correct back down to
+    if (bytesAvailable & ((uint16_t)1 << 15))
+    {
+      //Clear the MSbit
+      bytesAvailable &= ~((uint16_t)1 << 15);
+
       if (_printDebug == true)
       {
-        _debugSerial->println("No bytes available");
+        _debugSerial->print("Bytes available error:");
+        _debugSerial->println(bytesAvailable);
       }
-      lastCheck = millis(); //Put off checking to avoid I2C bus traffic
-      return true;
+    }
+
+    if (bytesAvailable > 100)
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->print("Bytes available:");
+        _debugSerial->println(bytesAvailable);
+      }
     }
 
     while (bytesAvailable)
     {
       _i2cPort->beginTransmission(_gpsI2Caddress);
-      _i2cPort->write(0xFF);                     //0xFF is the register to read general NMEA data from
+      _i2cPort->write(0xFF);                     //0xFF is the register to read data from
       if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
         return (false);                          //Sensor did not ACK
 
@@ -237,12 +283,28 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       if (bytesToRead > I2C_BUFFER_LENGTH)
         bytesToRead = I2C_BUFFER_LENGTH;
 
+    TRY_AGAIN:
+
       _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead);
       if (_i2cPort->available())
       {
         for (uint16_t x = 0; x < bytesToRead; x++)
         {
-          process(_i2cPort->read()); //Grab the actual character and process it
+          uint8_t incoming = _i2cPort->read(); //Grab the actual character
+
+          //Check to see if the first read is 0x7F. If it is, the module is not ready
+          //to respond. Stop, wait, and try again
+          if (x == 0)
+          {
+            if (incoming == 0x7F)
+            {
+              debugPrintln("Module not ready with data");
+              delay(5); //In logic analyzation, the module starting responding after 1.48ms
+              goto TRY_AGAIN;
+            }
+          }
+
+          process(incoming); //Process this valid character
         }
       }
       else
@@ -271,16 +333,6 @@ boolean SFE_UBLOX_GPS::checkUbloxSerial()
 //Take a given byte and file it into the proper array
 void SFE_UBLOX_GPS::process(uint8_t incoming)
 {
-
-  if (_printDebug == true)
-  {
-    //if (currentSentence == NONE && incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
-    //	_debugSerial->println(); //Show new packet start
-
-    //_debugSerial->print(" ");
-    //_debugSerial->print(incoming, HEX);
-  }
-
   if (currentSentence == NONE || currentSentence == NMEA)
   {
     if (incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
@@ -463,7 +515,9 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        _debugSerial->print("Received: ");
+        _debugSerial->print("Size: ");
+        _debugSerial->print(incomingUBX->len);
+        _debugSerial->print(" Received: ");
         printPacket(incomingUBX);
       }
       incomingUBX->valid = true;
@@ -473,7 +527,28 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println("Checksum failed. Response too big?");
+        debugPrintln("Checksum failed. Response too big?");
+
+        //Drive an external pin to allow for easier logic analyzation
+        digitalWrite(2, LOW);
+        delay(10);
+        digitalWrite(2, HIGH);
+
+        _debugSerial->print("Size: ");
+        _debugSerial->print(incomingUBX->len);
+        _debugSerial->print(" Received: ");
+        printPacket(incomingUBX);
+
+        _debugSerial->print(" checksumA: ");
+        _debugSerial->print(incomingUBX->checksumA);
+        _debugSerial->print(" checksumB: ");
+        _debugSerial->print(incomingUBX->checksumB);
+
+        _debugSerial->print(" rollingChecksumA: ");
+        _debugSerial->print(rollingChecksumA);
+        _debugSerial->print(" rollingChecksumB: ");
+        _debugSerial->print(rollingChecksumB);
+        _debugSerial->println();
       }
     }
   }
@@ -505,10 +580,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     if (msg->id == UBX_ACK_ACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
     {
       //The ack we just received matched the CLS/ID of last packetCfg sent
-      if (_printDebug == true)
-      {
-        _debugSerial->println("Command sent/ack'd successfully");
-      }
+      debugPrintln("Command sent/ack'd successfully");
       commandAck = true;
     }
     break;
@@ -519,12 +591,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into global vars
       constexpr int startingSpot = 0; //fixed value used in processUBX
 
+      gpsMillisecond = extractLong(0) % 1000; //Get last three digits of iTOW
       gpsYear = extractInt(4);
       gpsMonth = extractByte(6);
       gpsDay = extractByte(7);
       gpsHour = extractByte(8);
       gpsMinute = extractByte(9);
       gpsSecond = extractByte(10);
+      gpsNanosecond = extractLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
@@ -538,12 +612,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       pDOP = extractLong(76 - startingSpot);
 
       //Mark all datums as fresh (not read before)
+      moduleQueried.gpsiTOW = true;
       moduleQueried.gpsYear = true;
       moduleQueried.gpsMonth = true;
       moduleQueried.gpsDay = true;
       moduleQueried.gpsHour = true;
       moduleQueried.gpsMinute = true;
       moduleQueried.gpsSecond = true;
+      moduleQueried.gpsNanosecond = true;
 
       moduleQueried.all = true;
       moduleQueried.longitude = true;
@@ -560,8 +636,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
     {
       timeOfWeek = extractLong(4);
-      highResLatitude = extractLong(8);
-      highResLongitude = extractLong(12);
+      highResLongitude = extractLong(8);
+      highResLatitude = extractLong(12);
       elipsoid = extractLong(16);
       meanSeaLevel = extractLong(20);
       geoidSeparation = extractLong(24);
@@ -812,38 +888,33 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    checkUblox(); //See if new data is available. Process bytes as they come in.
-
-    if (commandAck == true)
-      return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
-    if (packetCfg.valid == true)
+    if (checkUblox() == true) //See if new data is available. Process bytes as they come in.
     {
-      //Did we receive a config packet that matches the cls/id we requested?
-      if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
+      if (commandAck == true)
+        return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
+      if (packetCfg.valid == true)
       {
-        if (_printDebug == true)
+        //Did we receive a config packet that matches the cls/id we requested?
+        if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
         {
-          _debugSerial->println(F("CLS/ID match!"));
+          debugPrintln("CLS/ID match!");
+          return (true); //If the packet we just sent was a NAV packet then we'll just get data back
         }
-        return (true); //If the packet we just sent was a NAV packet then we'll just get data back
-      }
-      else
-      {
-        if (_printDebug == true)
+        else
         {
-          _debugSerial->print(F("Packet didn't match CLS/ID"));
-          printPacket(&packetCfg);
+          if (_printDebug == true)
+          {
+            _debugSerial->print("Packet didn't match CLS/ID");
+            printPacket(&packetCfg);
+          }
         }
       }
     }
 
-    delay(1);
+    delayMicroseconds(500);
   }
 
-  if (_printDebug == true)
-  {
-    _debugSerial->println(F("waitForResponse timeout"));
-  }
+  debugPrintln("waitForResponse timeout");
 
   return (false);
 }
@@ -1488,6 +1559,9 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 {
   //if(updateRate > 40) updateRate = 40; //Not needed: module will correct out of bounds values
 
+  //Adjust the I2C polling timeout based on update rate
+  i2cPollingWait = 1000 / (navFreq * 4); //This is the number of ms to wait between checks for new I2C data
+
   //Query the module for the latest lat/long
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_RATE;
@@ -1527,9 +1601,29 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
   return (measurementRate);
 }
 
+//In case no config access to the GPS is possible and PVT is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoPVT(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoPVT != enabled || autoPVTImplicitUpdate != implicitUpdate;
+  if(changes)
+  {
+    autoPVT = enabled;
+    autoPVTImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
 //Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
+{
+  return setAutoPVT(enable, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
+//works.
+boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_MSG;
@@ -1541,7 +1635,10 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
 
   bool ok = sendCommand(packetCfg, maxWait);
   if (ok)
+  {
     autoPVT = enable;
+    autoPVTImplicitUpdate = implicitUpdate;
+  }
   moduleQueried.all = false;
   return ok;
 }
@@ -1590,7 +1687,7 @@ uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
   return (gpsMonth);
 }
 
-//Get the current year
+//Get the current day
 uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 {
   if (moduleQueried.gpsDay == false)
@@ -1599,7 +1696,7 @@ uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
   return (gpsDay);
 }
 
-//Get the current year
+//Get the current hour
 uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 {
   if (moduleQueried.gpsHour == false)
@@ -1608,7 +1705,7 @@ uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
   return (gpsHour);
 }
 
-//Get the current year
+//Get the current minute
 uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 {
   if (moduleQueried.gpsMinute == false)
@@ -1617,7 +1714,7 @@ uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
   return (gpsMinute);
 }
 
-//Get the current year
+//Get the current second
 uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsSecond == false)
@@ -1626,14 +1723,37 @@ uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
   return (gpsSecond);
 }
 
+//Get the current millisecond
+uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
+{
+  if (moduleQueried.gpsiTOW == false)
+    getPVT();
+  moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
+  return (gpsMillisecond);
+}
+
+//Get the current nanoseconds - includes milliseconds
+int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
+{
+  if (moduleQueried.gpsNanosecond == false)
+    getPVT();
+  moduleQueried.gpsNanosecond = false; //Since we are about to give this to user, mark this data as stale
+  return (gpsNanosecond);
+}
+
 //Get the latest Position/Velocity/Time solution and fill all global variables
 boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 {
-  if (autoPVT)
+  if (autoPVT && autoPVTImplicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUblox();
     return moduleQueried.all;
+  }
+  else if(autoPVT && !autoPVTImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    return (false);
   }
   else
   {
@@ -1744,6 +1864,7 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 
   return (tempAccuracy);
 }
+
 //Get the current latitude in degrees
 //Returns a long representing the number of degrees *10^-7
 int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)

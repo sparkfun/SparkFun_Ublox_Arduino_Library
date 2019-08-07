@@ -95,9 +95,12 @@ getRELPOSNED	KEYWORD2
 
 enableDebugging	KEYWORD2
 disableDebugging	KEYWORD2
+debugPrint	KEYWORD2
+debugPrintln	KEYWORD2
 
 factoryReset	KEYWORD2
 setAutoPVT	KEYWORD2
+assumeAutoPVT	KEYWORD2
 
 getYear	KEYWORD2
 getMonth	KEYWORD2
@@ -105,6 +108,8 @@ getDay	KEYWORD2
 getHour	KEYWORD2
 getMinute	KEYWORD2
 getSecond	KEYWORD2
+getMillisecond   KEYWORD2
+getNanosecond   KEYWORD2
 
 getHPPOSLLH KEYWORD2
 getTimeOfWeek KEYWORD2
