@@ -28,8 +28,6 @@
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
-
 void setup()
 {
   Serial.begin(115200);
@@ -56,17 +54,19 @@ void setup()
   //L, U1, I1, E1 and X1 values are 8-bit
   //U2, I2, E2 and X2 values are 16-bit
   //U4, I4, R4, E4, X4 values are 32-bit
-  
+
   setValueSuccess &= myGPS.setVal8(0x10930006, 0); //Enable high precision NMEA (value is 8-bit (L / U1))
-  //setValueSuccess &= myGPS.setVal16(0x30210001, 100); //Set measurement rate to 100ms (10Hz update rate) (value is 16-bit (U2))
+  //setValueSuccess &= myGPS.setVal16(0x30210001, 200); //Set measurement rate to 100ms (10Hz update rate) (value is 16-bit (U2))
+  //setValueSuccess &= myGPS.setVal16(0x30210001, 200, 1); //Set rate setting in RAM instead of BBR
   setValueSuccess &= myGPS.setVal16(0x30210001, 1000); //Set measurement rate to 1000ms (1Hz update rate) (value is 16-bit (U2))
 
   //Below is the original way we enabled a single RTCM message on the I2C port. After that, we show how to do the same
   //but with multiple messages all in one go using newCfgValset, addCfgValset and sendCfgValset.
   //Original: myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
-  
+
   //Begin with newCfgValset8/16/32
   setValueSuccess &= myGPS.newCfgValset8(0x209102bd, 1); //Set output rate of msg 1005 over the I2C port to once per measurement (value is 8-bit (U1))
+  //setValueSuccess &= myGPS.newCfgValset8(0x209102bd, 1, 7); //Set this and the following settings into Flash/RAM/BBR instead of BBR
   //Add extra keyIDs and values using addCfgValset8/16/32
   setValueSuccess &= myGPS.addCfgValset8(0x209102cc, 1); //Set output rate of msg 1077 over the I2C port to once per measurement (value is 8-bit (U1))
   setValueSuccess &= myGPS.addCfgValset8(0x209102d1, 1); //Set output rate of msg 1087 over the I2C port to once per measurement (value is 8-bit (U1))
@@ -75,13 +75,12 @@ void setup()
   // Add the final value and send the packet using sendCfgValset8/16/32
   setValueSuccess &= myGPS.sendCfgValset8(0x20910303, 10); //Set output rate of msg 1230 over the I2C port to once every 10 measurements (value is 8-bit (U1))
 
-  if(setValueSuccess == true)
+  if (setValueSuccess == true)
   {
     Serial.println("Values were successfully set");
   }
   else
     Serial.println("Value set failed");
-    
 }
 
 void loop()

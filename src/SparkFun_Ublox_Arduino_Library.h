@@ -174,7 +174,8 @@ const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
 #ifndef MAX_PAYLOAD_SIZE
 
-#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
+#define MAX_PAYLOAD_SIZE 128
+//#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
 
 #endif
 
