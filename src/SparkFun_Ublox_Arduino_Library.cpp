@@ -232,7 +232,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       uint8_t lsb = _i2cPort->read();
       if (lsb == 0xFF)
       {
-        debugPrintln("No bytes available");
+        debugPrintln((char *)"No bytes available");
         lastCheck = millis(); //Put off checking to avoid I2C bus traffic
         return (false);
       }
@@ -241,7 +241,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
 
     if (bytesAvailable == 0)
     {
-      debugPrintln("Zero bytes available");
+      debugPrintln((char *)"Zero bytes available");
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
       return (false);
     }
@@ -298,7 +298,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
           {
             if (incoming == 0x7F)
             {
-              debugPrintln("Module not ready with data");
+              debugPrintln((char *)"Module not ready with data");
               delay(5); //In logic analyzation, the module starting responding after 1.48ms
               goto TRY_AGAIN;
             }
@@ -527,7 +527,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        debugPrintln("Checksum failed. Response too big?");
+        debugPrintln((char *)"Checksum failed. Response too big?");
 
         //Drive an external pin to allow for easier logic analyzation
         digitalWrite(2, LOW);
@@ -580,7 +580,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     if (msg->id == UBX_ACK_ACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
     {
       //The ack we just received matched the CLS/ID of last packetCfg sent
-      debugPrintln("Command sent/ack'd successfully");
+      debugPrintln((char *)"Command sent/ack'd successfully");
       commandAck = true;
     }
     break;
@@ -897,7 +897,7 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
         //Did we receive a config packet that matches the cls/id we requested?
         if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
         {
-          debugPrintln("CLS/ID match!");
+          debugPrintln((char *)"CLS/ID match!");
           return (true); //If the packet we just sent was a NAV packet then we'll just get data back
         }
         else
@@ -914,7 +914,7 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
     delayMicroseconds(500);
   }
 
-  debugPrintln("waitForResponse timeout");
+  debugPrintln((char *)"waitForResponse timeout");
 
   return (false);
 }
