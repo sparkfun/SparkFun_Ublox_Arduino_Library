@@ -17,22 +17,6 @@
   Development environment specifics:
   Arduino IDE 1.8.5
 
-  Modified by David Mann @ Loggerhead Instruments, 16 April 2019
-  - Added support for parsing date and time
-  - Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
-
-  Modified by Steven Rowland, June 11th, 2019
-  - Added functionality for reading HPPOSLLH (High Precision Geodetic Position)
-  - Added getTimeOfWeek(), getHighResLatitude(). getHighResLongitude(), getElipsoid(), 
-    getMeanSeaLevel(), getHorizontalAccuracy(), getVerticalAccuracy(), getHPPOSLLH()
-  - Modified ProcessUBXPacket to parse HPPOSLLH packet
-  - Added query staleness verification for HPPOSLLH data 
-
-  Modified by Paul Clark, 1st July 2019
-  - Added 8 and 32 bit versions of setVal
-  - Added newCfgValset8/16/32, addCfgValset8/16/32 and sendCfgValset8/16/32
-    to support the setting of multiple keyID and value pairs simultaneously
-
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -88,23 +72,6 @@ void SFE_UBLOX_GPS::enableDebugging(Stream &debugPort)
 void SFE_UBLOX_GPS::disableDebugging(void)
 {
   _printDebug = false; //Turn off extra print statements
-}
-
-//Safely print messages
-void SFE_UBLOX_GPS::debugPrint(char *message)
-{
-  if (_printDebug == true)
-  {
-    _debugSerial->print(message);
-  }
-}
-//Safely print messages
-void SFE_UBLOX_GPS::debugPrintln(char *message)
-{
-  if (_printDebug == true)
-  {
-    _debugSerial->println(message);
-  }
 }
 
 void SFE_UBLOX_GPS::factoryReset()
@@ -206,17 +173,16 @@ void SFE_UBLOX_GPS::setNMEAOutputPort(Stream &nmeaOutputPort)
 boolean SFE_UBLOX_GPS::checkUblox()
 {
   if (commType == COMM_TYPE_I2C)
-    return (checkUbloxI2C());
+    checkUbloxI2C();
   else if (commType == COMM_TYPE_SERIAL)
-    return (checkUbloxSerial());
+    checkUbloxSerial();
   return false;
 }
 
 //Polls I2C for data, passing any new bytes to process()
-//Returns true if new bytes are available
 boolean SFE_UBLOX_GPS::checkUbloxI2C()
 {
-  if (millis() - lastCheck >= i2cPollingWait)
+  if (millis() - lastCheck >= I2C_POLLING_WAIT_MS)
   {
     //Get the number of bytes available from the module
     uint16_t bytesAvailable = 0;
@@ -230,51 +196,23 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     {
       uint8_t msb = _i2cPort->read();
       uint8_t lsb = _i2cPort->read();
-      if (lsb == 0xFF)
-      {
-        debugPrintln((char *)"No bytes available");
-        lastCheck = millis(); //Put off checking to avoid I2C bus traffic
-        return (false);
-      }
       bytesAvailable = (uint16_t)msb << 8 | lsb;
     }
 
     if (bytesAvailable == 0)
     {
-      debugPrintln((char *)"Zero bytes available");
+      if (_printDebug == true)
+      {
+        _debugSerial->println("No bytes available");
+      }
       lastCheck = millis(); //Put off checking to avoid I2C bus traffic
-      return (false);
-    }
-
-    //Check for bit error
-    //This error is rare but if we incorrectly interpret the first bit of the two 'data available' bytes as 1
-    //then we have far too many bytes to check
-    //Correct back down to
-    if (bytesAvailable & ((uint16_t)1 << 15))
-    {
-      //Clear the MSbit
-      bytesAvailable &= ~((uint16_t)1 << 15);
-
-      if (_printDebug == true)
-      {
-        _debugSerial->print("Bytes available error:");
-        _debugSerial->println(bytesAvailable);
-      }
-    }
-
-    if (bytesAvailable > 100)
-    {
-      if (_printDebug == true)
-      {
-        _debugSerial->print("Bytes available:");
-        _debugSerial->println(bytesAvailable);
-      }
+      return true;
     }
 
     while (bytesAvailable)
     {
       _i2cPort->beginTransmission(_gpsI2Caddress);
-      _i2cPort->write(0xFF);                     //0xFF is the register to read data from
+      _i2cPort->write(0xFF);                     //0xFF is the register to read general NMEA data from
       if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
         return (false);                          //Sensor did not ACK
 
@@ -283,28 +221,12 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       if (bytesToRead > I2C_BUFFER_LENGTH)
         bytesToRead = I2C_BUFFER_LENGTH;
 
-    TRY_AGAIN:
-
       _i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead);
       if (_i2cPort->available())
       {
         for (uint16_t x = 0; x < bytesToRead; x++)
         {
-          uint8_t incoming = _i2cPort->read(); //Grab the actual character
-
-          //Check to see if the first read is 0x7F. If it is, the module is not ready
-          //to respond. Stop, wait, and try again
-          if (x == 0)
-          {
-            if (incoming == 0x7F)
-            {
-              debugPrintln((char *)"Module not ready with data");
-              delay(5); //In logic analyzation, the module starting responding after 1.48ms
-              goto TRY_AGAIN;
-            }
-          }
-
-          process(incoming); //Process this valid character
+          process(_i2cPort->read()); //Grab the actual character and process it
         }
       }
       else
@@ -333,6 +255,16 @@ boolean SFE_UBLOX_GPS::checkUbloxSerial()
 //Take a given byte and file it into the proper array
 void SFE_UBLOX_GPS::process(uint8_t incoming)
 {
+
+  if (_printDebug == true)
+  {
+    //if (currentSentence == NONE && incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
+    //	_debugSerial->println(); //Show new packet start
+
+    //_debugSerial->print(" ");
+    //_debugSerial->print(incoming, HEX);
+  }
+
   if (currentSentence == NONE || currentSentence == NMEA)
   {
     if (incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
@@ -462,14 +394,14 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 {
   //Radio.sendReliable((String)incoming); //An example of passing this byte to a radio
 
-  //_debugSerial->write(incoming); //An example of passing this byte out the serial port
+  //Serial.write(incoming); //An example of passing this byte out the serial port
 
   //Debug printing
-  //  _debugSerial->print(" ");
-  //  if(incoming < 0x10) _debugSerial->print("0");
-  //  if(incoming < 0x10) _debugSerial->print("0");
-  //  _debugSerial->print(incoming, HEX);
-  //  if(rtcmFrameCounter % 16 == 0) _debugSerial->println();
+  //  Serial.print(" ");
+  //  if(incoming < 0x10) Serial.print("0");
+  //  if(incoming < 0x10) Serial.print("0");
+  //  Serial.print(incoming, HEX);
+  //  if(rtcmFrameCounter % 16 == 0) Serial.println();
 }
 
 //Given a character, file it away into the uxb packet structure
@@ -515,9 +447,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        _debugSerial->print("Size: ");
-        _debugSerial->print(incomingUBX->len);
-        _debugSerial->print(" Received: ");
+        _debugSerial->print("Received: ");
         printPacket(incomingUBX);
       }
       incomingUBX->valid = true;
@@ -527,28 +457,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        debugPrintln((char *)"Checksum failed. Response too big?");
-
-        //Drive an external pin to allow for easier logic analyzation
-        digitalWrite(2, LOW);
-        delay(10);
-        digitalWrite(2, HIGH);
-
-        _debugSerial->print("Size: ");
-        _debugSerial->print(incomingUBX->len);
-        _debugSerial->print(" Received: ");
-        printPacket(incomingUBX);
-
-        _debugSerial->print(" checksumA: ");
-        _debugSerial->print(incomingUBX->checksumA);
-        _debugSerial->print(" checksumB: ");
-        _debugSerial->print(incomingUBX->checksumB);
-
-        _debugSerial->print(" rollingChecksumA: ");
-        _debugSerial->print(rollingChecksumA);
-        _debugSerial->print(" rollingChecksumB: ");
-        _debugSerial->print(rollingChecksumB);
-        _debugSerial->println();
+        _debugSerial->println("Checksum failed. Response too big?");
       }
     }
   }
@@ -580,7 +489,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     if (msg->id == UBX_ACK_ACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
     {
       //The ack we just received matched the CLS/ID of last packetCfg sent
-      debugPrintln((char *)"Command sent/ack'd successfully");
+      if (_printDebug == true)
+      {
+        _debugSerial->println("Command sent/ack'd successfully");
+      }
       commandAck = true;
     }
     break;
@@ -591,14 +503,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into global vars
       constexpr int startingSpot = 0; //fixed value used in processUBX
 
-      gpsMillisecond = extractLong(0) % 1000; //Get last three digits of iTOW
       gpsYear = extractInt(4);
       gpsMonth = extractByte(6);
       gpsDay = extractByte(7);
       gpsHour = extractByte(8);
       gpsMinute = extractByte(9);
       gpsSecond = extractByte(10);
-      gpsNanosecond = extractLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
@@ -612,14 +522,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       pDOP = extractLong(76 - startingSpot);
 
       //Mark all datums as fresh (not read before)
-      moduleQueried.gpsiTOW = true;
       moduleQueried.gpsYear = true;
       moduleQueried.gpsMonth = true;
       moduleQueried.gpsDay = true;
       moduleQueried.gpsHour = true;
       moduleQueried.gpsMinute = true;
       moduleQueried.gpsSecond = true;
-      moduleQueried.gpsNanosecond = true;
 
       moduleQueried.all = true;
       moduleQueried.longitude = true;
@@ -632,55 +540,6 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.groundSpeed = true;
       moduleQueried.headingOfMotion = true;
       moduleQueried.pDOP = true;
-    }
-    else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
-    {
-      timeOfWeek = extractLong(4);
-      highResLongitude = extractLong(8);
-      highResLatitude = extractLong(12);
-      elipsoid = extractLong(16);
-      meanSeaLevel = extractLong(20);
-      geoidSeparation = extractLong(24);
-      horizontalAccuracy = extractLong(28);
-      verticalAccuracy = extractLong(32);
-
-      highResModuleQueried.all = true;
-      highResModuleQueried.timeOfWeek = true;
-      highResModuleQueried.highResLatitude = true;
-      highResModuleQueried.highResLongitude = true;
-      highResModuleQueried.elipsoid = true;
-      highResModuleQueried.meanSeaLevel = true;
-      highResModuleQueried.geoidSeparation = true;
-      highResModuleQueried.horizontalAccuracy = true;
-      highResModuleQueried.verticalAccuracy = true;
-
-      if (_printDebug == true)
-      {
-        _debugSerial->print("Sec: ");
-        _debugSerial->print(((float)extractLong(4)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("LON: ");
-        _debugSerial->print(((float)(int32_t)extractLong(8)) / 10000000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("LAT: ");
-        _debugSerial->print(((float)(int32_t)extractLong(12)) / 10000000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("ELI M: ");
-        _debugSerial->print(((float)(int32_t)extractLong(16)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("MSL M: ");
-        _debugSerial->print(((float)(int32_t)extractLong(20)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("GEO: ");
-        _debugSerial->print(((float)(int32_t)extractLong(24)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("HA 2D M: ");
-        _debugSerial->print(((float)extractLong(28)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("VERT M: ");
-        _debugSerial->print(((float)extractLong(32)) / 1000.0f);
-        _debugSerial->print(" ");
-      }
     }
     break;
   }
@@ -862,8 +721,8 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
     _debugSerial->print(" ID:");
     _debugSerial->print(packet->id, HEX);
 
-    _debugSerial->print(" Len: 0x");
-    _debugSerial->print(packet->len, HEX);
+    //_debugSerial->print(" Len: 0x");
+    //_debugSerial->print(packet->len, HEX);
 
     _debugSerial->print(" Payload:");
 
@@ -888,33 +747,38 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    if (checkUblox() == true) //See if new data is available. Process bytes as they come in.
+    checkUblox(); //See if new data is available. Process bytes as they come in.
+
+    if (commandAck == true)
+      return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
+    if (packetCfg.valid == true)
     {
-      if (commandAck == true)
-        return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
-      if (packetCfg.valid == true)
+      //Did we receive a config packet that matches the cls/id we requested?
+      if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
       {
-        //Did we receive a config packet that matches the cls/id we requested?
-        if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
+        if (_printDebug == true)
         {
-          debugPrintln((char *)"CLS/ID match!");
-          return (true); //If the packet we just sent was a NAV packet then we'll just get data back
+          _debugSerial->println(F("CLS/ID match!"));
         }
-        else
+        return (true); //If the packet we just sent was a NAV packet then we'll just get data back
+      }
+      else
+      {
+        if (_printDebug == true)
         {
-          if (_printDebug == true)
-          {
-            _debugSerial->print("Packet didn't match CLS/ID");
-            printPacket(&packetCfg);
-          }
+          _debugSerial->print(F("Packet didn't match CLS/ID"));
+          printPacket(&packetCfg);
         }
       }
     }
 
-    delayMicroseconds(500);
+    delay(1);
   }
 
-  debugPrintln((char *)"waitForResponse timeout");
+  if (_printDebug == true)
+  {
+    _debugSerial->println(F("waitForResponse timeout"));
+  }
 
   return (false);
 }
@@ -1027,28 +891,19 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
   return (extractByte(8));
 }
 
-//Given a key, set a 16-bit value
+//Given a key, set an 8-bit value
 //This function takes a full 32-bit key
 //Default layer is BBR
 //Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
 {
-  return setVal16(key, value, layer, maxWait);
-}
-
-//Given a key, set a 16-bit value
-//This function takes a full 32-bit key
-//Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
-{
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_VALSET;
   packetCfg.len = 4 + 4 + 2; //4 byte header, 4 byte key ID, 2 bytes of value
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint16_t x = 0; x < packetCfg.len; x++)
+  for (uint8_t x = 0; x < packetCfg.len; x++)
     packetCfg.payload[x] = 0;
 
   payloadCfg[0] = 0;     //Message Version - set to 0
@@ -1063,285 +918,6 @@ uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uin
   //Load user's value
   payloadCfg[8] = value >> 8 * 0; //Value LSB
   payloadCfg[9] = value >> 8 * 1;
-
-  //Send VALSET command with this key and value
-  if (sendCommand(packetCfg, maxWait) == false)
-    return (false); //If command send fails then bail
-
-  //All done
-  return (true);
-}
-
-//Given a key, set an 8-bit value
-//This function takes a full 32-bit key
-//Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::setVal8(uint32_t key, uint8_t value, uint8_t layer, uint16_t maxWait)
-{
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_VALSET;
-  packetCfg.len = 4 + 4 + 1; //4 byte header, 4 byte key ID, 1 byte value
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for (uint16_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
-
-  payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the BBR layer
-
-  //Load key into outgoing payload
-  payloadCfg[4] = key >> 8 * 0; //Key LSB
-  payloadCfg[5] = key >> 8 * 1;
-  payloadCfg[6] = key >> 8 * 2;
-  payloadCfg[7] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[8] = value; //Value
-
-  //Send VALSET command with this key and value
-  if (sendCommand(packetCfg, maxWait) == false)
-    return (false); //If command send fails then bail
-
-  //All done
-  return (true);
-}
-
-//Given a key, set a 32-bit value
-//This function takes a full 32-bit key
-//Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::setVal32(uint32_t key, uint32_t value, uint8_t layer, uint16_t maxWait)
-{
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_VALSET;
-  packetCfg.len = 4 + 4 + 4; //4 byte header, 4 byte key ID, 4 bytes of value
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for (uint16_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
-
-  payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the BBR layer
-
-  //Load key into outgoing payload
-  payloadCfg[4] = key >> 8 * 0; //Key LSB
-  payloadCfg[5] = key >> 8 * 1;
-  payloadCfg[6] = key >> 8 * 2;
-  payloadCfg[7] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[8] = value >> 8 * 0; //Value LSB
-  payloadCfg[9] = value >> 8 * 1;
-  payloadCfg[10] = value >> 8 * 2;
-  payloadCfg[11] = value >> 8 * 3;
-
-  //Send VALSET command with this key and value
-  if (sendCommand(packetCfg, maxWait) == false)
-    return (false); //If command send fails then bail
-
-  //All done
-  return (true);
-}
-
-//Start defining a new UBX-CFG-VALSET ubxPacket
-//This function takes a full 32-bit key and 32-bit value
-//Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::newCfgValset32(uint32_t key, uint32_t value, uint8_t layer)
-{
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_VALSET;
-  packetCfg.len = 4 + 4 + 4; //4 byte header, 4 byte key ID, 4 bytes of value
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
-    packetCfg.payload[x] = 0;
-
-  payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the BBR layer
-
-  //Load key into outgoing payload
-  payloadCfg[4] = key >> 8 * 0; //Key LSB
-  payloadCfg[5] = key >> 8 * 1;
-  payloadCfg[6] = key >> 8 * 2;
-  payloadCfg[7] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[8] = value >> 8 * 0; //Value LSB
-  payloadCfg[9] = value >> 8 * 1;
-  payloadCfg[10] = value >> 8 * 2;
-  payloadCfg[11] = value >> 8 * 3;
-
-  //All done
-  return (true);
-}
-
-//Start defining a new UBX-CFG-VALSET ubxPacket
-//This function takes a full 32-bit key and 16-bit value
-//Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::newCfgValset16(uint32_t key, uint16_t value, uint8_t layer)
-{
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_VALSET;
-  packetCfg.len = 4 + 4 + 2; //4 byte header, 4 byte key ID, 2 bytes of value
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
-    packetCfg.payload[x] = 0;
-
-  payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the BBR layer
-
-  //Load key into outgoing payload
-  payloadCfg[4] = key >> 8 * 0; //Key LSB
-  payloadCfg[5] = key >> 8 * 1;
-  payloadCfg[6] = key >> 8 * 2;
-  payloadCfg[7] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[8] = value >> 8 * 0; //Value LSB
-  payloadCfg[9] = value >> 8 * 1;
-
-  //All done
-  return (true);
-}
-
-//Start defining a new UBX-CFG-VALSET ubxPacket
-//This function takes a full 32-bit key and 8-bit value
-//Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer)
-{
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_VALSET;
-  packetCfg.len = 4 + 4 + 1; //4 byte header, 4 byte key ID, 1 byte value
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
-    packetCfg.payload[x] = 0;
-
-  payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the BBR layer
-
-  //Load key into outgoing payload
-  payloadCfg[4] = key >> 8 * 0; //Key LSB
-  payloadCfg[5] = key >> 8 * 1;
-  payloadCfg[6] = key >> 8 * 2;
-  payloadCfg[7] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[8] = value; //Value
-
-  //All done
-  return (true);
-}
-
-//Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
-//This function takes a full 32-bit key and 32-bit value
-uint8_t SFE_UBLOX_GPS::addCfgValset32(uint32_t key, uint32_t value)
-{
-  //Load key into outgoing payload
-  payloadCfg[packetCfg.len + 0] = key >> 8 * 0; //Key LSB
-  payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
-  payloadCfg[packetCfg.len + 2] = key >> 8 * 2;
-  payloadCfg[packetCfg.len + 3] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[packetCfg.len + 4] = value >> 8 * 0; //Value LSB
-  payloadCfg[packetCfg.len + 5] = value >> 8 * 1;
-  payloadCfg[packetCfg.len + 6] = value >> 8 * 2;
-  payloadCfg[packetCfg.len + 7] = value >> 8 * 3;
-
-  //Update packet length: 4 byte key ID, 4 bytes of value
-  packetCfg.len = packetCfg.len + 4 + 4;
-
-  //All done
-  return (true);
-}
-
-//Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
-//This function takes a full 32-bit key and 16-bit value
-uint8_t SFE_UBLOX_GPS::addCfgValset16(uint32_t key, uint16_t value)
-{
-  //Load key into outgoing payload
-  payloadCfg[packetCfg.len + 0] = key >> 8 * 0; //Key LSB
-  payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
-  payloadCfg[packetCfg.len + 2] = key >> 8 * 2;
-  payloadCfg[packetCfg.len + 3] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[packetCfg.len + 4] = value >> 8 * 0; //Value LSB
-  payloadCfg[packetCfg.len + 5] = value >> 8 * 1;
-
-  //Update packet length: 4 byte key ID, 2 bytes of value
-  packetCfg.len = packetCfg.len + 4 + 2;
-
-  //All done
-  return (true);
-}
-
-//Add another keyID and value to an existing UBX-CFG-VALSET ubxPacket
-//This function takes a full 32-bit key and 8-bit value
-uint8_t SFE_UBLOX_GPS::addCfgValset8(uint32_t key, uint8_t value)
-{
-  //Load key into outgoing payload
-  payloadCfg[packetCfg.len + 0] = key >> 8 * 0; //Key LSB
-  payloadCfg[packetCfg.len + 1] = key >> 8 * 1;
-  payloadCfg[packetCfg.len + 2] = key >> 8 * 2;
-  payloadCfg[packetCfg.len + 3] = key >> 8 * 3;
-
-  //Load user's value
-  payloadCfg[packetCfg.len + 4] = value; //Value
-
-  //Update packet length: 4 byte key ID, 1 byte value
-  packetCfg.len = packetCfg.len + 4 + 1;
-
-  //All done
-  return (true);
-}
-
-//Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
-//This function takes a full 32-bit key and 32-bit value
-uint8_t SFE_UBLOX_GPS::sendCfgValset32(uint32_t key, uint32_t value, uint16_t maxWait)
-{
-  //Load keyID and value into outgoing payload
-  addCfgValset32(key, value);
-
-  //Send VALSET command with this key and value
-  if (sendCommand(packetCfg, maxWait) == false)
-    return (false); //If command send fails then bail
-
-  //All done
-  return (true);
-}
-
-//Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
-//This function takes a full 32-bit key and 16-bit value
-uint8_t SFE_UBLOX_GPS::sendCfgValset16(uint32_t key, uint16_t value, uint16_t maxWait)
-{
-  //Load keyID and value into outgoing payload
-  addCfgValset16(key, value);
-
-  //Send VALSET command with this key and value
-  if (sendCommand(packetCfg, maxWait) == false)
-    return (false); //If command send fails then bail
-
-  //All done
-  return (true);
-}
-
-//Add a final keyID and value to an existing UBX-CFG-VALSET ubxPacket and send it
-//This function takes a full 32-bit key and 8-bit value
-uint8_t SFE_UBLOX_GPS::sendCfgValset8(uint32_t key, uint8_t value, uint16_t maxWait)
-{
-  //Load keyID and value into outgoing payload
-  addCfgValset8(key, value);
 
   //Send VALSET command with this key and value
   if (sendCommand(packetCfg, maxWait) == false)
@@ -1377,6 +953,18 @@ boolean SFE_UBLOX_GPS::setSurveyMode(uint8_t mode, uint16_t observationTime, flo
   for (uint8_t x = 0; x < packetCfg.len; x++)
     packetCfg.payload[x] = 0;
 
+  //reset the variables
+  svin.active = false;
+  svin.valid = false;
+  svin.observationTime = 0;
+  svin.meanAccuracy = 0;
+  svin.meanX = 0;
+  svin.meanY = 0;
+  svin.meanZ = 0;
+  svin.meanXHP = 0;
+  svin.meanYHP = 0;
+  svin.meanZHP = 0;
+  
   //payloadCfg should be loaded with poll response. Now modify only the bits we care about
   payloadCfg[2] = mode; //Set mode. Survey-In and Disabled are most common.
 
@@ -1408,12 +996,18 @@ boolean SFE_UBLOX_GPS::disableSurveyMode(uint16_t maxWait)
 //Returns true if commands was successful
 boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
 {
+	
   //Reset variables
   svin.active = false;
   svin.valid = false;
   svin.observationTime = 0;
   svin.meanAccuracy = 0;
-
+  svin.meanX = 0;
+  svin.meanY = 0;
+  svin.meanZ = 0;
+  svin.meanXHP = 0;
+  svin.meanYHP = 0;
+  svin.meanZHP = 0;
   packetCfg.cls = UBX_CLASS_NAV;
   packetCfg.id = UBX_NAV_SVIN;
   packetCfg.len = 0;
@@ -1424,7 +1018,14 @@ boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
 
   //We got a response, now parse the bits into the svin structure
   svin.observationTime = extractLong(8);
-
+   
+  svin.meanX = extractLong(12);
+  svin.meanY = extractLong(16);
+  svin.meanZ = extractLong(20);
+  svin.meanXHP = extractByte(24);
+  svin.meanYHP = extractByte(25);
+  svin.meanZHP = extractByte(26);
+  
   uint32_t tempFloat = extractLong(28);
   svin.meanAccuracy = tempFloat / 10000.0; //Convert 0.1mm to m
 
@@ -1433,6 +1034,67 @@ boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
 
   return (true);
 }
+
+
+
+//Set GPS to fixed mode with the passed longitude, latitude, altitude and accuracy
+boolean SFE_UBLOX_GPS::setFixedMode(uint8_t mode, uint8_t pos_type, double fixed_latitude, double fixed_longitude, double fixed_altitude, double fixedPosAcc, uint16_t maxWait)
+{
+	
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_TMODE3;
+	packetCfg.len = 40;
+	packetCfg.startingSpot = 0;
+	
+	  //Clear packet payload
+	for (uint8_t x = 0; x < packetCfg.len; x++){
+		packetCfg.payload[x] = 0;
+	}
+	
+	packetCfg.payload[2] = mode; //Set Time Mode 3 mode (disabled, survey-in, or fixed mode)
+	packetCfg.payload[3] = pos_type; //Set the position type (use LLH or ECEF)
+	
+	unsigned long fixed_posAcc = fixedPosAcc * 10000; //Convert the float to a long (m to 0.1 mm)
+	long fixed_lat = fixed_latitude * 10000000; //Convert the float to a long (degrees to degrees * 1e-7)
+	long fixed_long = fixed_longitude * 10000000; // Convert the float to a long (degrees to degrees * 1e-7)
+	long fixed_alt = fixed_altitude * 100; //Convert the float to a long (m to cm)
+	long long fixed_lat_multiplication = fixed_latitude * 1000000000; //Get the latitude in 1e-9*degrees
+	long long fixed_long_multiplication = fixed_longitude * 1000000000; //Get the longitude in 1e-9*degrees
+	long long fixed_alt_multiplication = fixed_altitude * 10000; //Get the altitude in 0.1 mm
+	char fixed_latHP = (char)(fixed_lat_multiplication - (long long)fixed_lat * 100); //Only get the last two digits
+	char fixed_longHP = (char)(fixed_long_multiplication - (long long)fixed_long * 100); //Only get the last two digits
+	char fixed_altHP = (char)(fixed_alt_multiplication - (long long)fixed_alt * 100); //Only get the last two digits
+	
+	packetCfg.payload[4] = fixed_lat >> 0; //Set the latitude LSB
+	packetCfg.payload[5] = fixed_lat >> 8;
+	packetCfg.payload[6] = fixed_lat >> 16;
+	packetCfg.payload[7] = fixed_lat >> 24;
+	packetCfg.payload[8] = fixed_long >> 0; //Set the longitude LSB
+	packetCfg.payload[9] = fixed_long >> 8;
+	packetCfg.payload[10] = fixed_long >> 16;
+	packetCfg.payload[11] = fixed_long >> 24;
+	packetCfg.payload[12] = fixed_alt >> 0; //Set the altitude LSB
+	packetCfg.payload[13] = fixed_alt >> 8;
+	packetCfg.payload[14] = fixed_alt >> 16;
+	packetCfg.payload[15] = fixed_alt >> 24;
+
+	packetCfg.payload[16] = fixed_latHP >> 0;
+	packetCfg.payload[17] = fixed_longHP >> 0;
+	packetCfg.payload[18] = fixed_altHP >> 0;
+
+	
+	packetCfg.payload[20] = fixed_posAcc >> 0; //Set the position 3D accuracy LSB
+	packetCfg.payload[21] = fixed_posAcc >> 8;
+	packetCfg.payload[22] = fixed_posAcc >> 16;
+	packetCfg.payload[23] = fixed_posAcc >> 24;
+
+	
+	
+	return (sendCommand(packetCfg, maxWait));
+}
+
+
+
 
 //Given a message number turns on a message ID for output over a given portID (UART, I2C, SPI, USB, etc)
 //To disable a message, set secondsBetween messages to 0
@@ -1471,6 +1133,295 @@ boolean SFE_UBLOX_GPS::enableRTCMmessage(uint8_t messageNumber, uint8_t portID, 
 boolean SFE_UBLOX_GPS::disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait)
 {
   return (enableRTCMmessage(messageNumber, portID, 0, maxWait));
+}
+
+
+
+//Given a certain NMEA message and a port, will turn on that NMEA message for that port
+boolean SFE_UBLOX_GPS::enableNMEAmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait){
+  //first we need to find the old states, so we don't override previous settings
+  //reset the values
+  nmea.i2c = 0;
+  nmea.uart1 = 0;
+  nmea.uart2 = 0;
+  nmea.usb = 0;
+  nmea.spi = 0;
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 2; //packet size of 2 with just the MSB and message number will return the entire configuration for that number
+  packetCfg.startingSpot = 0;
+  packetCfg.payload[0] = UBX_NMEA_MSB; 		//MSB, always 0xF0
+  packetCfg.payload[1] = messageNumber;		//message number
+  if (sendCommand(packetCfg, maxWait) == false){ //sending this packet should return us a packet with all the current message configurations
+    return (false); //If command send fails then bail
+  }
+  
+	if(packetCfg.cls == UBX_CLASS_CFG && packetCfg.id == UBX_CFG_MSG && packetCfg.len == 8){ //if the message is actually about the messages (and not just ack)
+		////extract this information from the returned message packet
+		nmea.i2c = extractByte(2);
+		nmea.uart1 = extractByte(3);
+		nmea.uart2 = extractByte(4);
+		nmea.usb = extractByte(5);
+		nmea.spi = extractByte(6);
+	}
+	else{
+		Serial.println("Not the message we want");
+		return(false);
+	}
+	
+	//if we somehow got the syncronization packets (timing issues/not got the actual data packet), then bail
+	if(nmea.i2c == UBX_SYNCH_1 || nmea.i2c == UBX_SYNCH_2){
+		return(false); //bail
+	}
+	else if(nmea.uart1 == UBX_SYNCH_1 || nmea.uart1 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(nmea.uart2 == UBX_SYNCH_1 || nmea.uart2 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(nmea.usb == UBX_SYNCH_1 || nmea.usb == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(nmea.spi == UBX_SYNCH_1 || nmea.spi == UBX_SYNCH_2){
+		return(false);
+	}
+
+	// Now we want to send the new packet
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_MSG;
+	packetCfg.len = 8;
+	packetCfg.startingSpot = 0;
+	// clear packet payload
+	for(uint8_t x = 0; x < packetCfg.len; x++){
+		packetCfg.payload[x] = 0;
+	}
+	// pass the old values into the payload
+	packetCfg.payload[0] = UBX_NMEA_MSB;
+	packetCfg.payload[1] = messageNumber;
+	packetCfg.payload[2] = nmea.i2c;
+	packetCfg.payload[3] = nmea.uart1;
+	packetCfg.payload[4] = nmea.uart2;
+	packetCfg.payload[5] = nmea.usb;
+	packetCfg.payload[6] = nmea.spi;
+	packetCfg.payload[2 + portID] = 1; //update the new port with the configuration we want
+	return(sendCommand(packetCfg, maxWait));
+}
+
+boolean SFE_UBLOX_GPS::disableNMEAmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait){
+  //first we need to find the old states, so we don't override previous settings
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 2; //packet size of 2 with just the MSB and message number will return the entire configuration for that number
+  packetCfg.startingSpot = 0;
+  packetCfg.payload[0] = UBX_NMEA_MSB; 		//MSB, always 0xF0
+  packetCfg.payload[1] = messageNumber;		//message number
+  if (sendCommand(packetCfg, maxWait) == false){ //sending this packet should return us a packet with all the current message configurations
+    return (false); //If command send fails then bail
+  }
+  
+	//extract this information from the returned message packet
+	if(packetCfg.cls == UBX_CLASS_CFG && packetCfg.id == UBX_CFG_MSG && packetCfg.len == 8){ //if the message is actually about the messages (and not just ack)
+		//extract this information from the returned message packet
+		nmea.i2c = extractByte(2);
+		nmea.uart1 = extractByte(3);
+		nmea.uart2 = extractByte(4);
+		nmea.usb = extractByte(5);
+		nmea.spi = extractByte(6);
+	}
+	else{
+		Serial.println("Not the message we want");
+		return(false);
+	}
+	
+	//if we somehow got the syncronization packets (timing issues/not got the actual data packet), then bail
+	//hopefully you never actually set it too that rate (else it's an infinite loop)
+	if(nmea.i2c == UBX_SYNCH_1 || nmea.i2c == UBX_SYNCH_2){
+		return(false); //bail
+	}
+	else if(nmea.uart1 == UBX_SYNCH_1 || nmea.uart1 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(nmea.uart2 == UBX_SYNCH_1 || nmea.uart2 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(nmea.usb == UBX_SYNCH_1 || nmea.usb == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(nmea.spi == UBX_SYNCH_1 || nmea.spi == UBX_SYNCH_2){
+		return(false);
+	}
+
+	//Now we want to send the new packet
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_MSG;
+	packetCfg.len = 8;
+	packetCfg.startingSpot = 0;
+	//clear packet payload
+	for(uint8_t x = 0; x < packetCfg.len; x++){
+		packetCfg.payload[x] = 0;
+	}
+	//pass the old values into the payload
+	packetCfg.payload[0] = UBX_NMEA_MSB;
+	packetCfg.payload[1] = messageNumber;
+	packetCfg.payload[2] = nmea.i2c;
+	packetCfg.payload[3] = nmea.uart1;
+	packetCfg.payload[4] = nmea.uart2;
+	packetCfg.payload[5] = nmea.usb;
+	packetCfg.payload[6] = nmea.spi;
+	packetCfg.payload[2 + portID] = 0; //update the new port to disable it
+	return(sendCommand(packetCfg, maxWait));
+}
+
+
+boolean SFE_UBLOX_GPS::enableUBXmessage(uint8_t messageType, uint8_t messageNumber, uint8_t portID, uint16_t maxWait){
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_MSG;
+	packetCfg.len = 2; //packet size of 2 with just the MSB and message number will return the entire configuration for that number
+	packetCfg.startingSpot = 0;
+	packetCfg.payload[0] = messageType;
+	packetCfg.payload[1] = messageNumber;
+	if (sendCommand(packetCfg, maxWait) == false){ //sending this packet should return us a packet with all the current message configurations
+		return (false); //If command send fails then bail
+	}
+	
+	if(packetCfg.cls == UBX_CLASS_CFG && packetCfg.id == UBX_CFG_MSG && packetCfg.len == 8){ //if the message is actually about the messages (and not just ack)
+		ubx.i2c = extractByte(2);
+		ubx.uart1 = extractByte(3);
+		ubx.uart2 = extractByte(4);
+		ubx.usb = extractByte(5);
+		ubx.spi = extractByte(6);
+	}
+	else{
+		return(false);
+	}
+	
+	//if we somehow got the syncronization packets (timing issues/not got the actual data packet), then bail
+	//hopefully you never actually set it too that rate (else it's an infinite loop)
+	if(ubx.i2c == UBX_SYNCH_1 || ubx.i2c == UBX_SYNCH_2){
+		return(false); //bail
+	}
+	else if(ubx.uart1 == UBX_SYNCH_1 || ubx.uart1 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(ubx.uart2 == UBX_SYNCH_1 || ubx.uart2 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(ubx.usb == UBX_SYNCH_1 || ubx.usb == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(ubx.spi == UBX_SYNCH_1 || ubx.spi == UBX_SYNCH_2){
+		return(false);
+	}
+	
+	//Now we want to send the new packet
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_MSG;
+	packetCfg.len = 8;
+	packetCfg.startingSpot = 0;
+	packetCfg.payload[0] = messageType;
+	packetCfg.payload[1] = messageNumber;
+	packetCfg.payload[2] = ubx.i2c;
+	packetCfg.payload[3] = ubx.uart1;
+	packetCfg.payload[4] = ubx.uart2;
+	packetCfg.payload[5] = ubx.usb;
+	packetCfg.payload[6] = ubx.spi;
+	packetCfg.payload[2 + portID] = 1; //update the new port to enable
+	return(sendCommand(packetCfg, maxWait));
+}
+
+boolean SFE_UBLOX_GPS::disableUBXmessage(uint8_t messageType, uint8_t messageNumber, uint8_t portID, uint16_t maxWait){
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_MSG;
+	packetCfg.len = 2; //packet size of 2 with just the MSB and message number will return the entire configuration for that number
+	packetCfg.startingSpot = 0;
+	packetCfg.payload[0] = messageType;
+	packetCfg.payload[1] = messageNumber;
+	if (sendCommand(packetCfg, maxWait) == false){ //sending this packet should return us a packet with all the current message configurations
+		return (false); //If command send fails then bail
+	}
+	
+	if(packetCfg.cls == UBX_CLASS_CFG && packetCfg.id == UBX_CFG_MSG && packetCfg.len == 8){ //if the message is actually about the messages (and not just ack)
+		ubx.i2c = extractByte(2);
+		ubx.uart1 = extractByte(3);
+		ubx.uart2 = extractByte(4);
+		ubx.usb = extractByte(5);
+		ubx.spi = extractByte(6);
+	}
+	else{
+		return(false);
+	}
+	
+	//if we somehow got the syncronization packets (timing issues/not got the actual data packet), then bail
+	//hopefully you never actually set it too that rate (else it's an infinite loop)
+	if(ubx.i2c == UBX_SYNCH_1 || ubx.i2c == UBX_SYNCH_2){
+		return(false); //bail
+	}
+	else if(ubx.uart1 == UBX_SYNCH_1 || ubx.uart1 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(ubx.uart2 == UBX_SYNCH_1 || ubx.uart2 == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(ubx.usb == UBX_SYNCH_1 || ubx.usb == UBX_SYNCH_2){
+		return(false);
+	}
+	else if(ubx.spi == UBX_SYNCH_1 || ubx.spi == UBX_SYNCH_2){
+		return(false);
+	}
+	
+	//Now we want to send the new packet
+	packetCfg.cls = UBX_CLASS_CFG;
+	packetCfg.id = UBX_CFG_MSG;
+	packetCfg.len = 8;
+	packetCfg.startingSpot = 0;
+	packetCfg.payload[0] = messageType;
+	packetCfg.payload[1] = messageNumber;
+	packetCfg.payload[2] = ubx.i2c;
+	packetCfg.payload[3] = ubx.uart1;
+	packetCfg.payload[4] = ubx.uart2;
+	packetCfg.payload[5] = ubx.usb;
+	packetCfg.payload[6] = ubx.spi;
+	packetCfg.payload[2 + portID] = 0; //update the new port to disable
+	return(sendCommand(packetCfg, maxWait));
+}
+
+boolean SFE_UBLOX_GPS::setNav5DynamicPlatformModel(uint8_t dynamicModel, uint16_t maxWait){
+	
+	packetCfg.cls = UBX_CLASS_CFG; //we want to config
+	packetCfg.id = UBX_CFG_NAV5; //we want to config the Nav5 settings
+	packetCfg.len = 36; //packet is going to be 36 bytes long
+	packetCfg.startingSpot = 0;
+	//clear the packet
+	for(uint8_t x = 0; x < packetCfg.len; x++){
+		packetCfg.payload[x] = 0;
+	}
+	packetCfg.payload[0] = 0x01; //apply only the dynamic model settings through bitmask
+	packetCfg.payload[1] = 0x00; //second byte of that bitmask
+	packetCfg.payload[2] = dynamicModel; //set the dynamic platform model to airborne with < 1g acceleration
+	
+	return(sendCommand(packetCfg, maxWait)); //send the packet
+}
+
+boolean SFE_UBLOX_GPS::setNMEATalkerID(uint8_t mainTalkerId, uint8_t gsvTalkerId, uint16_t maxWait){
+	//first we need to find the old states, so we don't override previous settings
+	packetCfg.cls = UBX_CLASS_CFG; //we want to configure stuff
+	packetCfg.id = UBX_CFG_NMEA; //specifically, the NMEA protocol
+	packetCfg.len = 0; //packet size of 0 will return the entire configuration for the NMEAT protocol
+	packetCfg.startingSpot = 0;
+	
+	if (sendCommand(packetCfg, maxWait) == false){ //sending this packet should return us a packet with all the current NMEA configurations
+		return (false); //If command send fails then bail
+	}
+	
+	packetCfg.cls = UBX_CLASS_CFG; //we want to configure stuff
+	packetCfg.id = UBX_CFG_NMEA; //specifically, the NMEA protocol
+	packetCfg.len = 20; //packet size of 20
+	packetCfg.startingSpot = 0;
+
+	//current configurations loaded, so set the new changes and send
+	packetCfg.payload[9] = mainTalkerId;
+	packetCfg.payload[10] = gsvTalkerId;
+	return(sendCommand(packetCfg, maxWait)); //send the packet
 }
 
 //Loads the payloadCfg array with the current protocol bits located the UBX-CFG-PRT register for a given port
@@ -1552,15 +1503,12 @@ boolean SFE_UBLOX_GPS::setSPIOutput(uint8_t comSettings, uint16_t maxWait)
   return (setPortOutput(COM_PORT_SPI, comSettings, maxWait));
 }
 
-//Set the rate at which the module will give us an updated navigation solution
+//Set the rate at which the module will give us an updated navigation solution	
 //Expects a number that is the updates per second. For example 1 = 1Hz, 2 = 2Hz, etc.
 //Max is 40Hz(?!)
 boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
 {
   //if(updateRate > 40) updateRate = 40; //Not needed: module will correct out of bounds values
-
-  //Adjust the I2C polling timeout based on update rate
-  i2cPollingWait = 1000 / (navFreq * 4); //This is the number of ms to wait between checks for new I2C data
 
   //Query the module for the latest lat/long
   packetCfg.cls = UBX_CLASS_CFG;
@@ -1601,29 +1549,9 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
   return (measurementRate);
 }
 
-//In case no config access to the GPS is possible and PVT is send cyclically already
-//set config to suitable parameters
-boolean SFE_UBLOX_GPS::assumeAutoPVT(boolean enabled, boolean implicitUpdate)
-{
-  boolean changes = autoPVT != enabled || autoPVTImplicitUpdate != implicitUpdate;
-  if (changes)
-  {
-    autoPVT = enabled;
-    autoPVTImplicitUpdate = implicitUpdate;
-  }
-  return changes;
-}
-
 //Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
-{
-  return setAutoPVT(enable, true, maxWait);
-}
-
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
-//works.
-boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_MSG;
@@ -1635,10 +1563,7 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
 
   bool ok = sendCommand(packetCfg, maxWait);
   if (ok)
-  {
     autoPVT = enable;
-    autoPVTImplicitUpdate = implicitUpdate;
-  }
   moduleQueried.all = false;
   return ok;
 }
@@ -1647,10 +1572,10 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {
   uint32_t val = 0;
-  val |= (uint32_t)payloadCfg[spotToStart + 0] << 8 * 0;
-  val |= (uint32_t)payloadCfg[spotToStart + 1] << 8 * 1;
-  val |= (uint32_t)payloadCfg[spotToStart + 2] << 8 * 2;
-  val |= (uint32_t)payloadCfg[spotToStart + 3] << 8 * 3;
+  val |= (int32_t)payloadCfg[spotToStart + 0] << 8 * 0;
+  val |= (int32_t)payloadCfg[spotToStart + 1] << 8 * 1;
+  val |= (int32_t)payloadCfg[spotToStart + 2] << 8 * 2;
+  val |= (int32_t)payloadCfg[spotToStart + 3] << 8 * 3;
   return (val);
 }
 
@@ -1658,8 +1583,8 @@ uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
 {
   uint16_t val = 0;
-  val |= (uint16_t)payloadCfg[spotToStart + 0] << 8 * 0;
-  val |= (uint16_t)payloadCfg[spotToStart + 1] << 8 * 1;
+  val |= (int16_t)payloadCfg[spotToStart + 0] << 8 * 0;
+  val |= (int16_t)payloadCfg[spotToStart + 1] << 8 * 1;
   return (val);
 }
 
@@ -1687,7 +1612,7 @@ uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
   return (gpsMonth);
 }
 
-//Get the current day
+//Get the current year
 uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 {
   if (moduleQueried.gpsDay == false)
@@ -1696,7 +1621,7 @@ uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
   return (gpsDay);
 }
 
-//Get the current hour
+//Get the current year
 uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 {
   if (moduleQueried.gpsHour == false)
@@ -1705,7 +1630,7 @@ uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
   return (gpsHour);
 }
 
-//Get the current minute
+//Get the current year
 uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 {
   if (moduleQueried.gpsMinute == false)
@@ -1714,7 +1639,7 @@ uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
   return (gpsMinute);
 }
 
-//Get the current second
+//Get the current year
 uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsSecond == false)
@@ -1723,37 +1648,14 @@ uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
   return (gpsSecond);
 }
 
-//Get the current millisecond
-uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
-{
-  if (moduleQueried.gpsiTOW == false)
-    getPVT();
-  moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
-  return (gpsMillisecond);
-}
-
-//Get the current nanoseconds - includes milliseconds
-int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
-{
-  if (moduleQueried.gpsNanosecond == false)
-    getPVT();
-  moduleQueried.gpsNanosecond = false; //Since we are about to give this to user, mark this data as stale
-  return (gpsNanosecond);
-}
-
 //Get the latest Position/Velocity/Time solution and fill all global variables
 boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 {
-  if (autoPVT && autoPVTImplicitUpdate)
+  if (autoPVT)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUblox();
     return moduleQueried.all;
-  }
-  else if (autoPVT && !autoPVTImplicitUpdate)
-  {
-    //Someone else has to call checkUblox for us...
-    return (false);
   }
   else
   {
@@ -1767,81 +1669,6 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     return sendCommand(packetCfg, maxWait);
     return (false); //If command send fails then bail
   }
-}
-
-uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.timeOfWeek == false)
-    getHPPOSLLH();
-  highResModuleQueried.timeOfWeek = false; //Since we are about to give this to user, mark this data as stale
-  return (timeOfWeek);
-}
-
-int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.highResLatitude == false)
-    getHPPOSLLH();
-  highResModuleQueried.highResLatitude = false; //Since we are about to give this to user, mark this data as stale
-  return (highResLatitude);
-}
-
-int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.highResLongitude == false)
-    getHPPOSLLH();
-  highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
-  return (highResLongitude);
-}
-
-int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.elipsoid == false)
-    getHPPOSLLH();
-  highResModuleQueried.elipsoid = false; //Since we are about to give this to user, mark this data as stale
-  return (elipsoid);
-}
-
-int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.meanSeaLevel == false)
-    getHPPOSLLH();
-  highResModuleQueried.meanSeaLevel = false; //Since we are about to give this to user, mark this data as stale
-  return (meanSeaLevel);
-}
-
-int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.geoidSeparation == false)
-    getHPPOSLLH();
-  highResModuleQueried.geoidSeparation = false; //Since we are about to give this to user, mark this data as stale
-  return (geoidSeparation);
-}
-
-uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.horizontalAccuracy == false)
-    getHPPOSLLH();
-  highResModuleQueried.horizontalAccuracy = false; //Since we are about to give this to user, mark this data as stale
-  return (horizontalAccuracy);
-}
-
-uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait /* = 250*/)
-{
-  if (highResModuleQueried.verticalAccuracy == false)
-    getHPPOSLLH();
-  highResModuleQueried.verticalAccuracy = false; //Since we are about to give this to user, mark this data as stale
-  return (verticalAccuracy);
-}
-
-boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
-{
-  //The GPS is not automatically reporting navigation position so we have to poll explicitly
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_HPPOSLLH;
-  packetCfg.len = 0;
-
-  return sendCommand(packetCfg, maxWait);
-  return (false); //If command send fails then bail
 }
 
 //Get the current 3D high precision positional accuracy - a fun thing to watch
@@ -1864,7 +1691,6 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 
   return (tempAccuracy);
 }
-
 //Get the current latitude in degrees
 //Returns a long representing the number of degrees *10^-7
 int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
@@ -2062,8 +1888,8 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
   //We got a response, now parse the bits
 
   uint16_t refStationID = extractInt(2);
-  //_debugSerial->print("refStationID: ");
-  //_debugSerial->println(refStationID);
+  Serial.print("refStationID: ");
+  Serial.println(refStationID);
 
   int32_t tempRelPos;
 
