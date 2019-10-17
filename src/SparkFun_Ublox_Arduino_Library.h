@@ -1,45 +1,55 @@
 /*
-  This is a library written for the Ublox NEO-M8P-2
-  SparkFun sells these at its website: www.sparkfun.com
-  Do you like this library? Help support SparkFun. Buy a board!
-  https://www.sparkfun.com/products/14586
+	This is a library written for the Ublox NEO-M8P-2
+	SparkFun sells these at its website: www.sparkfun.com
+	Do you like this library? Help support SparkFun. Buy a board!
+	https://www.sparkfun.com/products/14586
 
-  Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
 
-  The NEO-M8P-2 is a powerful GPS receiver capable of calculating correction data
-  to achieve 2cm accuracy.
+	The NEO-M8P-2 is a powerful GPS receiver capable of calculating correction data
+	to achieve 2cm accuracy.
 
-  This library handles the configuration of 'survey-in', RTCM messages, and to output
-  the RTCM messages to the user's selected stream
+	This library handles the configuration of 'survey-in', RTCM messages, and to output
+	the RTCM messages to the user's selected stream
 
-  https://github.com/sparkfun/SparkFun_RTK_Arduino_Library
+	https://github.com/sparkfun/SparkFun_RTK_Arduino_Library
 
-  Development environment specifics:
-  Arduino IDE 1.8.5
+	Development environment specifics:
+	Arduino IDE 1.8.5
 
-  Modified by David Mann @ Loggerhead Instruments, 16 April 2019
-  - Added support for parsing date and time
-  - Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
+	Modified by David Mann @ Loggerhead Instruments, 16 April 2019
+	- Added support for parsing date and time
+	- Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
 
-  Modified by Steven Rowland, June 11th, 2019
-  - Added functionality for reading HPPOSLLH (High Precision Geodetic Position)
-  - Added getTimeOfWeek(), getHighResLatitude(). getHighResLongitude(), getElipsoid(), 
-    getMeanSeaLevel(), getHorizontalAccuracy(), getVerticalAccuracy(), getHPPOSLLH()
-  - Modified ProcessUBXPacket to parse HPPOSLLH packet
-  - Added query staleness verification for HPPOSLLH data 
+	Modified by Steven Rowland, June 11th, 2019
+	- Added functionality for reading HPPOSLLH (High Precision Geodetic Position)
+	- Added getTimeOfWeek(), getHighResLatitude(). getHighResLongitude(), getElipsoid(), 
+	getMeanSeaLevel(), getHorizontalAccuracy(), getVerticalAccuracy(), getHPPOSLLH()
+	- Modified ProcessUBXPacket to parse HPPOSLLH packet
+	- Added query staleness verification for HPPOSLLH data 
 
-   Modified by Paul Clark, 1st July 2019
-   - Added 8 and 32 bit versions of setVal
-   - Added newCfgValset8/16/32, addCfgValset8/16/32 and sendCfgValset8/16/32
-     to support the setting of multiple keyID and value pairs simultaneously
+	Modified by Paul Clark, 1st July 2019
+	- Added 8 and 32 bit versions of setVal
+	- Added newCfgValset8/16/32, addCfgValset8/16/32 and sendCfgValset8/16/32
+		to support the setting of multiple keyID and value pairs simultaneously
 
- This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU General Public License for more details.
+	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
+	The MIT License (MIT)
+	Copyright (c) 2016 SparkFun Electronics
+	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
+	associated documentation files (the "Software"), to deal in the Software without restriction, 
+	including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to 
+	do so, subject to the following conditions:
 
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	The above copyright notice and this permission notice shall be included in all copies or substantial 
+	portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT 
+	NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #ifndef SPARKFUN_UBLOX_ARDUINO_LIBRARY_H
