@@ -663,7 +663,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       highResModuleQueried.geoidSeparation = true;
       highResModuleQueried.horizontalAccuracy = true;
       highResModuleQueried.verticalAccuracy = true;
-      moduleQueried.timeOfWeek = true; // this can arrive here too.
+      moduleQueried.gpsiTOW = true; // this can arrive via HPPOS too.
 
       if (_printDebug == true)
       {
