@@ -102,3 +102,8 @@ Please use, reuse, and modify these files as you see fit. Please maintain attrib
 Distributed as-is; no warranty is given.
 
 - Your friends at SparkFun.
+
+Thanks to:
+* David Mann @ Loggerhead Instruments, April 2019, date and time additions
+* Steven Rowland, June  2019, HPPOSLLH (High Precision Geodetic Position)
+* Paul Clark, July 2019, 8/16/32 bit versions of setVal, addCfg, etc

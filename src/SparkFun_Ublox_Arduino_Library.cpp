@@ -17,22 +17,6 @@
 	Development environment specifics:
 	Arduino IDE 1.8.5
 
-	Modified by David Mann @ Loggerhead Instruments, 16 April 2019
-	- Added support for parsing date and time
-	- Added functions getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()
-
-	Modified by Steven Rowland, June 11th, 2019
-	- Added functionality for reading HPPOSLLH (High Precision Geodetic Position)
-	- Added getTimeOfWeek(), getHighResLatitude(). getHighResLongitude(), getElipsoid(), 
-	getMeanSeaLevel(), getHorizontalAccuracy(), getVerticalAccuracy(), getHPPOSLLH()
-	- Modified ProcessUBXPacket to parse HPPOSLLH packet
-	- Added query staleness verification for HPPOSLLH data 
-
-	Modified by Paul Clark, 1st July 2019
-	- Added 8 and 32 bit versions of setVal
-	- Added newCfgValset8/16/32, addCfgValset8/16/32 and sendCfgValset8/16/32
-	to support the setting of multiple keyID and value pairs simultaneously
-
 	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
 	The MIT License (MIT)
 	Copyright (c) 2016 SparkFun Electronics
