@@ -585,6 +585,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into global vars
       constexpr int startingSpot = 0; //fixed value used in processUBX
 
+      timeOfWeek = extractLong(0);
       gpsMillisecond = extractLong(0) % 1000; //Get last three digits of iTOW
       gpsYear = extractInt(4);
       gpsMonth = extractByte(6);
@@ -639,7 +640,6 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       verticalAccuracy = extractLong(32);
 
       highResModuleQueried.all = true;
-      highResModuleQueried.timeOfWeek = true;
       highResModuleQueried.highResLatitude = true;
       highResModuleQueried.highResLongitude = true;
       highResModuleQueried.elipsoid = true;
@@ -647,6 +647,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       highResModuleQueried.geoidSeparation = true;
       highResModuleQueried.horizontalAccuracy = true;
       highResModuleQueried.verticalAccuracy = true;
+      moduleQueried.gpsiTOW = true; // this can arrive via HPPOS too.
 
       if (_printDebug == true)
       {
@@ -1765,11 +1766,12 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 
 uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait /* = 250*/)
 {
-  if (highResModuleQueried.timeOfWeek == false)
-    getHPPOSLLH();
-  highResModuleQueried.timeOfWeek = false; //Since we are about to give this to user, mark this data as stale
+  if (moduleQueried.gpsiTOW == false)
+    getPVT();
+  moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
   return (timeOfWeek);
 }
+
 
 int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
 {
