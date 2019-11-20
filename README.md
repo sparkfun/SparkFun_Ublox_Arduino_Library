@@ -30,7 +30,8 @@ Thanks to:
 * [tve](https://github.com/tve) for building out serial additions and examples
 * [Redstoned](https://github.com/Redstoned) and [davidallenmann](https://github.com/davidallenmann) for adding PVT date and time
 * [wittend](https://forum.sparkfun.com/viewtopic.php?t=49874) for pointing out the RTCM print bug
-* Big thanks to [PaulZC] for implementing the combined key ValSet method
+* Big thanks to [PaulZC](https://github.com/PaulZC) for implementing the combined key ValSet method
+* [RollieRowland](https://github.com/RollieRowland) for adding HPPOSLLH (High Precision Geodetic Position)
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
@@ -102,3 +103,4 @@ Please use, reuse, and modify these files as you see fit. Please maintain attrib
 Distributed as-is; no warranty is given.
 
 - Your friends at SparkFun.
+
