@@ -107,6 +107,8 @@ const uint8_t UBX_CFG_GEOFENCE = 0x69; //Used to configure a geofence
 const uint8_t UBX_CFG_ANT = 0x13; //Used to configure the antenna control settings
 const uint8_t UBX_NAV_GEOFENCE = 0x39; //Used to poll the geofence status
 
+const uint8_t UBX_CFG_NAV5 = 0x24; //Used to configure the navigation engine including the dynamic model
+
 const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
 const uint8_t SVIN_MODE_DISABLE = 0x00;
 const uint8_t SVIN_MODE_ENABLE = 0x01;
@@ -344,6 +346,9 @@ public:
   boolean clearGeofences(uint16_t maxWait = 2000); //Clears all geofences
   boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 2000);  //Returns the combined geofence state
 
+  //Change the dynamic platform model using UBX-CFG-NAV5
+  boolean setDynamicModel(uint8_t newDynamicModel = PEDESTRIAN, uint16_t maxWait = 2000);
+
 	//Survey-in specific controls
 	struct svinStructure
 	{
@@ -416,6 +421,20 @@ public:
 	uint32_t verticalAccuracy;
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
+
+  enum dynModel // Possible values for the dynamic platform model
+  {
+    PORTABLE = 0,
+    STATIONARY,
+    PEDESTRIAN,
+    AUTOMOTIVE,
+    SEA,
+    AIRBORNE1g,
+    AIRBORNE2g,
+    AIRBORNE4g,
+    WRIST, // Not supported in protocol versions less than 18
+    BIKE // Supported in protocol versions 19.2
+  };
 
 private:
 	//Depending on the sentence type the processor will load characters into different arrays
