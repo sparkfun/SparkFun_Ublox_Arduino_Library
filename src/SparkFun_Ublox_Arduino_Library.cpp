@@ -1789,6 +1789,33 @@ boolean SFE_UBLOX_GPS::getGeofenceState(geofenceState &currentGeofenceState, uin
   return(true);
 }
 
+//Changes the dynamic platform model using UBX-CFG-NAV5
+//Possible values are:
+//PORTABLE,STATIONARY,PEDESTRIAN,AUTOMOTIVE,SEA,
+//AIRBORNE1g,AIRBORNE2g,AIRBORNE4g,WRIST,BIKE
+//WRIST is not supported in protocol versions less than 18
+//BIKE is supported in protocol versions 19.2
+
+boolean SFE_UBLOX_GPS::setDynamicModel(uint8_t newDynamicModel, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAV5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current navigation model settings. Loads into payloadCfg.
+  return (false);
+
+  payloadCfg[0] = 0x01; // mask: set only the dyn bit (0)
+  payloadCfg[1] = 0x00; // mask
+  payloadCfg[2] = newDynamicModel; // dynModel
+
+  packetCfg.len = 36;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
 //Given a spot in the payload array, extract four bytes and build a long
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {
