@@ -425,7 +425,8 @@ public:
   enum dynModel // Possible values for the dynamic platform model
   {
     PORTABLE = 0,
-    STATIONARY,
+    // 1 is not defined
+    STATIONARY = 2,
     PEDESTRIAN,
     AUTOMOTIVE,
     SEA,
