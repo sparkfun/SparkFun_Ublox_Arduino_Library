@@ -1816,6 +1816,33 @@ boolean SFE_UBLOX_GPS::setDynamicModel(uint8_t newDynamicModel, uint16_t maxWait
   return (sendCommand(packetCfg, maxWait)); //Wait for ack
 }
 
+//Power Save Mode
+//Enables/Disables Low Power Mode using UBX-CFG-RXM
+boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current power management settings. Loads into payloadCfg.
+  return (false);
+
+  if (power_save)
+  {
+    payloadCfg[1] = 1; // Power Save Mode
+  }
+  else
+  {
+    payloadCfg[1] = 0; // Continuous Mode
+  }
+  
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
 //Given a spot in the payload array, extract four bytes and build a long
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {

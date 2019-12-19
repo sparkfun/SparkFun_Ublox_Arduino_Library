@@ -127,6 +127,8 @@ getGeofenceState	KEYWORD2
 
 setDynamicModel	KEYWORD2
 
+powerSaveMode	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################

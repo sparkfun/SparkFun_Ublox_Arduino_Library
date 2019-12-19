@@ -99,6 +99,7 @@ const uint8_t UBX_CFG_PRT = 0x00;	//Used to configure port specifics
 const uint8_t UBX_CFG_RST = 0x04;	//Used to reset device
 const uint8_t UBX_CFG_RATE = 0x08;   //Used to set port baud rates
 const uint8_t UBX_CFG_CFG = 0x09;	//Used to save current configuration
+const uint8_t UBX_CFG_RXM = 0x11;	//Used to set receiver power management (power save mode)
 const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALGET = 0x8B; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALDEL = 0x8C; //Used for config of higher version Ublox modules (ie protocol v27 and above)
@@ -348,6 +349,9 @@ public:
 
   //Change the dynamic platform model using UBX-CFG-NAV5
   boolean setDynamicModel(uint8_t newDynamicModel = PEDESTRIAN, uint16_t maxWait = 2000);
+
+  //Power Save Mode
+  boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 2000);
 
 	//Survey-in specific controls
 	struct svinStructure
