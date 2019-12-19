@@ -94,6 +94,7 @@ const uint8_t UBX_CLASS_MGA = 0x13;
 const uint8_t UBX_CLASS_LOG = 0x21;
 const uint8_t UBX_CLASS_SEC = 0x27;
 const uint8_t UBX_CLASS_HNR = 0x28;
+const uint8_t UBX_CLASS_NMEA = 0xF0;
 
 const uint8_t UBX_CFG_PRT = 0x00;	//Used to configure port specifics
 const uint8_t UBX_CFG_RST = 0x04;	//Used to reset device
@@ -112,6 +113,17 @@ const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high pre
 const uint8_t UBX_NAV_HPPOSLLH = 0x14;  //Used for obtaining lat/long/alt in high precision
 const uint8_t UBX_NAV_SVIN = 0x3B;		//Used for checking Survey In status
 const uint8_t UBX_NAV_RELPOSNED = 0x3C; //Relative Positioning Information in NED frame
+
+const uint8_t UBX_NMEA_GGA = 0x00;
+const uint8_t UBX_NMEA_GLL = 0x01;
+const uint8_t UBX_NMEA_GNS = 0x0D;
+const uint8_t UBX_NMEA_GRS = 0x06;
+const uint8_t UBX_NMEA_GSA = 0x02;
+const uint8_t UBX_NMEA_GST = 0x07;
+const uint8_t UBX_NMEA_GSV = 0x03;
+const uint8_t UBX_NMEA_RMC = 0x04;
+const uint8_t UBX_NMEA_VTG = 0x05;
+const uint8_t UBX_NMEA_ZDA = 0x08;
 
 const uint8_t UBX_MON_VER = 0x04;   //Used for obtaining Protocol Version
 const uint8_t UBX_MON_TXBUF = 0x08; //Used for query tx buffer size/state
@@ -235,6 +247,7 @@ public:
 	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
 
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true);				 //In case no config access to the GPS is possible and PVT is send cyclically already
+    boolean setCFG_MSG(uint8_t msgClass, uint8_t messageID, uint8_t rate, uint16_t maxWait = 250);
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250);						 //Enable/disable automatic PVT reports at the navigation frequency
 	boolean getPVT(uint16_t maxWait = 1000);											 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
