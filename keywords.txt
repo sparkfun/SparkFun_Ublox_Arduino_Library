@@ -121,6 +121,10 @@ getGeoidSeparation KEYWORD2
 getHorizontalAccuracy KEYWORD2
 getVerticalAccuracy KEYWORD2
 
+addGeofence	KEYWORD2
+clearGeofences	KEYWORD2
+getGeofenceState	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################

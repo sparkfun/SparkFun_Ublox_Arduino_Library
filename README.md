@@ -32,7 +32,7 @@ Thanks to:
 * [tve](https://github.com/tve) for building out serial additions and examples
 * [Redstoned](https://github.com/Redstoned) and [davidallenmann](https://github.com/davidallenmann) for adding PVT date and time
 * [wittend](https://forum.sparkfun.com/viewtopic.php?t=49874) for pointing out the RTCM print bug
-* Big thanks to [PaulZC](https://github.com/PaulZC) for implementing the combined key ValSet method
+* Big thanks to [PaulZC](https://github.com/PaulZC) for implementing the combined key ValSet method and geofence functions
 * [RollieRowland](https://github.com/RollieRowland) for adding HPPOSLLH (High Precision Geodetic Position)
 * [tedder](https://github.com/tedder) for moving iTOW to PVT instead of HPPOS and comment cleanup
 
