@@ -1794,7 +1794,7 @@ boolean SFE_UBLOX_GPS::getGeofenceState(geofenceState &currentGeofenceState, uin
 boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
 {
   // Let's begin by checking the Protocol Version as UBX_CFG_RXM is not supported on the ZED (protocol >= 27)
-  uint8_t protVer = getProtocolVersionHigh();
+  uint8_t protVer = getProtocolVersionHigh(maxWait);
   /*
   if (_printDebug == true)
   {
