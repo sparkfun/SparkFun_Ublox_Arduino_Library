@@ -164,7 +164,7 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
     _debugSerial->println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
   }
 
-  sendCommand(packetCfg);
+  sendCommand(packetCfg, maxWait);
 }
 
 //Changes the I2C address that the Ublox module responds to
@@ -172,7 +172,7 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
 boolean SFE_UBLOX_GPS::setI2CAddress(uint8_t deviceAddress, uint16_t maxWait)
 {
   //Get the current config values for the I2C port
-  getPortSettings(COM_PORT_I2C); //This will load the payloadCfg array with current port settings
+  getPortSettings(COM_PORT_I2C, maxWait); //This will load the payloadCfg array with current port settings
 
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
@@ -1361,7 +1361,7 @@ boolean SFE_UBLOX_GPS::getSurveyMode(uint16_t maxWait)
 //Control Survey-In for NEO-M8P
 boolean SFE_UBLOX_GPS::setSurveyMode(uint8_t mode, uint16_t observationTime, float requiredAccuracy, uint16_t maxWait)
 {
-  if (getSurveyMode() == false) //Ask module for the current TimeMode3 settings. Loads into payloadCfg.
+  if (getSurveyMode(maxWait) == false) //Ask module for the current TimeMode3 settings. Loads into payloadCfg.
     return (false);
 
   packetCfg.cls = UBX_CLASS_CFG;
@@ -1488,9 +1488,13 @@ boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
 boolean SFE_UBLOX_GPS::setPortOutput(uint8_t portID, uint8_t outStreamSettings, uint16_t maxWait)
 {
   //Get the current config values for this port ID
-  if (getPortSettings(portID) == false)
+  if (getPortSettings(portID, maxWait) == false)
     return (false); //Something went wrong. Bail.
 
+  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
+  waitForResponse(UBX_CLASS_CFG, UBX_CFG_PRT, 100); // But we'll only wait for 100msec max
+  
   //Yes, this is the depreciated way to do it but it's still supported on v27 so it
   //covers both ZED-F9P (v27) and SAM-M8Q (v18)
 
@@ -1512,9 +1516,13 @@ boolean SFE_UBLOX_GPS::setPortInput(uint8_t portID, uint8_t inStreamSettings, ui
 {
   //Get the current config values for this port ID
   //This will load the payloadCfg array with current port settings
-  if (getPortSettings(portID) == false)
+  if (getPortSettings(portID, maxWait) == false)
     return (false); //Something went wrong. Bail.
 
+  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
+  waitForResponse(UBX_CLASS_CFG, UBX_CFG_PRT, 100); // But we'll only wait for 100msec max
+  
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
   packetCfg.len = 20;
@@ -1787,6 +1795,36 @@ boolean SFE_UBLOX_GPS::getGeofenceState(geofenceState &currentGeofenceState, uin
   if (currentGeofenceState.numFences > 3) currentGeofenceState.states[3] = payloadCfg[14]; // Extract geofence 4 state
 
   return(true);
+}
+
+//Change the dynamic platform model using UBX-CFG-NAV5
+//Possible values are:
+//PORTABLE,STATIONARY,PEDESTRIAN,AUTOMOTIVE,SEA,
+//AIRBORNE1g,AIRBORNE2g,AIRBORNE4g,WRIST,BIKE
+//WRIST is not supported in protocol versions less than 18
+//BIKE is supported in protocol versions 19.2
+boolean SFE_UBLOX_GPS::setDynamicModel(uint8_t newDynamicModel, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAV5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current navigation model settings. Loads into payloadCfg.
+  return (false);
+
+  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
+  waitForResponse(UBX_CLASS_CFG, UBX_CFG_NAV5, 100); // But we'll only wait for 100msec max
+
+  payloadCfg[0] = 0x01; // mask: set only the dyn bit (0)
+  payloadCfg[1] = 0x00; // mask
+  payloadCfg[2] = newDynamicModel; // dynModel
+
+  packetCfg.len = 36;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
 }
 
 //Given a spot in the payload array, extract four bytes and build a long

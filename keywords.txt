@@ -125,6 +125,8 @@ addGeofence	KEYWORD2
 clearGeofences	KEYWORD2
 getGeofenceState	KEYWORD2
 
+setDynamicModel	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
