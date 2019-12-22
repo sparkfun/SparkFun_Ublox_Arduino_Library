@@ -1789,6 +1789,53 @@ boolean SFE_UBLOX_GPS::getGeofenceState(geofenceState &currentGeofenceState, uin
   return(true);
 }
 
+//Power Save Mode
+//Enables/Disables Low Power Mode using UBX-CFG-RXM
+boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
+{
+  // Let's begin by checking the Protocol Version as UBX_CFG_RXM is not supported on the ZED (protocol >= 27)
+  uint8_t protVer = getProtocolVersionHigh();
+  /*
+  if (_printDebug == true)
+  {
+    _debugSerial->print("Protocol version is ");
+    _debugSerial->println(protVer);
+  }
+  */
+  if (protVer >= 27)
+  {
+    debugPrintln((char *)"powerSaveMode (UBX-CFG-RXM) is not supported by this protocol version");
+    return (false);
+  }
+
+  // Now let's change the power setting using UBX-CFG-RXM
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current power management settings. Loads into payloadCfg.
+    return (false);
+
+  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
+  waitForResponse(UBX_CLASS_CFG, UBX_CFG_RXM, 100); // But we'll only wait for 100msec max
+
+  if (power_save)
+  {
+    payloadCfg[1] = 1; // Power Save Mode
+  }
+  else
+  {
+    payloadCfg[1] = 0; // Continuous Mode
+  }
+	
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
 //Given a spot in the payload array, extract four bytes and build a long
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {
@@ -2133,7 +2180,7 @@ uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
-    getProtocolVersion();
+    getProtocolVersion(maxWait);
   moduleQueried.versionNumber = false;
   return (versionHigh);
 }
@@ -2143,7 +2190,7 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionLow(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
-    getProtocolVersion();
+    getProtocolVersion(maxWait);
   moduleQueried.versionNumber = false;
   return (versionLow);
 }
@@ -2166,6 +2213,10 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
     if (sendCommand(packetCfg, maxWait) == false)
       return (false); //If command send fails then bail
 
+	  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+	  // This is only required because we are doing multiple sendCommands in quick succession using the same class and ID
+	  waitForResponse(UBX_CLASS_MON, UBX_MON_VER, 100); // But we'll only wait for 100msec max
+
     if (_printDebug == true)
     {
       _debugSerial->print("Extension ");
@@ -2185,7 +2236,7 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
     {
       versionHigh = (payloadCfg[8] - '0') * 10 + (payloadCfg[9] - '0');  //Convert '18' to 18
       versionLow = (payloadCfg[11] - '0') * 10 + (payloadCfg[12] - '0'); //Convert '00' to 00
-      return (versionLow);
+      return (true); // This function returns a boolean (so we can't return versionLow)
     }
   }
 
