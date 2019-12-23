@@ -7,12 +7,14 @@ SparkFun Ublox Arduino Library
    <td><a href="https://www.sparkfun.com/products/15005"><img src="https://cdn.sparkfun.com//assets/parts/1/3/3/2/0/15005-SparkFun_GPS-RTK__Qwiic__-_NEO-M8P-2-00.jpg"></a></td>
    <td><a href="https://www.sparkfun.com/products/15193"><img src="https://cdn.sparkfun.com//assets/parts/1/3/6/1/4/15193-SparkFun_GPS_Breakout_-_U.FL__ZOE-M8__Qwiic_-01.jpg"></a></td>
    <td><a href="https://www.sparkfun.com/products/15210"><img src="https://cdn.sparkfun.com//assets/parts/1/3/6/4/8/15210-SparkFun_GPS_Breakout_-_Chip_Antenna__SAM-M8Q__Qwiic_-01.jpg"></a></td>
+    <td><a href="https://www.sparkfun.com/products/15733"><img src="https://cdn.sparkfun.com//assets/parts/1/4/3/2/2/15733-SparkFun_GPS_Breakout_-_NEO-M9N__Chip_Antenna__Qwiic_-01.jpg"></a></td>
   </tr>
   <tr align="center">
     <td><a href="https://www.sparkfun.com/products/15136">SparkFun GPS-RTK2 - ZED-F9P (GPS-15136)</a></td>
     <td><a href="https://www.sparkfun.com/products/15005">SparkFun GPS-RTK - NEO-M8P-2 (GPS-15005)</a></td>
     <td><a href="https://www.sparkfun.com/products/15193">SparkFun ZOE-M8Q Breakout (GPS-15193)</a></td>
     <td><a href="https://www.sparkfun.com/products/15210">SparkFun SAM-M8Q Breakout (GPS-15210)</a></td>
+    <td><a href="https://www.sparkfun.com/products/15733">SparkFun NEO-M9N Breakout (GPS-15733)</a></td>
   </tr>
 </table>
 
@@ -30,7 +32,7 @@ Thanks to:
 * [tve](https://github.com/tve) for building out serial additions and examples
 * [Redstoned](https://github.com/Redstoned) and [davidallenmann](https://github.com/davidallenmann) for adding PVT date and time
 * [wittend](https://forum.sparkfun.com/viewtopic.php?t=49874) for pointing out the RTCM print bug
-* Big thanks to [PaulZC](https://github.com/PaulZC) for implementing the combined key ValSet method
+* Big thanks to [PaulZC](https://github.com/PaulZC) for implementing the combined key ValSet method and geofence functions
 * [RollieRowland](https://github.com/RollieRowland) for adding HPPOSLLH (High Precision Geodetic Position)
 * [tedder](https://github.com/tedder) for moving iTOW to PVT instead of HPPOS and comment cleanup
 
@@ -89,6 +91,8 @@ Products That Use This Library
 * [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun GPS-RTK NEO-M8P-2
 * [GPS-15210](https://www.sparkfun.com/products/15210) - SparkFun GPS Breakout - Chip Antenna, SAM-M8Q (Qwiic)
 * [GPS-15193](https://www.sparkfun.com/products/15193) - SparkFun GPS Breakout - Chip Antenna, ZOE-M8Q (Qwiic)
+* [GPS-15733](https://www.sparkfun.com/products/15733) - SparkFun GPS Breakout - NEO-M9N, Chip Antenna (Qwiic)
+* [GPS-15712](https://www.sparkfun.com/products/15712) - SparkFun GPS Breakout - NEO-M9N, U.FL (Qwiic)
 * [SPX-14980](https://www.sparkfun.com/products/14980) - SparkX GPS-RTK Black
 * [SPX-15106](https://www.sparkfun.com/products/15106) - SparkX SAM-M8Q
 

@@ -41,6 +41,7 @@
 SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
 {
   // Constructor
+  currentGeofenceParams.numFences = 0; // Zero the number of geofences currently in use
 }
 
 //Initialize the Serial port
@@ -1652,6 +1653,203 @@ boolean SFE_UBLOX_GPS::setCFG_MSG(uint8_t msgClass, uint8_t messageID, uint8_t r
   return ok;
 }
 
+//Add a new geofence using UBX-CFG-GEOFENCE
+boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence, byte pinPolarity, byte pin, uint16_t maxWait)
+{
+  if (currentGeofenceParams.numFences >= 4) return(false); // Quit if we already have four geofences defined
+
+  // Store the new geofence parameters
+  currentGeofenceParams.lats[currentGeofenceParams.numFences] = latitude;
+  currentGeofenceParams.longs[currentGeofenceParams.numFences] = longitude;
+  currentGeofenceParams.rads[currentGeofenceParams.numFences] = radius;
+  currentGeofenceParams.numFences = currentGeofenceParams.numFences + 1; // Increment the number of fences
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_GEOFENCE;
+  packetCfg.len = (currentGeofenceParams.numFences * 12) + 8;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = 0; // Message version = 0x00
+  payloadCfg[1] = currentGeofenceParams.numFences; // numFences
+  payloadCfg[2] = confidence; // confLvl = Confidence level 0-4 (none, 68%, 95%, 99.7%, 99.99%)
+  payloadCfg[3] = 0; // reserved1
+  if (pin > 0)
+  {
+    payloadCfg[4] = 1; // enable PIO combined fence state
+  }
+  else
+  {
+    payloadCfg[4] = 0; // disable PIO combined fence state
+  }
+  payloadCfg[5] = pinPolarity; // PIO pin polarity (0 = low means inside, 1 = low means outside (or unknown))
+  payloadCfg[6] = pin; // PIO pin
+  payloadCfg[7] = 0; //reserved2
+  payloadCfg[8] = currentGeofenceParams.lats[0] & 0xFF;
+  payloadCfg[9] = currentGeofenceParams.lats[0] >> 8;
+  payloadCfg[10] = currentGeofenceParams.lats[0] >> 16;
+  payloadCfg[11] = currentGeofenceParams.lats[0] >> 24;
+  payloadCfg[12] = currentGeofenceParams.longs[0] & 0xFF;
+  payloadCfg[13] = currentGeofenceParams.longs[0] >> 8;
+  payloadCfg[14] = currentGeofenceParams.longs[0] >> 16;
+  payloadCfg[15] = currentGeofenceParams.longs[0] >> 24;
+  payloadCfg[16] = currentGeofenceParams.rads[0] & 0xFF;
+  payloadCfg[17] = currentGeofenceParams.rads[0] >> 8;
+  payloadCfg[18] = currentGeofenceParams.rads[0] >> 16;
+  payloadCfg[19] = currentGeofenceParams.rads[0] >> 24;
+  if (currentGeofenceParams.numFences >= 2) {
+    payloadCfg[20] = currentGeofenceParams.lats[1] & 0xFF;
+    payloadCfg[21] = currentGeofenceParams.lats[1] >> 8;
+    payloadCfg[22] = currentGeofenceParams.lats[1] >> 16;
+    payloadCfg[23] = currentGeofenceParams.lats[1] >> 24;
+    payloadCfg[24] = currentGeofenceParams.longs[1] & 0xFF;
+    payloadCfg[25] = currentGeofenceParams.longs[1] >> 8;
+    payloadCfg[26] = currentGeofenceParams.longs[1] >> 16;
+    payloadCfg[27] = currentGeofenceParams.longs[1] >> 24;
+    payloadCfg[28] = currentGeofenceParams.rads[1] & 0xFF;
+    payloadCfg[29] = currentGeofenceParams.rads[1] >> 8;
+    payloadCfg[30] = currentGeofenceParams.rads[1] >> 16;
+    payloadCfg[31] = currentGeofenceParams.rads[1] >> 24;
+  }
+  if (currentGeofenceParams.numFences >= 3) {
+    payloadCfg[32] = currentGeofenceParams.lats[2] & 0xFF;
+    payloadCfg[33] = currentGeofenceParams.lats[2] >> 8;
+    payloadCfg[34] = currentGeofenceParams.lats[2] >> 16;
+    payloadCfg[35] = currentGeofenceParams.lats[2] >> 24;
+    payloadCfg[36] = currentGeofenceParams.longs[2] & 0xFF;
+    payloadCfg[37] = currentGeofenceParams.longs[2] >> 8;
+    payloadCfg[38] = currentGeofenceParams.longs[2] >> 16;
+    payloadCfg[39] = currentGeofenceParams.longs[2] >> 24;
+    payloadCfg[40] = currentGeofenceParams.rads[2] & 0xFF;
+    payloadCfg[41] = currentGeofenceParams.rads[2] >> 8;
+    payloadCfg[42] = currentGeofenceParams.rads[2] >> 16;
+    payloadCfg[43] = currentGeofenceParams.rads[2] >> 24;
+  }
+  if (currentGeofenceParams.numFences >= 4) {
+    payloadCfg[44] = currentGeofenceParams.lats[3] & 0xFF;
+    payloadCfg[45] = currentGeofenceParams.lats[3] >> 8;
+    payloadCfg[46] = currentGeofenceParams.lats[3] >> 16;
+    payloadCfg[47] = currentGeofenceParams.lats[3] >> 24;
+    payloadCfg[48] = currentGeofenceParams.longs[3] & 0xFF;
+    payloadCfg[49] = currentGeofenceParams.longs[3] >> 8;
+    payloadCfg[50] = currentGeofenceParams.longs[3] >> 16;
+    payloadCfg[51] = currentGeofenceParams.longs[3] >> 24;
+    payloadCfg[52] = currentGeofenceParams.rads[3] & 0xFF;
+    payloadCfg[53] = currentGeofenceParams.rads[3] >> 8;
+    payloadCfg[54] = currentGeofenceParams.rads[3] >> 16;
+    payloadCfg[55] = currentGeofenceParams.rads[3] >> 24;
+  }
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
+//Clear all geofences using UBX-CFG-GEOFENCE
+boolean SFE_UBLOX_GPS::clearGeofences(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_GEOFENCE;
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = 0; // Message version = 0x00
+  payloadCfg[1] = 0; // numFences
+  payloadCfg[2] = 0; // confLvl
+  payloadCfg[3] = 0; // reserved1
+  payloadCfg[4] = 0; // disable PIO combined fence state
+  payloadCfg[5] = 0; // PIO pin polarity (0 = low means inside, 1 = low means outside (or unknown))
+  payloadCfg[6] = 0; // PIO pin
+  payloadCfg[7] = 0; //reserved2
+
+  currentGeofenceParams.numFences = 0; // Zero the number of geofences currently in use
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
+//Clear the antenna control settings using UBX-CFG-ANT
+//This function is hopefully redundant but may be needed to release
+//any PIO pins pre-allocated for antenna functions
+boolean SFE_UBLOX_GPS::clearAntPIO(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_ANT;
+  packetCfg.len = 4;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = 0x10; // Antenna flag mask: set the recovery bit
+  payloadCfg[1] = 0;
+  payloadCfg[2] = 0xFF; // Antenna pin configuration: set pinSwitch and pinSCD to 31
+  payloadCfg[3] = 0xFF; // Antenna pin configuration: set pinOCD to 31, set reconfig bit
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
+//Returns the combined geofence state using UBX-NAV-GEOFENCE
+boolean SFE_UBLOX_GPS::getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_GEOFENCE;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false) //Ask module for the geofence status. Loads into payloadCfg.
+  return (false);
+
+  currentGeofenceState.status = payloadCfg[5]; // Extract the status
+  currentGeofenceState.numFences = payloadCfg[6]; // Extract the number of geofences
+  currentGeofenceState.combState = payloadCfg[7]; // Extract the combined state of all geofences
+  if (currentGeofenceState.numFences > 0) currentGeofenceState.states[0] = payloadCfg[8]; // Extract geofence 1 state
+  if (currentGeofenceState.numFences > 1) currentGeofenceState.states[1] = payloadCfg[10]; // Extract geofence 2 state
+  if (currentGeofenceState.numFences > 2) currentGeofenceState.states[2] = payloadCfg[12]; // Extract geofence 3 state
+  if (currentGeofenceState.numFences > 3) currentGeofenceState.states[3] = payloadCfg[14]; // Extract geofence 4 state
+
+  return(true);
+}
+
+//Power Save Mode
+//Enables/Disables Low Power Mode using UBX-CFG-RXM
+boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
+{
+  // Let's begin by checking the Protocol Version as UBX_CFG_RXM is not supported on the ZED (protocol >= 27)
+  uint8_t protVer = getProtocolVersionHigh(maxWait);
+  /*
+  if (_printDebug == true)
+  {
+    _debugSerial->print("Protocol version is ");
+    _debugSerial->println(protVer);
+  }
+  */
+  if (protVer >= 27)
+  {
+    debugPrintln((char *)"powerSaveMode (UBX-CFG-RXM) is not supported by this protocol version");
+    return (false);
+  }
+
+  // Now let's change the power setting using UBX-CFG-RXM
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current power management settings. Loads into payloadCfg.
+    return (false);
+
+  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
+  waitForResponse(UBX_CLASS_CFG, UBX_CFG_RXM, 100); // But we'll only wait for 100msec max
+
+  if (power_save)
+  {
+    payloadCfg[1] = 1; // Power Save Mode
+  }
+  else
+  {
+    payloadCfg[1] = 0; // Continuous Mode
+  }
+	
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
 //Given a spot in the payload array, extract four bytes and build a long
 uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
 {
@@ -1996,7 +2194,7 @@ uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
-    getProtocolVersion();
+    getProtocolVersion(maxWait);
   moduleQueried.versionNumber = false;
   return (versionHigh);
 }
@@ -2006,7 +2204,7 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionLow(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
-    getProtocolVersion();
+    getProtocolVersion(maxWait);
   moduleQueried.versionNumber = false;
   return (versionLow);
 }
@@ -2029,6 +2227,10 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
     if (sendCommand(packetCfg, maxWait) == false)
       return (false); //If command send fails then bail
 
+	  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+	  // This is only required because we are doing multiple sendCommands in quick succession using the same class and ID
+	  waitForResponse(UBX_CLASS_MON, UBX_MON_VER, 100); // But we'll only wait for 100msec max
+
     if (_printDebug == true)
     {
       _debugSerial->print("Extension ");
@@ -2048,7 +2250,7 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
     {
       versionHigh = (payloadCfg[8] - '0') * 10 + (payloadCfg[9] - '0');  //Convert '18' to 18
       versionLow = (payloadCfg[11] - '0') * 10 + (payloadCfg[12] - '0'); //Convert '00' to 00
-      return (versionLow);
+      return (true); // This function returns a boolean (so we can't return versionLow)
     }
   }
 
