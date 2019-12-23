@@ -1639,6 +1639,20 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   return ok;
 }
 
+boolean SFE_UBLOX_GPS::setCFG_MSG(uint8_t msgClass, uint8_t messageID, uint8_t rate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = msgClass;
+  payloadCfg[1] = messageID;
+  payloadCfg[2] = rate;
+
+  bool ok = sendCommand(packetCfg, maxWait);
+  return ok;
+}
+
 //Add a new geofence using UBX-CFG-GEOFENCE
 boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence, byte pinPolarity, byte pin, uint16_t maxWait)
 {
