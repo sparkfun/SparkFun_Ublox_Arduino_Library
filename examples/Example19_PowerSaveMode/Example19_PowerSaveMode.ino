@@ -2,7 +2,7 @@
   Power Save Mode
   By: Paul Clark (PaulZC)
   Date: December 18th, 2019
-  
+
   Based extensively on Example3_GetPosition
   By: Nathan Seidle
   SparkFun Electronics
@@ -21,7 +21,7 @@
   Note: this will fail on the ZED (protocol version >= 27) as UBX-CFG-RXM is not supported
 
   Note: Long/lat are large numbers because they are * 10^7. To convert lat/long
-  to something google maps understands simply divide the numbers by 10,000,000. We 
+  to something google maps understands simply divide the numbers by 10,000,000. We
   do this so that we don't have to use floating point numbers.
 
   Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
@@ -48,7 +48,8 @@ long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox m
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial); //Wait for user to open terminal
+  while (!Serial)
+    ; //Wait for user to open terminal
   Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
@@ -56,56 +57,67 @@ void setup()
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
+    while (1)
+      ;
   }
 
   //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
 
-  Serial.println(F("Waiting for a 3D fix..."));
-
-  byte fixType = 0;
-
-  while (fixType != 3) // Wait for a 3D fix
-  {
-    fixType = myGPS.getFixType(); // Get the fix type
-    Serial.print(F("Fix: "));
-    Serial.print(fixType);
-    if(fixType == 0) Serial.print(F(" = No fix"));
-    else if(fixType == 1) Serial.print(F(" = Dead reckoning"));
-    else if(fixType == 2) Serial.print(F(" = 2D"));
-    else if(fixType == 3) Serial.print(F(" = 3D"));
-    else if(fixType == 4) Serial.print(F(" = GNSS + Dead reckoning"));
-    Serial.println();
-    delay(1000);
-  }
-
-  Serial.println(F("3D fix found! Engaging power save mode..."));
-
-  // Put the GNSS into power save mode
-  // (If you want to disable power save mode, call myGPS.powerSaveMode(false) instead)
-  // This will fail on the ZED (protocol version >= 27) as UBX-CFG-RXM is not supported
-  if (myGPS.powerSaveMode())
-  {
-    Serial.println(F("Power Save Mode enabled."));
-  }
-  else
-  {
-    Serial.println(F("***!!! Power Save Mode FAILED !!!***"));
-  }
-
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   //myGPS.saveConfiguration(); //Uncomment this line to save the current settings to flash and BBR
+
+  Serial.println("Power save example.");
+  Serial.println("1) Enable power saving");
+  Serial.println("2) Disable power saving");
 }
 
 void loop()
 {
+  if (Serial.available())
+  {
+    byte incoming = Serial.read();
+
+    if (incoming == '1')
+    {
+      // Put the GNSS into power save mode
+      // (If you want to disable power save mode, call myGPS.powerSaveMode(false) instead)
+      // This will fail on the ZED (protocol version >= 27) as UBX-CFG-RXM is not supported
+      if (myGPS.powerSaveMode())
+        Serial.println(F("Power Save Mode enabled."));
+      else
+        Serial.println(F("***!!! Power Save Mode FAILED !!!***"));
+    }
+    else if (incoming == '2')
+    {
+      //Go to normal power mode (not power saving mode)
+      if (myGPS.powerSaveMode(false))
+        Serial.println(F("Power Save Mode disabled."));
+      else
+        Serial.println(F("***!!! Power Save Disable FAILED !!!***"));
+    }
+  }
+
   //Query module every 10 seconds so it is easier to monitor the current draw
   if (millis() - lastTime > 10000)
   {
     lastTime = millis(); //Update the timer
-    
+
+    byte fixType = myGPS.getFixType(); // Get the fix type
+    Serial.print(F("Fix: "));
+    Serial.print(fixType);
+    if (fixType == 0)
+      Serial.print(F("(No fix)"));
+    else if (fixType == 1)
+      Serial.print(F("(Dead reckoning)"));
+    else if (fixType == 2)
+      Serial.print(F("(2D)"));
+    else if (fixType == 3)
+      Serial.print(F("(3D)"));
+    else if (fixType == 4)
+      Serial.print(F("(GNSS + Dead reckoning)"));
+
     long latitude = myGPS.getLatitude();
-    Serial.print(F("Lat: "));
+    Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
     long longitude = myGPS.getLongitude();
