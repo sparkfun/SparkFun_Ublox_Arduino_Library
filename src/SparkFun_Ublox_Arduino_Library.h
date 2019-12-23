@@ -96,11 +96,11 @@ const uint8_t UBX_CLASS_SEC = 0x27;
 const uint8_t UBX_CLASS_HNR = 0x28;
 const uint8_t UBX_CLASS_NMEA = 0xF0;
 
-const uint8_t UBX_CFG_PRT = 0x00;	//Used to configure port specifics
-const uint8_t UBX_CFG_RST = 0x04;	//Used to reset device
-const uint8_t UBX_CFG_RATE = 0x08;   //Used to set port baud rates
-const uint8_t UBX_CFG_CFG = 0x09;	//Used to save current configuration
-const uint8_t UBX_CFG_RXM = 0x11;	//Used to set receiver power management (power save mode)
+const uint8_t UBX_CFG_PRT = 0x00;  //Used to configure port specifics
+const uint8_t UBX_CFG_RST = 0x04;  //Used to reset device
+const uint8_t UBX_CFG_RATE = 0x08; //Used to set port baud rates
+const uint8_t UBX_CFG_CFG = 0x09;  //Used to save current configuration
+const uint8_t UBX_CFG_RXM = 0x11;  //Used to set receiver power management (power save mode)
 const uint8_t UBX_CFG_NAV5 = 0x24; //Used to configure the navigation engine including the dynamic model
 
 const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
@@ -186,6 +186,21 @@ const uint8_t VAL_GROUP_I2C = 0x51;
 const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_8; //All fields in I2C group are currently 1 byte
 
 const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
+
+enum dynModel // Possible values for the dynamic platform model
+{
+	DYN_MODEL_PORTABLE = 0,
+	// 1 is not defined
+	DYN_MODEL_STATIONARY = 2,
+	DYN_MODEL_PEDESTRIAN,
+	DYN_MODEL_AUTOMOTIVE,
+	DYN_MODEL_SEA,
+	DYN_MODEL_AIRBORNE1g,
+	DYN_MODEL_AIRBORNE2g,
+	DYN_MODEL_AIRBORNE4g,
+	DYN_MODEL_WRIST, // Not supported in protocol versions less than 18
+	DYN_MODEL_BIKE,  // Supported in protocol versions 19.2
+};
 
 #ifndef MAX_PAYLOAD_SIZE
 
@@ -372,8 +387,8 @@ public:
 
 	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 2000);
 
-  //Change the dynamic platform model using UBX-CFG-NAV5
-  boolean setDynamicModel(uint8_t newDynamicModel = PEDESTRIAN, uint16_t maxWait = 2000);
+	//Change the dynamic platform model using UBX-CFG-NAV5
+	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 2000);
 
 	//Survey-in specific controls
 	struct svinStructure
@@ -447,21 +462,6 @@ public:
 	uint32_t verticalAccuracy;
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
-
-  enum dynModel // Possible values for the dynamic platform model
-  {
-    PORTABLE = 0,
-    // 1 is not defined
-    STATIONARY = 2,
-    PEDESTRIAN,
-    AUTOMOTIVE,
-    SEA,
-    AIRBORNE1g,
-    AIRBORNE2g,
-    AIRBORNE4g,
-    WRIST, // Not supported in protocol versions less than 18
-    BIKE // Supported in protocol versions 19.2
-  };
 
 private:
 	//Depending on the sentence type the processor will load characters into different arrays

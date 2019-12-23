@@ -1455,7 +1455,7 @@ boolean SFE_UBLOX_GPS::setPortOutput(uint8_t portID, uint8_t outStreamSettings, 
   // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
   // This is only required because we are doing two sendCommands in quick succession using the same class and ID
   waitForResponse(UBX_CLASS_CFG, UBX_CFG_PRT, 100); // But we'll only wait for 100msec max
-  
+
   //Yes, this is the depreciated way to do it but it's still supported on v27 so it
   //covers both ZED-F9P (v27) and SAM-M8Q (v18)
 
@@ -1483,7 +1483,7 @@ boolean SFE_UBLOX_GPS::setPortInput(uint8_t portID, uint8_t inStreamSettings, ui
   // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
   // This is only required because we are doing two sendCommands in quick succession using the same class and ID
   waitForResponse(UBX_CLASS_CFG, UBX_CFG_PRT, 100); // But we'll only wait for 100msec max
-  
+
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
   packetCfg.len = 20;
@@ -1884,7 +1884,7 @@ boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
 //AIRBORNE1g,AIRBORNE2g,AIRBORNE4g,WRIST,BIKE
 //WRIST is not supported in protocol versions less than 18
 //BIKE is supported in protocol versions 19.2
-boolean SFE_UBLOX_GPS::setDynamicModel(uint8_t newDynamicModel, uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setDynamicModel(dynModel newDynamicModel, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_NAV5;
@@ -1892,14 +1892,14 @@ boolean SFE_UBLOX_GPS::setDynamicModel(uint8_t newDynamicModel, uint16_t maxWait
   packetCfg.startingSpot = 0;
 
   if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current navigation model settings. Loads into payloadCfg.
-  return (false);
+    return (false);
 
   // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
   // This is only required because we are doing two sendCommands in quick succession using the same class and ID
   waitForResponse(UBX_CLASS_CFG, UBX_CFG_NAV5, 100); // But we'll only wait for 100msec max
 
-  payloadCfg[0] = 0x01; // mask: set only the dyn bit (0)
-  payloadCfg[1] = 0x00; // mask
+  payloadCfg[0] = 0x01;            // mask: set only the dyn bit (0)
+  payloadCfg[1] = 0x00;            // mask
   payloadCfg[2] = newDynamicModel; // dynModel
 
   packetCfg.len = 36;
