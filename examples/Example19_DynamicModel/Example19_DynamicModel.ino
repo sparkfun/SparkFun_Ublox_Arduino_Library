@@ -45,7 +45,8 @@ long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox m
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial); //Wait for user to open terminal
+  while (!Serial)
+    ; //Wait for user to open terminal
   Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
@@ -53,7 +54,8 @@ void setup()
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
+    while (1)
+      ;
   }
 
   //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
@@ -62,8 +64,8 @@ void setup()
   // If we are going to change the dynamic platform model, let's do it here.
   // Possible values are:
   // PORTABLE, STATIONARY, PEDESTRIAN, AUTOMOTIVE, SEA, AIRBORNE1g, AIRBORNE2g, AIRBORNE4g, WRIST, BIKE
-  
-  if (!myGPS.setDynamicModel(myGPS.PORTABLE)) // Set the dynamic model to PORTABLE
+
+  if (myGPS.setDynamicModel(DYN_MODEL_PORTABLE) == false) // Set the dynamic model to PORTABLE
   {
     Serial.println("***!!! Warning: setDynamicModel failed !!!***");
   }
@@ -71,7 +73,7 @@ void setup()
   {
     Serial.println("Dynamic platform model changed successfully!");
   }
-          
+
   //myGPS.saveConfiguration(); //Uncomment this line to save the current settings to flash and BBR
 }
 
@@ -82,7 +84,7 @@ void loop()
   if (millis() - lastTime > 1000)
   {
     lastTime = millis(); //Update the timer
-    
+
     long latitude = myGPS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
