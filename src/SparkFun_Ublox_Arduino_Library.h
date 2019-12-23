@@ -291,30 +291,30 @@ public:
 
 	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
 
-  // getPVT will only return data once in each navigation cycle. By default, that is once per second.
-  // Therefore we should set getPVTmaxWait to slightly longer than that.
-  // If you change the navigation frequency to (e.g.) 4Hz using setNavigationFrequency(4)
-  // then you should use a shorter maxWait for getPVT. 300msec would be about right: getPVT(300)
-  // The same is true for getHPPOSLLH.
-  #define getPVTmaxWait 1100 // Default maxWait for getPVT and all functions which call it
-  #define getHPPOSLLHmaxWait 1100  // Default maxWait for getHPPOSLLH and all functions which call it
+// getPVT will only return data once in each navigation cycle. By default, that is once per second.
+// Therefore we should set getPVTmaxWait to slightly longer than that.
+// If you change the navigation frequency to (e.g.) 4Hz using setNavigationFrequency(4)
+// then you should use a shorter maxWait for getPVT. 300msec would be about right: getPVT(300)
+// The same is true for getHPPOSLLH.
+#define getPVTmaxWait 1100		// Default maxWait for getPVT and all functions which call it
+#define getHPPOSLLHmaxWait 1100 // Default maxWait for getHPPOSLLH and all functions which call it
 
-	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and PVT is send cyclically already
-	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency
-	boolean getPVT(uint16_t maxWait = getPVTmaxWait); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true);				 //In case no config access to the GPS is possible and PVT is send cyclically already
+	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250);						 //Enable/disable automatic PVT reports at the navigation frequency
+	boolean getPVT(uint16_t maxWait = getPVTmaxWait);									 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-	boolean getHPPOSLLH(uint16_t maxWait = getHPPOSLLHmaxWait); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+	boolean getHPPOSLLH(uint16_t maxWait = getHPPOSLLHmaxWait);							 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 
-	int32_t getLatitude(uint16_t maxWait = getPVTmaxWait); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getLongitude(uint16_t maxWait = getPVTmaxWait); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getAltitude(uint16_t maxWait = getPVTmaxWait); //Returns the current altitude in mm above ellipsoid
-	int32_t getAltitudeMSL(uint16_t maxWait = getPVTmaxWait); //Returns the current altitude in mm above mean sea level
-	uint8_t getSIV(uint16_t maxWait = getPVTmaxWait); //Returns number of sats used in fix
-	uint8_t getFixType(uint16_t maxWait = getPVTmaxWait); //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
+	int32_t getLatitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getLongitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getAltitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current altitude in mm above ellipsoid
+	int32_t getAltitudeMSL(uint16_t maxWait = getPVTmaxWait);		  //Returns the current altitude in mm above mean sea level
+	uint8_t getSIV(uint16_t maxWait = getPVTmaxWait);				  //Returns number of sats used in fix
+	uint8_t getFixType(uint16_t maxWait = getPVTmaxWait);			  //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 	uint8_t getCarrierSolutionType(uint16_t maxWait = getPVTmaxWait); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
-	int32_t getGroundSpeed(uint16_t maxWait = getPVTmaxWait); //Returns speed in mm/s
-	int32_t getHeading(uint16_t maxWait = getPVTmaxWait); //Returns heading in degrees * 10^-7
-	uint16_t getPDOP(uint16_t maxWait = getPVTmaxWait); //Returns positional dillution of precision * 10^-2
+	int32_t getGroundSpeed(uint16_t maxWait = getPVTmaxWait);		  //Returns speed in mm/s
+	int32_t getHeading(uint16_t maxWait = getPVTmaxWait);			  //Returns heading in degrees * 10^-7
+	uint16_t getPDOP(uint16_t maxWait = getPVTmaxWait);				  //Returns positional dillution of precision * 10^-2
 	uint16_t getYear(uint16_t maxWait = getPVTmaxWait);
 	uint8_t getMonth(uint16_t maxWait = getPVTmaxWait);
 	uint8_t getDay(uint16_t maxWait = getPVTmaxWait);
@@ -393,10 +393,10 @@ public:
 
 	//Support for geofences
 	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 1100); // Add a new geofence
-	boolean clearGeofences(uint16_t maxWait = 1100); //Clears all geofences
-	boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 1100); //Returns the combined geofence state
-	boolean clearAntPIO(uint16_t maxWait = 1100); //Clears the antenna control pin settings to release the PIOs
-	geofenceParams currentGeofenceParams; // Global to store the geofence parameters
+	boolean clearGeofences(uint16_t maxWait = 1100);																											 //Clears all geofences
+	boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 1100);																		 //Returns the combined geofence state
+	boolean clearAntPIO(uint16_t maxWait = 1100);																												 //Clears the antenna control pin settings to release the PIOs
+	geofenceParams currentGeofenceParams;																														 // Global to store the geofence parameters
 
 	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 1100);
 
