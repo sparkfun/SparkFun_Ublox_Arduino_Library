@@ -105,7 +105,7 @@ const uint8_t UBX_CFG_VALGET = 0x8B; //Used for config of higher version Ublox m
 const uint8_t UBX_CFG_VALDEL = 0x8C; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 
 const uint8_t UBX_CFG_GEOFENCE = 0x69; //Used to configure a geofence
-const uint8_t UBX_CFG_ANT = 0x13; //Used to configure the antenna control settings
+const uint8_t UBX_CFG_ANT = 0x13;	  //Used to configure the antenna control settings
 const uint8_t UBX_NAV_GEOFENCE = 0x39; //Used to poll the geofence status
 
 const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
@@ -195,19 +195,21 @@ typedef struct
 } ubxPacket;
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
-typedef struct {
-  uint8_t status; // Geofencing status: 0 - Geofencing not available or not reliable; 1 - Geofencing active
-  uint8_t numFences; // Number of geofences
-  uint8_t combState; // Combined (logical OR) state of all geofences: 0 - Unknown; 1 - Inside; 2 - Outside
-  uint8_t states[4]; // Geofence states: 0 - Unknown; 1 - Inside; 2 - Outside
+typedef struct
+{
+	uint8_t status;	// Geofencing status: 0 - Geofencing not available or not reliable; 1 - Geofencing active
+	uint8_t numFences; // Number of geofences
+	uint8_t combState; // Combined (logical OR) state of all geofences: 0 - Unknown; 1 - Inside; 2 - Outside
+	uint8_t states[4]; // Geofence states: 0 - Unknown; 1 - Inside; 2 - Outside
 } geofenceState;
 
 // Struct to hold the current geofence parameters
-typedef struct {
-  uint8_t numFences; // Number of active geofences
-  int32_t lats[4]; // Latitudes of geofences (in degrees * 10^-7)
-  int32_t longs[4]; // Longitudes of geofences (in degrees * 10^-7)
-  uint32_t rads[4]; // Radii of geofences (in m * 10^-2)
+typedef struct
+{
+	uint8_t numFences; // Number of active geofences
+	int32_t lats[4];   // Latitudes of geofences (in degrees * 10^-7)
+	int32_t longs[4];  // Longitudes of geofences (in degrees * 10^-7)
+	uint32_t rads[4];  // Radii of geofences (in m * 10^-2)
 } geofenceParams;
 
 class SFE_UBLOX_GPS
@@ -340,13 +342,13 @@ public:
 	void debugPrint(char *message);					  //Safely print debug statements
 	void debugPrintln(char *message);				  //Safely print debug statements
 
-  //Support for geofences
-  boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 2000); // Add a new geofence
-  boolean clearGeofences(uint16_t maxWait = 2000); //Clears all geofences
-  boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 2000);  //Returns the combined geofence state
+	//Support for geofences
+	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 2000); // Add a new geofence
+	boolean clearGeofences(uint16_t maxWait = 2000);																											 //Clears all geofences
+	boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 2000);																		 //Returns the combined geofence state
 
-  //Power Save Mode
-  boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 2000);
+	//Power Save Mode
+	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 2000);
 
 	//Survey-in specific controls
 	struct svinStructure
@@ -529,9 +531,9 @@ private:
 
 	uint16_t rtcmLen = 0;
 
-  //Support for geofences
-  boolean clearAntPIO(uint16_t maxWait = 2000); //Clears the antenna control pin settings to release the PIOs
-  geofenceParams currentGeofenceParams; // Global to store the geofence parameters
+	//Support for geofences
+	boolean clearAntPIO(uint16_t maxWait = 2000); //Clears the antenna control pin settings to release the PIOs
+	geofenceParams currentGeofenceParams;		  // Global to store the geofence parameters
 };
 
 #endif
