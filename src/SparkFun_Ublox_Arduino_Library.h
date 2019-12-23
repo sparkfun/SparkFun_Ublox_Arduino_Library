@@ -94,18 +94,21 @@ const uint8_t UBX_CLASS_MGA = 0x13;
 const uint8_t UBX_CLASS_LOG = 0x21;
 const uint8_t UBX_CLASS_SEC = 0x27;
 const uint8_t UBX_CLASS_HNR = 0x28;
+const uint8_t UBX_CLASS_NMEA = 0xF0;
 
 const uint8_t UBX_CFG_PRT = 0x00;	//Used to configure port specifics
 const uint8_t UBX_CFG_RST = 0x04;	//Used to reset device
 const uint8_t UBX_CFG_RATE = 0x08;   //Used to set port baud rates
 const uint8_t UBX_CFG_CFG = 0x09;	//Used to save current configuration
+const uint8_t UBX_CFG_RXM = 0x11;	//Used to set receiver power management (power save mode)
 const uint8_t UBX_CFG_NAV5 = 0x24; //Used to configure the navigation engine including the dynamic model
+
 const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALGET = 0x8B; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALDEL = 0x8C; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 
 const uint8_t UBX_CFG_GEOFENCE = 0x69; //Used to configure a geofence
-const uint8_t UBX_CFG_ANT = 0x13; //Used to configure the antenna control settings
+const uint8_t UBX_CFG_ANT = 0x13;	  //Used to configure the antenna control settings
 const uint8_t UBX_NAV_GEOFENCE = 0x39; //Used to poll the geofence status
 
 const uint8_t UBX_CFG_TMODE3 = 0x71; //Used to enable Survey In Mode
@@ -117,6 +120,17 @@ const uint8_t UBX_NAV_HPPOSECEF = 0x13; //Find our positional accuracy (high pre
 const uint8_t UBX_NAV_HPPOSLLH = 0x14;  //Used for obtaining lat/long/alt in high precision
 const uint8_t UBX_NAV_SVIN = 0x3B;		//Used for checking Survey In status
 const uint8_t UBX_NAV_RELPOSNED = 0x3C; //Relative Positioning Information in NED frame
+
+const uint8_t UBX_NMEA_GGA = 0x00;
+const uint8_t UBX_NMEA_GLL = 0x01;
+const uint8_t UBX_NMEA_GNS = 0x0D;
+const uint8_t UBX_NMEA_GRS = 0x06;
+const uint8_t UBX_NMEA_GSA = 0x02;
+const uint8_t UBX_NMEA_GST = 0x07;
+const uint8_t UBX_NMEA_GSV = 0x03;
+const uint8_t UBX_NMEA_RMC = 0x04;
+const uint8_t UBX_NMEA_VTG = 0x05;
+const uint8_t UBX_NMEA_ZDA = 0x08;
 
 const uint8_t UBX_MON_VER = 0x04;   //Used for obtaining Protocol Version
 const uint8_t UBX_MON_TXBUF = 0x08; //Used for query tx buffer size/state
@@ -195,19 +209,21 @@ typedef struct
 } ubxPacket;
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
-typedef struct {
-  uint8_t status; // Geofencing status: 0 - Geofencing not available or not reliable; 1 - Geofencing active
-  uint8_t numFences; // Number of geofences
-  uint8_t combState; // Combined (logical OR) state of all geofences: 0 - Unknown; 1 - Inside; 2 - Outside
-  uint8_t states[4]; // Geofence states: 0 - Unknown; 1 - Inside; 2 - Outside
+typedef struct
+{
+	uint8_t status;	// Geofencing status: 0 - Geofencing not available or not reliable; 1 - Geofencing active
+	uint8_t numFences; // Number of geofences
+	uint8_t combState; // Combined (logical OR) state of all geofences: 0 - Unknown; 1 - Inside; 2 - Outside
+	uint8_t states[4]; // Geofence states: 0 - Unknown; 1 - Inside; 2 - Outside
 } geofenceState;
 
 // Struct to hold the current geofence parameters
-typedef struct {
-  uint8_t numFences; // Number of active geofences
-  int32_t lats[4]; // Latitudes of geofences (in degrees * 10^-7)
-  int32_t longs[4]; // Longitudes of geofences (in degrees * 10^-7)
-  uint32_t rads[4]; // Radii of geofences (in m * 10^-2)
+typedef struct
+{
+	uint8_t numFences; // Number of active geofences
+	int32_t lats[4];   // Latitudes of geofences (in degrees * 10^-7)
+	int32_t longs[4];  // Longitudes of geofences (in degrees * 10^-7)
+	uint32_t rads[4];  // Radii of geofences (in m * 10^-2)
 } geofenceParams;
 
 class SFE_UBLOX_GPS
@@ -300,6 +316,15 @@ public:
 	boolean setUSBOutput(uint8_t comSettings, uint16_t maxWait = 250);   //Configure USB port to output UBX, NMEA, RTCM3 or a combination thereof
 	boolean setSPIOutput(uint8_t comSettings, uint16_t maxWait = 250);   //Configure SPI port to output UBX, NMEA, RTCM3 or a combination thereof
 
+	//Functions to turn on/off message types for a given port ID (see COM_PORT_I2C, etc above)
+	boolean configureMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t sendRate, uint16_t maxWait = 250);
+	boolean enableMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t sendRate = 1, uint16_t maxWait = 250);
+	boolean disableMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint16_t maxWait = 250);
+	boolean enableNMEAMessage(uint8_t msgID, uint8_t portID, uint8_t sendRate = 1, uint16_t maxWait = 250);
+	boolean disableNMEAMessage(uint8_t msgID, uint8_t portID, uint16_t maxWait = 250);
+	boolean enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t sendRate, uint16_t maxWait = 250); //Given a message number turns on a message ID for output over given PortID
+	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250);					//Turn off given RTCM message from a given port
+
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
 	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);							   //Returns the value at a given group/id/size location
@@ -323,9 +348,7 @@ public:
 	boolean enableSurveyMode(uint16_t observationTime, float requiredAccuracy, uint16_t maxWait = 250);			   //Begin Survey-In for NEO-M8P
 	boolean disableSurveyMode(uint16_t maxWait = 250);															   //Stop Survey-In mode
 
-	boolean getSurveyStatus(uint16_t maxWait);																				  //Reads survey in status and sets the global variables
-	boolean enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t secondsBetweenMessages, uint16_t maxWait = 250); //Given a message number turns on a message ID for output over given PortID
-	boolean disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait = 250);								  //Turn off given RTCM message from a given port
+	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables
 
 	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 
@@ -340,10 +363,14 @@ public:
 	void debugPrint(char *message);					  //Safely print debug statements
 	void debugPrintln(char *message);				  //Safely print debug statements
 
-  //Support for geofences
-  boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 2000); // Add a new geofence
-  boolean clearGeofences(uint16_t maxWait = 2000); //Clears all geofences
-  boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 2000);  //Returns the combined geofence state
+	//Support for geofences
+	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 2000); // Add a new geofence
+	boolean clearGeofences(uint16_t maxWait = 2000);																											 //Clears all geofences
+	boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 2000);																		 //Returns the combined geofence state
+	boolean clearAntPIO(uint16_t maxWait = 2000);																												 //Clears the antenna control pin settings to release the PIOs
+	geofenceParams currentGeofenceParams;																														 // Global to store the geofence parameters
+
+	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 2000);
 
   //Change the dynamic platform model using UBX-CFG-NAV5
   boolean setDynamicModel(uint8_t newDynamicModel = PEDESTRIAN, uint16_t maxWait = 2000);
@@ -543,10 +570,6 @@ private:
 	} highResModuleQueried;
 
 	uint16_t rtcmLen = 0;
-
-  //Support for geofences
-  boolean clearAntPIO(uint16_t maxWait = 2000); //Clears the antenna control pin settings to release the PIOs
-  geofenceParams currentGeofenceParams; // Global to store the geofence parameters
 };
 
 #endif

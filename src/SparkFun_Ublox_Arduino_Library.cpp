@@ -1430,45 +1430,6 @@ boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
   return (true);
 }
 
-//Given a message number turns on a message ID for output over a given portID (UART, I2C, SPI, USB, etc)
-//To disable a message, set secondsBetween messages to 0
-//Note: This function will return false if the message is already enabled
-//For base station RTK output we need to enable various sentences
-
-//NEO-M8P has four:
-//1005 = 0xF5 0x05 - Stationary RTK reference ARP
-//1077 = 0xF5 0x4D - GPS MSM7
-//1087 = 0xF5 0x57 - GLONASS MSM7
-//1230 = 0xF5 0xE6 - GLONASS code-phase biases, set to once every 10 seconds
-
-//ZED-F9P has six:
-//1005, 1074, 1084, 1094, 1124, 1230
-
-//Much of this configuration is not documented and instead discerned from u-center binary console
-boolean SFE_UBLOX_GPS::enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t secondsBetweenMessages, uint16_t maxWait)
-{
-  packetCfg.cls = UBX_CLASS_CFG;
-  packetCfg.id = UBX_CFG_MSG;
-  packetCfg.len = 8;
-  packetCfg.startingSpot = 0;
-
-  //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
-
-  packetCfg.payload[0] = UBX_RTCM_MSB;                    //MSB, always 0xF5. Interesting, these are not little endian
-  packetCfg.payload[1] = messageNumber;                   //LSB
-  packetCfg.payload[2 + portID] = secondsBetweenMessages; //Byte 2 is I2C, byte 3 is UART1, etc.
-
-  return (sendCommand(packetCfg, maxWait));
-}
-
-//Disable a given message on a given port by setting secondsBetweenMessages to zero
-boolean SFE_UBLOX_GPS::disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait)
-{
-  return (enableRTCMmessage(messageNumber, portID, 0, maxWait));
-}
-
 //Loads the payloadCfg array with the current protocol bits located the UBX-CFG-PRT register for a given port
 boolean SFE_UBLOX_GPS::getPortSettings(uint8_t portID, uint16_t maxWait)
 {
@@ -1647,10 +1608,76 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   return ok;
 }
 
+//Configure a given message type for a given port (UART1, I2C, SPI, etc)
+boolean SFE_UBLOX_GPS::configureMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t sendRate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  //Clear packet payload
+  for (uint8_t x = 0; x < packetCfg.len; x++)
+    packetCfg.payload[x] = 0;
+
+  packetCfg.payload[0] = msgClass;
+  packetCfg.payload[1] = msgID;
+  packetCfg.payload[2 + portID] = sendRate; //Send rate is relative to the event a message is registered on. For example, if the rate of a navigation message is set to 2, the message is sent every 2nd navigation solution.
+
+  return (sendCommand(packetCfg, maxWait));
+}
+
+//Enable a given message type, default of 1 per update rate (usually 1 per second)
+boolean SFE_UBLOX_GPS::enableMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t rate, uint16_t maxWait)
+{
+  return (configureMessage(msgClass, msgID, portID, rate, maxWait));
+}
+//Disable a given message type on a given port
+boolean SFE_UBLOX_GPS::disableMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint16_t maxWait)
+{
+  return (configureMessage(msgClass, msgID, portID, 0, maxWait));
+}
+
+boolean SFE_UBLOX_GPS::enableNMEAMessage(uint8_t msgID, uint8_t portID, uint8_t rate, uint16_t maxWait)
+{
+  return (configureMessage(UBX_CLASS_NMEA, msgID, portID, rate, maxWait));
+}
+boolean SFE_UBLOX_GPS::disableNMEAMessage(uint8_t msgID, uint8_t portID, uint16_t maxWait)
+{
+  return (enableNMEAMessage(msgID, portID, 0, maxWait));
+}
+
+//Given a message number turns on a message ID for output over a given portID (UART, I2C, SPI, USB, etc)
+//To disable a message, set secondsBetween messages to 0
+//Note: This function will return false if the message is already enabled
+//For base station RTK output we need to enable various sentences
+
+//NEO-M8P has four:
+//1005 = 0xF5 0x05 - Stationary RTK reference ARP
+//1077 = 0xF5 0x4D - GPS MSM7
+//1087 = 0xF5 0x57 - GLONASS MSM7
+//1230 = 0xF5 0xE6 - GLONASS code-phase biases, set to once every 10 seconds
+
+//ZED-F9P has six:
+//1005, 1074, 1084, 1094, 1124, 1230
+
+//Much of this configuration is not documented and instead discerned from u-center binary console
+boolean SFE_UBLOX_GPS::enableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint8_t sendRate, uint16_t maxWait)
+{
+  return (configureMessage(UBX_RTCM_MSB, messageNumber, portID, sendRate, maxWait));
+}
+
+//Disable a given message on a given port by setting secondsBetweenMessages to zero
+boolean SFE_UBLOX_GPS::disableRTCMmessage(uint8_t messageNumber, uint8_t portID, uint16_t maxWait)
+{
+  return (enableRTCMmessage(messageNumber, portID, 0, maxWait));
+}
+
 //Add a new geofence using UBX-CFG-GEOFENCE
 boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence, byte pinPolarity, byte pin, uint16_t maxWait)
 {
-  if (currentGeofenceParams.numFences >= 4) return(false); // Quit if we already have four geofences defined
+  if (currentGeofenceParams.numFences >= 4)
+    return (false); // Quit if we already have four geofences defined
 
   // Store the new geofence parameters
   currentGeofenceParams.lats[currentGeofenceParams.numFences] = latitude;
@@ -1663,10 +1690,10 @@ boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t
   packetCfg.len = (currentGeofenceParams.numFences * 12) + 8;
   packetCfg.startingSpot = 0;
 
-  payloadCfg[0] = 0; // Message version = 0x00
+  payloadCfg[0] = 0;                               // Message version = 0x00
   payloadCfg[1] = currentGeofenceParams.numFences; // numFences
-  payloadCfg[2] = confidence; // confLvl = Confidence level 0-4 (none, 68%, 95%, 99.7%, 99.99%)
-  payloadCfg[3] = 0; // reserved1
+  payloadCfg[2] = confidence;                      // confLvl = Confidence level 0-4 (none, 68%, 95%, 99.7%, 99.99%)
+  payloadCfg[3] = 0;                               // reserved1
   if (pin > 0)
   {
     payloadCfg[4] = 1; // enable PIO combined fence state
@@ -1676,8 +1703,8 @@ boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t
     payloadCfg[4] = 0; // disable PIO combined fence state
   }
   payloadCfg[5] = pinPolarity; // PIO pin polarity (0 = low means inside, 1 = low means outside (or unknown))
-  payloadCfg[6] = pin; // PIO pin
-  payloadCfg[7] = 0; //reserved2
+  payloadCfg[6] = pin;         // PIO pin
+  payloadCfg[7] = 0;           //reserved2
   payloadCfg[8] = currentGeofenceParams.lats[0] & 0xFF;
   payloadCfg[9] = currentGeofenceParams.lats[0] >> 8;
   payloadCfg[10] = currentGeofenceParams.lats[0] >> 16;
@@ -1690,7 +1717,8 @@ boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t
   payloadCfg[17] = currentGeofenceParams.rads[0] >> 8;
   payloadCfg[18] = currentGeofenceParams.rads[0] >> 16;
   payloadCfg[19] = currentGeofenceParams.rads[0] >> 24;
-  if (currentGeofenceParams.numFences >= 2) {
+  if (currentGeofenceParams.numFences >= 2)
+  {
     payloadCfg[20] = currentGeofenceParams.lats[1] & 0xFF;
     payloadCfg[21] = currentGeofenceParams.lats[1] >> 8;
     payloadCfg[22] = currentGeofenceParams.lats[1] >> 16;
@@ -1704,7 +1732,8 @@ boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t
     payloadCfg[30] = currentGeofenceParams.rads[1] >> 16;
     payloadCfg[31] = currentGeofenceParams.rads[1] >> 24;
   }
-  if (currentGeofenceParams.numFences >= 3) {
+  if (currentGeofenceParams.numFences >= 3)
+  {
     payloadCfg[32] = currentGeofenceParams.lats[2] & 0xFF;
     payloadCfg[33] = currentGeofenceParams.lats[2] >> 8;
     payloadCfg[34] = currentGeofenceParams.lats[2] >> 16;
@@ -1718,7 +1747,8 @@ boolean SFE_UBLOX_GPS::addGeofence(int32_t latitude, int32_t longitude, uint32_t
     payloadCfg[42] = currentGeofenceParams.rads[2] >> 16;
     payloadCfg[43] = currentGeofenceParams.rads[2] >> 24;
   }
-  if (currentGeofenceParams.numFences >= 4) {
+  if (currentGeofenceParams.numFences >= 4)
+  {
     payloadCfg[44] = currentGeofenceParams.lats[3] & 0xFF;
     payloadCfg[45] = currentGeofenceParams.lats[3] >> 8;
     payloadCfg[46] = currentGeofenceParams.lats[3] >> 16;
@@ -1784,17 +1814,68 @@ boolean SFE_UBLOX_GPS::getGeofenceState(geofenceState &currentGeofenceState, uin
   packetCfg.startingSpot = 0;
 
   if (sendCommand(packetCfg, maxWait) == false) //Ask module for the geofence status. Loads into payloadCfg.
-  return (false);
+    return (false);
 
-  currentGeofenceState.status = payloadCfg[5]; // Extract the status
+  currentGeofenceState.status = payloadCfg[5];    // Extract the status
   currentGeofenceState.numFences = payloadCfg[6]; // Extract the number of geofences
   currentGeofenceState.combState = payloadCfg[7]; // Extract the combined state of all geofences
-  if (currentGeofenceState.numFences > 0) currentGeofenceState.states[0] = payloadCfg[8]; // Extract geofence 1 state
-  if (currentGeofenceState.numFences > 1) currentGeofenceState.states[1] = payloadCfg[10]; // Extract geofence 2 state
-  if (currentGeofenceState.numFences > 2) currentGeofenceState.states[2] = payloadCfg[12]; // Extract geofence 3 state
-  if (currentGeofenceState.numFences > 3) currentGeofenceState.states[3] = payloadCfg[14]; // Extract geofence 4 state
+  if (currentGeofenceState.numFences > 0)
+    currentGeofenceState.states[0] = payloadCfg[8]; // Extract geofence 1 state
+  if (currentGeofenceState.numFences > 1)
+    currentGeofenceState.states[1] = payloadCfg[10]; // Extract geofence 2 state
+  if (currentGeofenceState.numFences > 2)
+    currentGeofenceState.states[2] = payloadCfg[12]; // Extract geofence 3 state
+  if (currentGeofenceState.numFences > 3)
+    currentGeofenceState.states[3] = payloadCfg[14]; // Extract geofence 4 state
 
-  return(true);
+  return (true);
+}
+
+//Power Save Mode
+//Enables/Disables Low Power Mode using UBX-CFG-RXM
+boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
+{
+  // Let's begin by checking the Protocol Version as UBX_CFG_RXM is not supported on the ZED (protocol >= 27)
+  uint8_t protVer = getProtocolVersionHigh(maxWait);
+  /*
+  if (_printDebug == true)
+  {
+    _debugSerial->print("Protocol version is ");
+    _debugSerial->println(protVer);
+  }
+  */
+  if (protVer >= 27)
+  {
+    debugPrintln((char *)"powerSaveMode (UBX-CFG-RXM) is not supported by this protocol version");
+    return (false);
+  }
+
+  // Now let's change the power setting using UBX-CFG-RXM
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current power management settings. Loads into payloadCfg.
+    return (false);
+
+  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
+  waitForResponse(UBX_CLASS_CFG, UBX_CFG_RXM, 100); // But we'll only wait for 100msec max
+
+  if (power_save)
+  {
+    payloadCfg[1] = 1; // Power Save Mode
+  }
+  else
+  {
+    payloadCfg[1] = 0; // Continuous Mode
+  }
+
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
 }
 
 //Change the dynamic platform model using UBX-CFG-NAV5
@@ -1857,7 +1938,7 @@ uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
 uint16_t SFE_UBLOX_GPS::getYear(uint16_t maxWait)
 {
   if (moduleQueried.gpsYear == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsYear = false; //Since we are about to give this to user, mark this data as stale
   return (gpsYear);
 }
@@ -1866,7 +1947,7 @@ uint16_t SFE_UBLOX_GPS::getYear(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
 {
   if (moduleQueried.gpsMonth == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsMonth = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMonth);
 }
@@ -1875,7 +1956,7 @@ uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 {
   if (moduleQueried.gpsDay == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsDay = false; //Since we are about to give this to user, mark this data as stale
   return (gpsDay);
 }
@@ -1884,7 +1965,7 @@ uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 {
   if (moduleQueried.gpsHour == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsHour = false; //Since we are about to give this to user, mark this data as stale
   return (gpsHour);
 }
@@ -1893,7 +1974,7 @@ uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 {
   if (moduleQueried.gpsMinute == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsMinute = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMinute);
 }
@@ -1902,7 +1983,7 @@ uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsSecond == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsSecond = false; //Since we are about to give this to user, mark this data as stale
   return (gpsSecond);
 }
@@ -1911,7 +1992,7 @@ uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsiTOW == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMillisecond);
 }
@@ -1920,7 +2001,7 @@ uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsNanosecond == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsNanosecond = false; //Since we are about to give this to user, mark this data as stale
   return (gpsNanosecond);
 }
@@ -1956,16 +2037,15 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait /* = 250*/)
 {
   if (moduleQueried.gpsiTOW == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
   return (timeOfWeek);
 }
 
-
 int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.highResLatitude == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.highResLatitude = false; //Since we are about to give this to user, mark this data as stale
   return (highResLatitude);
 }
@@ -1973,7 +2053,7 @@ int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.highResLongitude == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
   return (highResLongitude);
 }
@@ -1981,7 +2061,7 @@ int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.elipsoid == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.elipsoid = false; //Since we are about to give this to user, mark this data as stale
   return (elipsoid);
 }
@@ -1989,7 +2069,7 @@ int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.meanSeaLevel == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.meanSeaLevel = false; //Since we are about to give this to user, mark this data as stale
   return (meanSeaLevel);
 }
@@ -1997,7 +2077,7 @@ int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.geoidSeparation == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.geoidSeparation = false; //Since we are about to give this to user, mark this data as stale
   return (geoidSeparation);
 }
@@ -2005,7 +2085,7 @@ int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
 uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.horizontalAccuracy == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.horizontalAccuracy = false; //Since we are about to give this to user, mark this data as stale
   return (horizontalAccuracy);
 }
@@ -2013,7 +2093,7 @@ uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
 uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.verticalAccuracy == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.verticalAccuracy = false; //Since we are about to give this to user, mark this data as stale
   return (verticalAccuracy);
 }
@@ -2055,7 +2135,7 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 {
   if (moduleQueried.latitude == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.latitude = false; //Since we are about to give this to user, mark this data as stale
 
   return (latitude);
@@ -2066,7 +2146,7 @@ int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 {
   if (moduleQueried.longitude == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.longitude = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2077,7 +2157,7 @@ int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 {
   if (moduleQueried.altitude == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.altitude = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2090,7 +2170,7 @@ int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
 {
   if (moduleQueried.altitudeMSL == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.altitudeMSL = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2101,7 +2181,7 @@ int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 {
   if (moduleQueried.SIV == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.SIV = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2113,7 +2193,7 @@ uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
 {
   if (moduleQueried.fixType == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.fixType = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2126,7 +2206,7 @@ uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
 {
   if (moduleQueried.carrierSolution == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.carrierSolution = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2137,7 +2217,7 @@ uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
 {
   if (moduleQueried.groundSpeed == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.groundSpeed = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2148,7 +2228,7 @@ int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getHeading(uint16_t maxWait)
 {
   if (moduleQueried.headingOfMotion == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.headingOfMotion = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2159,7 +2239,7 @@ int32_t SFE_UBLOX_GPS::getHeading(uint16_t maxWait)
 uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 {
   if (moduleQueried.pDOP == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.pDOP = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2171,7 +2251,7 @@ uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
-    getProtocolVersion();
+    getProtocolVersion(maxWait);
   moduleQueried.versionNumber = false;
   return (versionHigh);
 }
@@ -2181,7 +2261,7 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionLow(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
-    getProtocolVersion();
+    getProtocolVersion(maxWait);
   moduleQueried.versionNumber = false;
   return (versionLow);
 }
@@ -2204,6 +2284,10 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
     if (sendCommand(packetCfg, maxWait) == false)
       return (false); //If command send fails then bail
 
+    // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+    // This is only required because we are doing multiple sendCommands in quick succession using the same class and ID
+    waitForResponse(UBX_CLASS_MON, UBX_MON_VER, 100); // But we'll only wait for 100msec max
+
     if (_printDebug == true)
     {
       _debugSerial->print("Extension ");
@@ -2223,7 +2307,7 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
     {
       versionHigh = (payloadCfg[8] - '0') * 10 + (payloadCfg[9] - '0');  //Convert '18' to 18
       versionLow = (payloadCfg[11] - '0') * 10 + (payloadCfg[12] - '0'); //Convert '00' to 00
-      return (versionLow);
+      return (true);                                                     // This function returns a boolean (so we can't return versionLow)
     }
   }
 
