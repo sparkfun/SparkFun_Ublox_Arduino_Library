@@ -1900,7 +1900,7 @@ uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
 uint16_t SFE_UBLOX_GPS::getYear(uint16_t maxWait)
 {
   if (moduleQueried.gpsYear == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsYear = false; //Since we are about to give this to user, mark this data as stale
   return (gpsYear);
 }
@@ -1909,7 +1909,7 @@ uint16_t SFE_UBLOX_GPS::getYear(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
 {
   if (moduleQueried.gpsMonth == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsMonth = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMonth);
 }
@@ -1918,7 +1918,7 @@ uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 {
   if (moduleQueried.gpsDay == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsDay = false; //Since we are about to give this to user, mark this data as stale
   return (gpsDay);
 }
@@ -1927,7 +1927,7 @@ uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 {
   if (moduleQueried.gpsHour == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsHour = false; //Since we are about to give this to user, mark this data as stale
   return (gpsHour);
 }
@@ -1936,7 +1936,7 @@ uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 {
   if (moduleQueried.gpsMinute == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsMinute = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMinute);
 }
@@ -1945,7 +1945,7 @@ uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsSecond == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsSecond = false; //Since we are about to give this to user, mark this data as stale
   return (gpsSecond);
 }
@@ -1954,7 +1954,7 @@ uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsiTOW == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMillisecond);
 }
@@ -1963,7 +1963,7 @@ uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsNanosecond == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsNanosecond = false; //Since we are about to give this to user, mark this data as stale
   return (gpsNanosecond);
 }
@@ -1999,7 +1999,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait /* = 250*/)
 {
   if (moduleQueried.gpsiTOW == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
   return (timeOfWeek);
 }
@@ -2007,7 +2007,7 @@ uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.highResLatitude == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.highResLatitude = false; //Since we are about to give this to user, mark this data as stale
   return (highResLatitude);
 }
@@ -2015,7 +2015,7 @@ int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.highResLongitude == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
   return (highResLongitude);
 }
@@ -2023,7 +2023,7 @@ int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.elipsoid == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.elipsoid = false; //Since we are about to give this to user, mark this data as stale
   return (elipsoid);
 }
@@ -2031,7 +2031,7 @@ int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.meanSeaLevel == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.meanSeaLevel = false; //Since we are about to give this to user, mark this data as stale
   return (meanSeaLevel);
 }
@@ -2039,7 +2039,7 @@ int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
 int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.geoidSeparation == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.geoidSeparation = false; //Since we are about to give this to user, mark this data as stale
   return (geoidSeparation);
 }
@@ -2047,7 +2047,7 @@ int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
 uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.horizontalAccuracy == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.horizontalAccuracy = false; //Since we are about to give this to user, mark this data as stale
   return (horizontalAccuracy);
 }
@@ -2055,7 +2055,7 @@ uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
 uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.verticalAccuracy == false)
-    getHPPOSLLH();
+    getHPPOSLLH(maxWait);
   highResModuleQueried.verticalAccuracy = false; //Since we are about to give this to user, mark this data as stale
   return (verticalAccuracy);
 }
@@ -2097,7 +2097,7 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 {
   if (moduleQueried.latitude == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.latitude = false; //Since we are about to give this to user, mark this data as stale
 
   return (latitude);
@@ -2108,7 +2108,7 @@ int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 {
   if (moduleQueried.longitude == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.longitude = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2119,7 +2119,7 @@ int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 {
   if (moduleQueried.altitude == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.altitude = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2132,7 +2132,7 @@ int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
 {
   if (moduleQueried.altitudeMSL == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.altitudeMSL = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2143,7 +2143,7 @@ int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 {
   if (moduleQueried.SIV == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.SIV = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2155,7 +2155,7 @@ uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
 {
   if (moduleQueried.fixType == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.fixType = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2168,7 +2168,7 @@ uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
 {
   if (moduleQueried.carrierSolution == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.carrierSolution = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2179,7 +2179,7 @@ uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
 {
   if (moduleQueried.groundSpeed == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.groundSpeed = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2190,7 +2190,7 @@ int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getHeading(uint16_t maxWait)
 {
   if (moduleQueried.headingOfMotion == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.headingOfMotion = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2201,7 +2201,7 @@ int32_t SFE_UBLOX_GPS::getHeading(uint16_t maxWait)
 uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 {
   if (moduleQueried.pDOP == false)
-    getPVT();
+    getPVT(maxWait);
   moduleQueried.pDOP = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
