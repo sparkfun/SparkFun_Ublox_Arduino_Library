@@ -346,8 +346,9 @@ public:
 	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 2000); // Add a new geofence
 	boolean clearGeofences(uint16_t maxWait = 2000);																											 //Clears all geofences
 	boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 2000);																		 //Returns the combined geofence state
+	boolean clearAntPIO(uint16_t maxWait = 2000);																												 //Clears the antenna control pin settings to release the PIOs
+	geofenceParams currentGeofenceParams;																														 // Global to store the geofence parameters
 
-	//Power Save Mode
 	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 2000);
 
 	//Survey-in specific controls
@@ -530,10 +531,6 @@ private:
 	} highResModuleQueried;
 
 	uint16_t rtcmLen = 0;
-
-	//Support for geofences
-	boolean clearAntPIO(uint16_t maxWait = 2000); //Clears the antenna control pin settings to release the PIOs
-	geofenceParams currentGeofenceParams;		  // Global to store the geofence parameters
 };
 
 #endif
