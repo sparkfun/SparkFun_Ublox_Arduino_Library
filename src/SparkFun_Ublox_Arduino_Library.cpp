@@ -42,6 +42,7 @@ SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
 {
   // Constructor
   currentGeofenceParams.numFences = 0; // Zero the number of geofences currently in use
+  moduleQueried.versionNumber = false;
 }
 
 //Initialize the Serial port
@@ -575,8 +576,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     if (msg->id == UBX_ACK_ACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
     {
       //The ack we just received matched the CLS/ID of last packetCfg sent
-      debugPrintln((char *)"Command sent/ack'd successfully");
-      commandAck = true;
+      debugPrintln((char *)"UBX ACK: Command sent/ack'd successfully");
+      commandAck = UBX_ACK_ACK;
+    }
+    else if (msg->id == UBX_ACK_NACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
+    {
+      //The ack we just received matched the CLS/ID of last packetCfg sent
+      debugPrintln((char *)"UBX ACK: Not-Acknowledged");
+      commandAck = UBX_ACK_NACK;
     }
     break;
 
@@ -685,7 +692,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 //Given a packet and payload, send everything including CRC bytes via I2C port
 boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 {
-  commandAck = false;         //We're about to send a command. Begin waiting for ack.
+  commandAck = UBX_ACK_NONE;  //We're about to send a command. Begin waiting for ack.
   calcChecksum(&outgoingUBX); //Sets checksum A and B bytes of the packet
 
   if (_printDebug == true)
@@ -878,16 +885,24 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 //Poll the module until and ack is received
 boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime)
 {
-  commandAck = false;      //Reset flag
-  packetCfg.valid = false; //This will go true when we receive a response to the packet we sent
+  commandAck = UBX_ACK_NONE; //Reset flag
+  packetCfg.valid = false;   //This will go true when we receive a response to the packet we sent
+  packetAck.valid = false;
 
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
     if (checkUblox() == true) //See if new data is available. Process bytes as they come in.
     {
-      if (commandAck == true)
-        return (true); //If the packet we just sent was a CFG packet then we'll get an ACK
+      if (packetAck.valid == true)
+      {
+        //If the packet we just sent was a CFG packet then we'll get an ACK
+        if (commandAck == UBX_ACK_ACK)
+          return (true); //  Received an ACK
+        else if (commandAck == UBX_ACK_NACK)
+          return (false); //  Received a NACK
+      }
+
       if (packetCfg.valid == true)
       {
         //Did we receive a config packet that matches the cls/id we requested?
@@ -2252,7 +2267,6 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
     getProtocolVersion(maxWait);
-  moduleQueried.versionNumber = false;
   return (versionHigh);
 }
 
@@ -2262,7 +2276,6 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionLow(uint16_t maxWait)
 {
   if (moduleQueried.versionNumber == false)
     getProtocolVersion(maxWait);
-  moduleQueried.versionNumber = false;
   return (versionLow);
 }
 
@@ -2274,46 +2287,44 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
   packetCfg.cls = UBX_CLASS_MON;
   packetCfg.id = UBX_MON_VER;
 
-  //We will send the command repeatedly, increasing the startingSpot as we go
-  //Then we look at each extension field of 30 bytes
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 40; //Start at first "extended software information" string
+
+  if (sendCommand(packetCfg, maxWait) == false)
+    return (false); //If command send fails then bail
+
+  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
+  // This is only required because we are doing multiple sendCommands in quick succession using the same class and ID
+  waitForResponse(UBX_CLASS_MON, UBX_MON_VER, 100); // But we'll only wait for 100msec max
+
+  //Payload should now contain ~220 characters (depends on module type)
+
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("MON VER Payload:"));
+    for (int location = 0; location < packetCfg.len; location++)
+    {
+      if (location % 30 == 0)
+        _debugSerial->println();
+      _debugSerial->write(payloadCfg[location]);
+    }
+    _debugSerial->println();
+  }
+
+  //We will step through the payload looking at each extension field of 30 bytes
   for (uint8_t extensionNumber = 0; extensionNumber < 10; extensionNumber++)
   {
-    packetCfg.len = 0;
-    packetCfg.startingSpot = 40 + (30 * extensionNumber);
-
-    if (sendCommand(packetCfg, maxWait) == false)
-      return (false); //If command send fails then bail
-
-    // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
-    // This is only required because we are doing multiple sendCommands in quick succession using the same class and ID
-    waitForResponse(UBX_CLASS_MON, UBX_MON_VER, 100); // But we'll only wait for 100msec max
-
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("Extension "));
-      _debugSerial->print(extensionNumber);
-      _debugSerial->print(F(": "));
-      for (int location = 0; location < MAX_PAYLOAD_SIZE; location++)
-      {
-        if (payloadCfg[location] == '\0')
-          break;
-        _debugSerial->write(payloadCfg[location]);
-      }
-      _debugSerial->println();
-    }
-
     //Now we need to find "PROTVER=18.00" in the incoming byte stream
-    if (payloadCfg[0] == 'P' && payloadCfg[6] == 'R')
+    if (payloadCfg[(30 * extensionNumber) + 0] == 'P' && payloadCfg[(30 * extensionNumber) + 6] == 'R')
     {
-      versionHigh = (payloadCfg[8] - '0') * 10 + (payloadCfg[9] - '0');  //Convert '18' to 18
-      versionLow = (payloadCfg[11] - '0') * 10 + (payloadCfg[12] - '0'); //Convert '00' to 00
-      return (true);                                                     // This function returns a boolean (so we can't return versionLow)
+      versionHigh = (payloadCfg[(30 * extensionNumber) + 8] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 9] - '0');  //Convert '18' to 18
+      versionLow = (payloadCfg[(30 * extensionNumber) + 11] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 12] - '0'); //Convert '00' to 00
+      moduleQueried.versionNumber = true;                                                                                  //Mark this data as new
+      return (true);                                                                                                       //Success!
     }
   }
 
-  moduleQueried.versionNumber = true; //Mark this data as new
-
-  return (true);
+  return (false); //We failed
 }
 
 //Relative Positioning Information in NED frame
