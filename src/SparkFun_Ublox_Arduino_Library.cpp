@@ -143,7 +143,7 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
 
   if (_printDebug == true)
   {
-    _debugSerial->print("Current baud rate: ");
+    _debugSerial->print(F("Current baud rate: "));
     _debugSerial->println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
   }
 
@@ -160,7 +160,7 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
 
   if (_printDebug == true)
   {
-    _debugSerial->print("New baud rate:");
+    _debugSerial->print(F("New baud rate:"));
     _debugSerial->println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
   }
 
@@ -252,7 +252,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
 
       if (_printDebug == true)
       {
-        _debugSerial->print("Bytes available error:");
+        _debugSerial->print(F("Bytes available error:"));
         _debugSerial->println(bytesAvailable);
       }
     }
@@ -261,7 +261,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
     {
       if (_printDebug == true)
       {
-        _debugSerial->print("Bytes available:");
+        _debugSerial->print(F("Bytes available:"));
         _debugSerial->println(bytesAvailable);
       }
     }
@@ -460,9 +460,9 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
   //_debugSerial->write(incoming); //An example of passing this byte out the serial port
 
   //Debug printing
-  //  _debugSerial->print(" ");
-  //  if(incoming < 0x10) _debugSerial->print("0");
-  //  if(incoming < 0x10) _debugSerial->print("0");
+  //  _debugSerial->print(F(" "));
+  //  if(incoming < 0x10) _debugSerial->print(F("0"));
+  //  if(incoming < 0x10) _debugSerial->print(F("0"));
   //  _debugSerial->print(incoming, HEX);
   //  if(rtcmFrameCounter % 16 == 0) _debugSerial->println();
 }
@@ -510,9 +510,9 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       if (_printDebug == true)
       {
-        _debugSerial->print("Size: ");
+        _debugSerial->print(F("Size: "));
         _debugSerial->print(incomingUBX->len);
-        _debugSerial->print(" Received: ");
+        _debugSerial->print(F(" Received: "));
         printPacket(incomingUBX);
       }
       incomingUBX->valid = true;
@@ -529,19 +529,19 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
         delay(10);
         digitalWrite(2, HIGH);
 
-        _debugSerial->print("Size: ");
+        _debugSerial->print(F("Size: "));
         _debugSerial->print(incomingUBX->len);
-        _debugSerial->print(" Received: ");
+        _debugSerial->print(F(" Received: "));
         printPacket(incomingUBX);
 
-        _debugSerial->print(" checksumA: ");
+        _debugSerial->print(F(" checksumA: "));
         _debugSerial->print(incomingUBX->checksumA);
-        _debugSerial->print(" checksumB: ");
+        _debugSerial->print(F(" checksumB: "));
         _debugSerial->print(incomingUBX->checksumB);
 
-        _debugSerial->print(" rollingChecksumA: ");
+        _debugSerial->print(F(" rollingChecksumA: "));
         _debugSerial->print(rollingChecksumA);
-        _debugSerial->print(" rollingChecksumB: ");
+        _debugSerial->print(F(" rollingChecksumB: "));
         _debugSerial->print(rollingChecksumB);
         _debugSerial->println();
       }
@@ -652,30 +652,30 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
       if (_printDebug == true)
       {
-        _debugSerial->print("Sec: ");
+        _debugSerial->print(F("Sec: "));
         _debugSerial->print(((float)extractLong(4)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("LON: ");
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("LON: "));
         _debugSerial->print(((float)(int32_t)extractLong(8)) / 10000000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("LAT: ");
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("LAT: "));
         _debugSerial->print(((float)(int32_t)extractLong(12)) / 10000000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("ELI M: ");
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("ELI M: "));
         _debugSerial->print(((float)(int32_t)extractLong(16)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("MSL M: ");
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("MSL M: "));
         _debugSerial->print(((float)(int32_t)extractLong(20)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("GEO: ");
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("GEO: "));
         _debugSerial->print(((float)(int32_t)extractLong(24)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("HA 2D M: ");
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("HA 2D M: "));
         _debugSerial->print(((float)extractLong(28)) / 1000.0f);
-        _debugSerial->print(" ");
-        _debugSerial->print("VERT M: ");
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("VERT M: "));
         _debugSerial->print(((float)extractLong(32)) / 1000.0f);
-        _debugSerial->print(" ");
+        _debugSerial->print(F(" "));
       }
     }
     break;
@@ -690,7 +690,7 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 
   if (_printDebug == true)
   {
-    _debugSerial->print("Sending: ");
+    _debugSerial->print(F("Sending: "));
     printPacket(&outgoingUBX);
   }
   if (commType == COMM_TYPE_I2C)
@@ -852,20 +852,20 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 {
   if (_printDebug == true)
   {
-    _debugSerial->print("CLS:");
+    _debugSerial->print(F("CLS:"));
     _debugSerial->print(packet->cls, HEX);
 
-    _debugSerial->print(" ID:");
+    _debugSerial->print(F(" ID:"));
     _debugSerial->print(packet->id, HEX);
 
-    _debugSerial->print(" Len: 0x");
+    _debugSerial->print(F(" Len: 0x"));
     _debugSerial->print(packet->len, HEX);
 
-    _debugSerial->print(" Payload:");
+    _debugSerial->print(F(" Payload:"));
 
     for (int x = 0; x < packet->len; x++)
     {
-      _debugSerial->print(" ");
+      _debugSerial->print(F(" "));
       _debugSerial->print(packet->payload[x], HEX);
     }
     _debugSerial->println();
@@ -900,7 +900,7 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
         {
           if (_printDebug == true)
           {
-            _debugSerial->print("Packet didn't match CLS/ID");
+            _debugSerial->print(F("Packet didn't match CLS/ID"));
             printPacket(&packetCfg);
           }
         }
@@ -971,7 +971,7 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_
 
   if (_printDebug == true)
   {
-    _debugSerial->print("key: 0x");
+    _debugSerial->print(F("key: 0x"));
     _debugSerial->print(key, HEX);
     _debugSerial->println();
   }
@@ -1005,7 +1005,7 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
 
   if (_printDebug == true)
   {
-    _debugSerial->print("key: 0x");
+    _debugSerial->print(F("key: 0x"));
     _debugSerial->print(key, HEX);
     _debugSerial->println();
   }
@@ -1840,7 +1840,7 @@ boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
   /*
   if (_printDebug == true)
   {
-    _debugSerial->print("Protocol version is ");
+    _debugSerial->print(F("Protocol version is "));
     _debugSerial->println(protVer);
   }
   */
@@ -2290,9 +2290,9 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
 
     if (_printDebug == true)
     {
-      _debugSerial->print("Extension ");
+      _debugSerial->print(F("Extension "));
       _debugSerial->print(extensionNumber);
-      _debugSerial->print(": ");
+      _debugSerial->print(F(": "));
       for (int location = 0; location < MAX_PAYLOAD_SIZE; location++)
       {
         if (payloadCfg[location] == '\0')
@@ -2331,8 +2331,8 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
   //We got a response, now parse the bits
 
   uint16_t refStationID = extractInt(2);
-  //_debugSerial->print("refStationID: ");
-  //_debugSerial->println(refStationID);
+  //_debugSerial->print(F("refStationID: "));
+  //_debugSerial->println(refStationID));
 
   int32_t tempRelPos;
 
