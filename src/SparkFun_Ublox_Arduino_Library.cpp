@@ -711,7 +711,10 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
   if (commType == COMM_TYPE_I2C)
   {
     if (!sendI2cCommand(outgoingUBX, maxWait))
+    {
+      debugPrintln((char *)"Send I2C Command failed");
       return false;
+    }
   }
   else if (commType == COMM_TYPE_SERIAL)
   {
@@ -720,12 +723,15 @@ boolean SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 
   if (maxWait > 0)
   {
+    debugPrintln((char *)"Waiting for response from sendCommand");
+
     //Give waitForResponse the cls/id to check for
     return waitForResponse(outgoingUBX.cls, outgoingUBX.id, maxWait); //Wait for Ack response
   }
   return true;
 }
 
+//Returns false if sensor fails to respond to I2C traffic
 boolean SFE_UBLOX_GPS::sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait)
 {
   //Point at 0xFF data register
@@ -958,12 +964,31 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
           return (true);
         }
       }
+      else if (packetCfg.valid == true)
+      {
+        //Packets that are not CFG packets such as getPVT()
+        Serial.println("Non CFG packet");
+        //Did we receive a config packet that matches the cls/id we requested?
+        if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
+        {
+          debugPrintln((char *)"CLS/ID match!");
+          return (true); //We have new data to act upon
+        }
+        else
+        {
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("Packet didn't match CLS/ID"));
+            printPacket(&packetCfg);
+          }
+        }
+      }
     }
 
     delayMicroseconds(500);
   }
 
-  debugPrintln((char *)"waitForResponse timeout");
+  debugPrintln((char *)"waitForResponse timeout: No valid ack packet received");
 
   return (false);
 }
@@ -2063,6 +2088,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 {
   if (autoPVT && autoPVTImplicitUpdate)
   {
+    Serial.println("Check ulbox");
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUblox();
     return moduleQueried.all;
@@ -2070,10 +2096,12 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
   else if (autoPVT && !autoPVTImplicitUpdate)
   {
     //Someone else has to call checkUblox for us...
+    Serial.println("Immediateexi");
     return (false);
   }
   else
   {
+    Serial.println("Poll PVT");
     //The GPS is not automatically reporting navigation position so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_NAV;
     packetCfg.id = UBX_NAV_PVT;
@@ -2082,7 +2110,6 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 
     //The data is parsed as part of processing the response
     return sendCommand(packetCfg, maxWait);
-    return (false); //If command send fails then bail
   }
 }
 
@@ -2245,8 +2272,13 @@ uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 //0=no fix, 1=dead reckoning, 2=2D, 3=3D, 4=GNSS, 5=Time fix
 uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
 {
+  Serial.println("Get fix type");
   if (moduleQueried.fixType == false)
+  {
+    Serial.println("GetPVT");
+
     getPVT(maxWait);
+  }
   moduleQueried.fixType = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
