@@ -575,13 +575,13 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     //We don't want to store ACK packets, just set commandAck flag
     if (msg->id == UBX_ACK_ACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
     {
-      //The ack we just received matched the CLS/ID of last packetCfg sent
+      //The ack we just received matched the CLS/ID of last packetCfg sent (or received)
       debugPrintln((char *)"UBX ACK: Command sent/ack'd successfully");
       commandAck = UBX_ACK_ACK;
     }
     else if (msg->id == UBX_ACK_NACK && msg->payload[0] == packetCfg.cls && msg->payload[1] == packetCfg.id)
     {
-      //The ack we just received matched the CLS/ID of last packetCfg sent
+      //The ack we just received matched the CLS/ID of last packetCfg sent (or received)
       debugPrintln((char *)"UBX ACK: Not-Acknowledged");
       commandAck = UBX_ACK_NACK;
     }
@@ -898,9 +898,25 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
       {
         //If the packet we just sent was a CFG packet then we'll get an ACK
         if (commandAck == UBX_ACK_ACK)
+        {
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("ACK received after "));
+            _debugSerial->print(millis() - startTime);
+            _debugSerial->println(F(" msec"));
+          }
           return (true); //  Received an ACK
+        }
         else if (commandAck == UBX_ACK_NACK)
+        {
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("NACK received after "));
+            _debugSerial->print(millis() - startTime);
+            _debugSerial->println(F(" msec"));
+          }
           return (false); //  Received a NACK
+        }
       }
 
       if (packetCfg.valid == true)
@@ -908,7 +924,12 @@ boolean SFE_UBLOX_GPS::waitForResponse(uint8_t requestedClass, uint8_t requested
         //Did we receive a config packet that matches the cls/id we requested?
         if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
         {
-          debugPrintln((char *)"CLS/ID match!");
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("CLS/ID match after "));
+            _debugSerial->print(millis() - startTime);
+            _debugSerial->println(F(" msec"));
+          }
           return (true); //If the packet we just sent was a NAV packet then we'll just get data back
         }
         else
@@ -2152,6 +2173,7 @@ int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
   if (moduleQueried.latitude == false)
     getPVT(maxWait);
   moduleQueried.latitude = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
 
   return (latitude);
 }
