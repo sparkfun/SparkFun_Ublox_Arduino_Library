@@ -76,6 +76,10 @@
 #endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Define a digital pin to aid checksum failure capture and analysis
+//Leave set to -1 if not needed
+const int checksumFailurePin = -1;
+
 //Registers
 const uint8_t UBX_SYNCH_1 = 0xB5;
 const uint8_t UBX_SYNCH_2 = 0x62;
