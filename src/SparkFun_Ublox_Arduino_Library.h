@@ -289,7 +289,9 @@ public:
 	boolean saveConfiguration(uint16_t maxWait = 250);						 //Save current configuration to flash and BBR (battery backed RAM)
 	boolean factoryDefault(uint16_t maxWait = 250);							 //Reset module to factory defaults
 
-	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
+	//boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until an ACK is received
+	boolean waitForACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250);   //Poll the module until a config packet and an ACK is received
+	boolean waitForNoACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until a config packet is received
 
 // getPVT will only return data once in each navigation cycle. By default, that is once per second.
 // Therefore we should set getPVTmaxWait to slightly longer than that.
