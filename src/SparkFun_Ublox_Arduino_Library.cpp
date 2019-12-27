@@ -1,18 +1,20 @@
 /*
-	This is a library written for the Ublox NEO-M8P-2
+	This is a library written for the Ublox ZED-F9P and NEO-M8P-2
 	SparkFun sells these at its website: www.sparkfun.com
 	Do you like this library? Help support SparkFun. Buy a board!
-	https://www.sparkfun.com/products/14586
+	https://www.sparkfun.com/products/15136
+	https://www.sparkfun.com/products/15005
+	https://www.sparkfun.com/products/15733
+	https://www.sparkfun.com/products/15193
+	https://www.sparkfun.com/products/15210
 
 	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
 
-	The NEO-M8P-2 is a powerful GPS receiver capable of calculating correction data
-	to achieve 2cm accuracy.
+	This library handles configuring and handling the responses 
+	from a Ublox GPS module. Works with most modules from Ublox including
+	the Zed-F9P, NEO-M8P-2, NEO-M9N, ZOE-M8Q, SAM-M8Q, and many others.
 
-	This library handles the configuration of 'survey-in', RTCM messages, and to output
-	the RTCM messages to the user's selected stream
-
-	https://github.com/sparkfun/SparkFun_RTK_Arduino_Library
+	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
 
 	Development environment specifics:
 	Arduino IDE 1.8.5
