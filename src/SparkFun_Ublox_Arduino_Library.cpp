@@ -313,8 +313,8 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       if (_printDebug == true)
       {
         _debugSerial->print(F("checkUbloxI2C: Large packet of "));
-        _debugSerial->println(bytesAvailable);
-        _debugSerial->print(F("bytes received"));
+        _debugSerial->print(bytesAvailable);
+        _debugSerial->println(F(" bytes received"));
       }
     }
 
