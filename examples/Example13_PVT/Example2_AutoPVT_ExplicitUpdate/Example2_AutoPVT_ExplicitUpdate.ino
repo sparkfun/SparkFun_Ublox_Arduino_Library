@@ -35,7 +35,8 @@ SFE_UBLOX_GPS myGPS;
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial); //Wait for user to open terminal
+  while (!Serial)
+    ; //Wait for user to open terminal
   Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
@@ -43,17 +44,18 @@ void setup()
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
+    while (1)
+      ;
   }
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.setNavigationFrequency(2); //Produce two solutions per second
-  myGPS.setAutoPVT(true, false); //Tell the GPS to "send" each solution and the lib not to update stale data implicitly
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  myGPS.setNavigationFrequency(2);  //Produce two solutions per second
+  myGPS.setAutoPVT(true, false);    //Tell the GPS to "send" each solution and the lib not to update stale data implicitly
+  myGPS.saveConfiguration();        //Save the current settings to flash and BBR
 }
 
 /*
-     Calling getPVT would return false now (compare to Example 13 where it would return true), so we just use the data provided
+     Calling getPVT would return false now (compare to previous example where it would return true), so we just use the data provided
      If you are using a threaded OS eg. FreeRTOS on an ESP32, the explicit mode of autoPVT allows you to use the data provided on both cores and inside multiple threads
      The data update in background creates an inconsistent state, but that should not cause issues for most applications as they usually won't change the GPS location significantly within a 2Hz - 5Hz update rate.
      Also you could oversample (10Hz - 20Hz) the data to smooth out such issues...
@@ -62,12 +64,14 @@ void loop()
 {
   static uint16_t counter = 0;
 
-  if (counter % 10 == 0) {
+  if (counter % 10 == 0)
+  {
     // update your AHRS filter here for a ~100Hz update rate
     // GPS data will be quasi static but data from your IMU will be changing
   }
   // debug output each half second
-  if (counter % 500  == 0) {
+  if (counter % 500 == 0)
+  {
     Serial.println();
     long latitude = myGPS.getLatitude();
     Serial.print(F("Lat: "));
@@ -90,7 +94,8 @@ void loop()
     Serial.println();
   }
   // call checkUblox all 50ms to capture the gps data
-  if (counter % 50 == 0) {
+  if (counter % 50 == 0)
+  {
     myGPS.checkUblox();
   }
   delay(1);
