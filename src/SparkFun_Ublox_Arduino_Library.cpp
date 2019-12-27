@@ -526,9 +526,12 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
         debugPrintln((char *)"Checksum failed. Response too big?");
 
         //Drive an external pin to allow for easier logic analyzation
-        digitalWrite(2, LOW);
-        delay(10);
-        digitalWrite(2, HIGH);
+        if (checksumFailurePin >= 0)
+        {
+          digitalWrite((uint8_t)checksumFailurePin, LOW);
+          delay(10);
+          digitalWrite((uint8_t)checksumFailurePin, HIGH);
+        }
 
         _debugSerial->print(F("Size: "));
         _debugSerial->print(incomingUBX->len);
