@@ -287,39 +287,47 @@ public:
 
 	boolean waitForResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until and ack is received
 
-	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true);				 //In case no config access to the GPS is possible and PVT is send cyclically already
-	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250);						 //Enable/disable automatic PVT reports at the navigation frequency
-	boolean getPVT(uint16_t maxWait = 1000);											 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+  // getPVT will only return data once in each navigation cycle. By default, that is once per second.
+  // Therefore we should set getPVTmaxWait to slightly longer than that.
+  // If you change the navigation frequency to (e.g.) 4Hz using setNavigationFrequency(4)
+  // then you should use a shorter maxWait for getPVT. 300msec would be about right: getPVT(300)
+  // The same is true for getHPPOSLLH.
+  #define getPVTmaxWait 1100 // Default maxWait for getPVT and all functions which call it
+  #define getHPPOSLLHmaxWait 1100  // Default maxWait for getHPPOSLLH and all functions which call it
+
+	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and PVT is send cyclically already
+	boolean setAutoPVT(boolean enabled, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency
+	boolean getPVT(uint16_t maxWait = getPVTmaxWait); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = 250); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-	boolean getHPPOSLLH(uint16_t maxWait = 1000);										 //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+	boolean getHPPOSLLH(uint16_t maxWait = getHPPOSLLHmaxWait); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
 
-	int32_t getLatitude(uint16_t maxWait = 250);			//Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getLongitude(uint16_t maxWait = 250);			//Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getAltitude(uint16_t maxWait = 250);			//Returns the current altitude in mm above ellipsoid
-	int32_t getAltitudeMSL(uint16_t maxWait = 250);			//Returns the current altitude in mm above mean sea level
-	uint8_t getSIV(uint16_t maxWait = 250);					//Returns number of sats used in fix
-	uint8_t getFixType(uint16_t maxWait = 250);				//Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
-	uint8_t getCarrierSolutionType(uint16_t maxWait = 250); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
-	int32_t getGroundSpeed(uint16_t maxWait = 250);			//Returns speed in mm/s
-	int32_t getHeading(uint16_t maxWait = 250);				//Returns heading in degrees * 10^-7
-	uint16_t getPDOP(uint16_t maxWait = 250);				//Returns positional dillution of precision * 10^-2
-	uint16_t getYear(uint16_t maxWait = 250);
-	uint8_t getMonth(uint16_t maxWait = 250);
-	uint8_t getDay(uint16_t maxWait = 250);
-	uint8_t getHour(uint16_t maxWait = 250);
-	uint8_t getMinute(uint16_t maxWait = 250);
-	uint8_t getSecond(uint16_t maxWait = 250);
-	uint16_t getMillisecond(uint16_t maxWait = 250);
-	int32_t getNanosecond(uint16_t maxWait = 250);
+	int32_t getLatitude(uint16_t maxWait = getPVTmaxWait); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getLongitude(uint16_t maxWait = getPVTmaxWait); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getAltitude(uint16_t maxWait = getPVTmaxWait); //Returns the current altitude in mm above ellipsoid
+	int32_t getAltitudeMSL(uint16_t maxWait = getPVTmaxWait); //Returns the current altitude in mm above mean sea level
+	uint8_t getSIV(uint16_t maxWait = getPVTmaxWait); //Returns number of sats used in fix
+	uint8_t getFixType(uint16_t maxWait = getPVTmaxWait); //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
+	uint8_t getCarrierSolutionType(uint16_t maxWait = getPVTmaxWait); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
+	int32_t getGroundSpeed(uint16_t maxWait = getPVTmaxWait); //Returns speed in mm/s
+	int32_t getHeading(uint16_t maxWait = getPVTmaxWait); //Returns heading in degrees * 10^-7
+	uint16_t getPDOP(uint16_t maxWait = getPVTmaxWait); //Returns positional dillution of precision * 10^-2
+	uint16_t getYear(uint16_t maxWait = getPVTmaxWait);
+	uint8_t getMonth(uint16_t maxWait = getPVTmaxWait);
+	uint8_t getDay(uint16_t maxWait = getPVTmaxWait);
+	uint8_t getHour(uint16_t maxWait = getPVTmaxWait);
+	uint8_t getMinute(uint16_t maxWait = getPVTmaxWait);
+	uint8_t getSecond(uint16_t maxWait = getPVTmaxWait);
+	uint16_t getMillisecond(uint16_t maxWait = getPVTmaxWait);
+	int32_t getNanosecond(uint16_t maxWait = getPVTmaxWait);
+	uint32_t getTimeOfWeek(uint16_t maxWait = getPVTmaxWait);
 
-	uint32_t getTimeOfWeek(uint16_t maxWait = 250);
-	int32_t getHighResLatitude(uint16_t maxWait = 250);
-	int32_t getHighResLongitude(uint16_t maxWait = 250);
-	int32_t getElipsoid(uint16_t maxWait = 250);
-	int32_t getMeanSeaLevel(uint16_t maxWait = 250);
-	int32_t getGeoidSeparation(uint16_t maxWait = 250);
-	uint32_t getHorizontalAccuracy(uint16_t maxWait = 250);
-	uint32_t getVerticalAccuracy(uint16_t maxWait = 250);
+	int32_t getHighResLatitude(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int32_t getHighResLongitude(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int32_t getElipsoid(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int32_t getMeanSeaLevel(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int32_t getGeoidSeparation(uint16_t maxWait = getHPPOSLLHmaxWait);
+	uint32_t getHorizontalAccuracy(uint16_t maxWait = getHPPOSLLHmaxWait);
+	uint32_t getVerticalAccuracy(uint16_t maxWait = getHPPOSLLHmaxWait);
 
 	//Port configurations
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = 250); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
@@ -366,13 +374,13 @@ public:
 
 	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables
 
-	uint32_t getPositionAccuracy(uint16_t maxWait = 500); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
+	uint32_t getPositionAccuracy(uint16_t maxWait = 1100); //Returns the 3D accuracy of the current high-precision fix, in mm. Supported on NEO-M8P, ZED-F9P,
 
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 500); //Returns the PROTVER XX.00 from UBX-MON-VER register
 	uint8_t getProtocolVersionLow(uint16_t maxWait = 500);  //Returns the PROTVER 00.XX from UBX-MON-VER register
 	boolean getProtocolVersion(uint16_t maxWait = 500);		//Queries module, loads low/high bytes
 
-	boolean getRELPOSNED(uint16_t maxWait = 1000); //Get Relative Positioning Information of the NED frame
+	boolean getRELPOSNED(uint16_t maxWait = 1100); //Get Relative Positioning Information of the NED frame
 
 	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages
 	void disableDebugging(void);					  //Turn off debug statements
@@ -380,16 +388,16 @@ public:
 	void debugPrintln(char *message);				  //Safely print debug statements
 
 	//Support for geofences
-	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 2000); // Add a new geofence
-	boolean clearGeofences(uint16_t maxWait = 2000);																											 //Clears all geofences
-	boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 2000);																		 //Returns the combined geofence state
-	boolean clearAntPIO(uint16_t maxWait = 2000);																												 //Clears the antenna control pin settings to release the PIOs
-	geofenceParams currentGeofenceParams;																														 // Global to store the geofence parameters
+	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 1100); // Add a new geofence
+	boolean clearGeofences(uint16_t maxWait = 1100); //Clears all geofences
+	boolean getGeofenceState(geofenceState &currentGeofenceState, uint16_t maxWait = 1100); //Returns the combined geofence state
+	boolean clearAntPIO(uint16_t maxWait = 1100); //Clears the antenna control pin settings to release the PIOs
+	geofenceParams currentGeofenceParams; // Global to store the geofence parameters
 
-	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 2000);
+	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 1100);
 
 	//Change the dynamic platform model using UBX-CFG-NAV5
-	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 2000);
+	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);
 
 	//Survey-in specific controls
 	struct svinStructure
