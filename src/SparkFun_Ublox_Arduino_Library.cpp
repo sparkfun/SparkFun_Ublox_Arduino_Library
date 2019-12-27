@@ -1706,10 +1706,6 @@ boolean SFE_UBLOX_GPS::setPortInput(uint8_t portID, uint8_t inStreamSettings, ui
   if (getPortSettings(portID, maxWait) == false)
     return (false); //Something went wrong. Bail.
 
-  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
-  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
-  //waitForResponse(UBX_CLASS_CFG, UBX_CFG_PRT, 100); // But we'll only wait for 100msec max
-
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
   packetCfg.len = 20;
@@ -2085,10 +2081,6 @@ boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
   if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current power management settings. Loads into payloadCfg.
     return (false);
 
-  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
-  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
-  //waitForResponse(UBX_CLASS_CFG, UBX_CFG_RXM, 100); // But we'll only wait for 100msec max
-
   if (power_save)
   {
     payloadCfg[1] = 1; // Power Save Mode
@@ -2119,10 +2111,6 @@ boolean SFE_UBLOX_GPS::setDynamicModel(dynModel newDynamicModel, uint16_t maxWai
 
   if (sendCommand(packetCfg, maxWait) == false) //Ask module for the current navigation model settings. Loads into payloadCfg.
     return (false);
-
-  // Let's make sure we wait for the ACK too (sendCommand will have returned as soon as the module sent its response)
-  // This is only required because we are doing two sendCommands in quick succession using the same class and ID
-  //waitForResponse(UBX_CLASS_CFG, UBX_CFG_NAV5, 100); // But we'll only wait for 100msec max
 
   payloadCfg[0] = 0x01;            // mask: set only the dyn bit (0)
   payloadCfg[1] = 0x00;            // mask
