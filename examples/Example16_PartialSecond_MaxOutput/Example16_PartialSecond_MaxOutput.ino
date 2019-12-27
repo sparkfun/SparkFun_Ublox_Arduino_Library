@@ -32,14 +32,14 @@ long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox m
 
 void setup()
 {
-  Serial.begin(500000); //Increase serial speed to maximize 
+  Serial.begin(500000); //Increase serial speed to maximize
   while (!Serial)
     ; //Wait for user to open terminal
   Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
   Wire.setClock(400000);
-  
+
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
@@ -51,12 +51,12 @@ void setup()
 
   //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
 
-  myGPS.setNavigationFrequency(10); //Set output to 10 times a second
+  myGPS.setNavigationFrequency(10);           //Set output to 10 times a second
   byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
   Serial.print("Current update rate:");
   Serial.println(rate);
-  
-  myGPS.saveConfiguration();        //Save the current settings to flash and BBR
+
+  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 
   pinMode(2, OUTPUT); //For debug capture
   digitalWrite(2, HIGH);
@@ -64,8 +64,8 @@ void setup()
 
 void loop()
 {
-  //Query module very often to get max update rate
-  if (millis() - lastTime > 10)
+  // Calling getPVT returns true if there actually is a fresh navigation solution available.
+  if (myGPS.getPVT())
   {
     lastTime = millis(); //Update the timer
 
@@ -102,11 +102,13 @@ void loop()
     Serial.print(".");
     //Pretty print leading zeros
     int mseconds = myGPS.getMillisecond();
-    if(mseconds < 100) Serial.print("0");
-    if(mseconds < 10) Serial.print("0");
+    if (mseconds < 100)
+      Serial.print("0");
+    if (mseconds < 10)
+      Serial.print("0");
     Serial.print(mseconds);
 
-    Serial.print(" nanoSeconds: ");    
+    Serial.print(" nanoSeconds: ");
     Serial.print(myGPS.getNanosecond());
 
     Serial.println();
