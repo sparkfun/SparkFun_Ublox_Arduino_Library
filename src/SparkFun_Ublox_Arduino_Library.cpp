@@ -1031,6 +1031,7 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 
 //If we are going to set the value for a setting, then packetCfg.len will be at least 3 when the packetCfg is _sent_.
 //(UBX-CFG-MSG appears to have the shortest set length of 3 bytes)
+//And we are only expecting an ACK (or a NACK) in return.
 
 //Returns true if we got the following:
 //* If we got an ACK and a valid packetCfg (module is responding with register content)
