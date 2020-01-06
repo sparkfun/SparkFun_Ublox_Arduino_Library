@@ -36,6 +36,8 @@ Thanks to:
 * [RollieRowland](https://github.com/RollieRowland) for adding HPPOSLLH (High Precision Geodetic Position)
 * [tedder](https://github.com/tedder) for moving iTOW to PVT instead of HPPOS and comment cleanup
 * [grexjmo](https://github.com/grexjmo) for pushing for a better NMEA sentence configuration method
+* [averywallis](https://github.com/averywallis) for adding good comments to the various constants.
+
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
