@@ -297,7 +297,6 @@ const uint8_t UBX_UPD_SOS = 0x14; //Poll Backup Fil Restore Status, Create Backu
 
 
 //The following are used to enable RTCM messages
-const uint8_t UBX_CFG_MSG = 0x01;
 const uint8_t UBX_RTCM_MSB = 0xF5;  //All RTCM enable commands have 0xF5 as MSB
 const uint8_t UBX_RTCM_1005 = 0x05; //Stationary RTK reference ARP
 const uint8_t UBX_RTCM_1074 = 0x4A; //GPS MSM4
