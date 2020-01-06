@@ -364,7 +364,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
             {
               if (_printDebug == true)
               {
-                _debugSerial->println(F("Module not ready with data"));
+                _debugSerial->println(F("checkUbloxI2C: Module not ready with data. Retrying."));
               }
               delay(5); //In logic analyzation, the module starting responding after 1.48ms
               goto TRY_AGAIN;
@@ -1005,6 +1005,10 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
     _debugSerial->print(F(" ID:"));
     if (packet->cls == UBX_CLASS_NAV && packet->id == UBX_NAV_PVT)
       _debugSerial->print("PVT");
+    else if (packet->cls == UBX_CLASS_CFG && packet->id == UBX_CFG_VALSET)
+      _debugSerial->print("VALSET");
+    else if (packet->cls == UBX_CLASS_CFG && packet->id == UBX_CFG_VALGET)
+      _debugSerial->print("VALGET");
     else
       _debugSerial->print(packet->id, HEX);
 
@@ -1053,8 +1057,8 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 //Returns SFE_UBLOX_STATUS_TIMEOUT if we timed out
 sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime)
 {
-  commandAck = UBX_ACK_NONE; //Reset flag
-  packetCfg.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;   //This will go VALID (or NOT_VALID) when we receive a response to the packet we sent
+  commandAck = UBX_ACK_NONE;                               //Reset flag
+  packetCfg.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED; //This will go VALID (or NOT_VALID) when we receive a response to the packet we sent
   packetAck.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
 
   unsigned long startTime = millis();
@@ -2289,7 +2293,7 @@ boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
   // waitForACKResponse returns SFE_UBLOX_STATUS_DATA_SENT if it got an ACK and no packetCfg
   // (no valid packetCfg needed, module absorbs new register data)
   if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT)
-  return (false);
+    return (false);
 
   //All done
   return (true);
