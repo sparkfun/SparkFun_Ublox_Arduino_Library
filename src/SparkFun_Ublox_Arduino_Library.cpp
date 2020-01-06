@@ -319,6 +319,15 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
         _debugSerial->println(F(" bytes received"));
       }
     }
+    else
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->print(F("checkUbloxI2C: Reading "));
+        _debugSerial->print(bytesAvailable);
+        _debugSerial->println(F(" bytes"));
+      }
+    }
 
     while (bytesAvailable)
     {
@@ -630,6 +639,16 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
   }
 
   incomingUBX->counter++;
+  if (incomingUBX->counter == MAX_PAYLOAD_SIZE)
+  {
+    //Something has gone very wrong
+    currentSentence = NONE; //Reset the sentence to being looking for a new start char
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
+    }
+    Serial.println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
+  }
 }
 
 //Once a packet has been received and validated, identify this packet's class/id and update internal flags
@@ -956,6 +975,10 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
     _debugSerial->print(F(" ID:"));
     if (packet->cls == UBX_CLASS_NAV && packet->id == UBX_NAV_PVT)
       _debugSerial->print("PVT");
+    else if (packet->cls == UBX_CLASS_CFG && packet->id == UBX_CFG_RATE)
+      _debugSerial->print("RATE");
+    else if (packet->cls == UBX_CLASS_CFG && packet->id == UBX_CFG_CFG)
+      _debugSerial->print("SAVE");
     else
       _debugSerial->print(packet->id, HEX);
 
