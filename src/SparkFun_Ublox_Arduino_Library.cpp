@@ -45,6 +45,12 @@ SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
   // Constructor
   currentGeofenceParams.numFences = 0; // Zero the number of geofences currently in use
   moduleQueried.versionNumber = false;
+
+  if (checksumFailurePin >= 0)
+  {
+    pinMode((uint8_t)checksumFailurePin, OUTPUT);
+    digitalWrite((uint8_t)checksumFailurePin, HIGH);
+  }
 }
 
 //Initialize the Serial port
@@ -282,6 +288,12 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       {
         //I believe this is a Ublox bug. Device should never present an 0xFF.
         debugPrintln((char *)F("checkUbloxI2C: Ublox bug, no bytes available"));
+        if (checksumFailurePin >= 0)
+        {
+          digitalWrite((uint8_t)checksumFailurePin, LOW);
+          delay(10);
+          digitalWrite((uint8_t)checksumFailurePin, HIGH);
+        }
         lastCheck = millis(); //Put off checking to avoid I2C bus traffic
         return (false);
       }
@@ -307,6 +319,12 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
       {
         _debugSerial->print(F("checkUbloxI2C: Bytes available error:"));
         _debugSerial->println(bytesAvailable);
+        if (checksumFailurePin >= 0)
+        {
+          digitalWrite((uint8_t)checksumFailurePin, LOW);
+          delay(10);
+          digitalWrite((uint8_t)checksumFailurePin, HIGH);
+        }
       }
     }
 
@@ -356,8 +374,14 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C()
           {
             if (incoming == 0x7F)
             {
-              debugPrintln((char *)F("Module not ready with data"));
+              debugPrintln((char *)F("checkUbloxU2C: Ublox error, module not ready with data"));
               delay(5); //In logic analyzation, the module starting responding after 1.48ms
+              if (checksumFailurePin >= 0)
+              {
+                digitalWrite((uint8_t)checksumFailurePin, LOW);
+                delay(10);
+                digitalWrite((uint8_t)checksumFailurePin, HIGH);
+              }
               goto TRY_AGAIN;
             }
           }
