@@ -2660,16 +2660,16 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
   uint32_t tempAcc;
 
-  tempAcc = extractLong(24);
+  tempAcc = extractLong(36);
   relPosInfo.accN = tempAcc / 10000.0; //Convert 0.1 mm to m
 
-  tempAcc = extractLong(28);
+  tempAcc = extractLong(40);
   relPosInfo.accE = tempAcc / 10000.0; //Convert 0.1 mm to m
 
-  tempAcc = extractLong(32);
+  tempAcc = extractLong(44);
   relPosInfo.accD = tempAcc / 10000.0; //Convert 0.1 mm to m
 
-  uint8_t flags = payloadCfg[36];
+  uint8_t flags = payloadCfg[60];
 
   relPosInfo.gnssFixOk = flags & (1 << 0);
   relPosInfo.diffSoln = flags & (1 << 1);
