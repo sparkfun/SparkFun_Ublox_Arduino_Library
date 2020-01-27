@@ -87,10 +87,15 @@ const uint8_t UBX_CLASS_LOG = 0x21;
 const uint8_t UBX_CLASS_SEC = 0x27;
 const uint8_t UBX_CLASS_HNR = 0x28;
 
-const uint8_t UBX_CFG_PRT = 0x00;	//Used to configure port specifics
-const uint8_t UBX_CFG_RST = 0x04;	//Used to reset device
+const uint8_t UBX_CFG_PRT = 0x00;	 //Used to configure port specifics
+const uint8_t UBX_CFG_RST = 0x04;	 //Used to reset device
 const uint8_t UBX_CFG_RATE = 0x08;   //Used to set port baud rates
-const uint8_t UBX_CFG_CFG = 0x09;	//Used to save current configuration
+const uint8_t UBX_CFG_CFG = 0x09;	 //Used to save current configuration
+const uint8_t UBX_CFG_RXM = 0x11;    //Used for config of power mode setup
+const uint8_t UBX_CFG_NAVX5 = 0x23;  //Used for config of Navigation Engine Expert Settings
+const uint8_t UBX_CFG_NAV5 = 0x24;   //Used for config of Navigation Engine Settings
+const uint8_t UBX_CFG_PM2 = 0x3B;    //Used for config of power mode setup
+const uint8_t UBX_CFG_PMS = 0x86;    //Used for config of power mode setup
 const uint8_t UBX_CFG_VALSET = 0x8A; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALGET = 0x8B; //Used for config of higher version Ublox modules (ie protocol v27 and above)
 const uint8_t UBX_CFG_VALDEL = 0x8C; //Used for config of higher version Ublox modules (ie protocol v27 and above)
@@ -122,6 +127,7 @@ const uint8_t UBX_RTCM_1230 = 0xE6; //GLONASS code-phase biases, set to once eve
 
 const uint8_t UBX_ACK_NACK = 0x00;
 const uint8_t UBX_ACK_ACK = 0x01;
+const uint8_t UBX_RXM_PMREQ = 0x41;
 
 //The following consts are used to configure the various ports and streams for those ports. See -CFG-PRT.
 const uint8_t COM_PORT_I2C = 0;
@@ -281,6 +287,21 @@ public:
 
 	void enableDebugging(Stream &debugPort = Serial); //Given a port to print to, enable debug messages
 	void disableDebugging(void);
+
+	boolean getPowerMode(uint16_t maxWait = 250);													//Get the current power settings
+	boolean setPowerMode(uint8_t mode, uint16_t period, uint16_t onTime, uint16_t maxWait = 250); 	//Control power in mode
+	boolean getExtPMConfig(uint16_t maxWait = 10000);												//Get the current power settings
+	boolean setExtPMConfig(uint16_t maxWait = 1000); //Control power in mode
+	boolean pollPVT();
+    boolean setPortTXReady(uint8_t portID, uint16_t txready, uint16_t maxWait = 250);
+
+	boolean sleep(uint32_t duration, uint16_t maxWait = 250); //Control sleep
+
+	boolean getNavEngineSettings(uint16_t maxWait = 250);
+	boolean setNavEngineSettings(uint8_t dynMode, uint8_t fixMode, uint8_t minElev, uint8_t staticHoldVelocity, uint16_t staticHoldDistance, uint16_t maxWait = 250);
+	boolean getNavEngineXSettings(uint16_t maxWait = 250);
+    boolean setNavEngineXSettings(uint8_t minSV, uint8_t maxSV, uint8_t minCNO, uint8_t iniFix3D, uint16_t maxWait = 250);
+
 
 	//Survey-in specific controls
 	struct svinStructure

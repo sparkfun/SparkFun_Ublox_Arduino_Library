@@ -1558,3 +1558,243 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
   return (true);
 }
+
+//Get the current power settings
+boolean SFE_UBLOX_GPS::getPowerMode(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PMS;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait));
+}
+
+//Control power mode
+boolean SFE_UBLOX_GPS::setPowerMode(uint8_t mode, uint16_t period, uint16_t onTime, uint16_t maxWait)
+{
+  if (getPowerMode() == false) //Ask module for the current power settings. Loads into payloadCfg.
+    return (false);
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PMS;
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  //payloadCfg should be loaded with poll response. Now modify only the bits we care about
+  payloadCfg[0] = 0;
+  payloadCfg[1] = mode; //Set mode
+  payloadCfg[2] = period & 0xFF;
+  payloadCfg[3] = period >> 8;
+  payloadCfg[4] = onTime & 0xFF;
+  payloadCfg[5] = onTime >> 8;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
+//Control power mode
+boolean SFE_UBLOX_GPS::sleep(uint32_t duration, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_RXM;
+  packetCfg.id = UBX_RXM_PMREQ;
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  //payloadCfg should be loaded with poll response. Now modify only the bits we care about
+  payloadCfg[0] = duration & 0xFF;
+  payloadCfg[1] = (duration >> 8) & 0xFF;
+  payloadCfg[2] = (duration >> 16) & 0xFF;
+  payloadCfg[3] = (duration >> 24) & 0xFF;
+  payloadCfg[4] = 2;
+  payloadCfg[5] = 0;
+  payloadCfg[6] = 0;
+  payloadCfg[7] = 0;
+
+  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+}
+
+//Get the current extended power settings
+boolean SFE_UBLOX_GPS::getExtPMConfig(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PM2;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait));
+}
+
+//Control extended power mode
+boolean SFE_UBLOX_GPS::setExtPMConfig(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 2;
+  packetCfg.startingSpot = 0;
+
+  //payloadCfg should be loaded with poll response. Now modify only the bits we care about
+  payloadCfg[0] = 0x00;
+  payloadCfg[1] = 0x01;
+
+  if (!sendCommand(packetCfg, maxWait)) {
+    if ( _printDebug == true )
+      _debugSerial->println("failed to cfg rxm");
+    return (false);
+  }
+
+  if (getExtPMConfig() == false) { //Ask module for the current power settings. Loads into payloadCfg.
+    if ( _printDebug == true )
+      _debugSerial->println("failed to get PM2 config");
+    return (false);
+  }
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PM2;
+  packetCfg.len = 48;
+  packetCfg.startingSpot = 0;
+
+  for (uint8_t i=0; i<48; i++)  //  clear the payload
+    payloadCfg[i] = 0;
+
+  //payloadCfg should be loaded with configuration
+  payloadCfg[0] = 0x02;  // msg version
+  payloadCfg[1] = 0x00;  // reserved = 0
+  payloadCfg[2] = 0x00;  // MaxStartupStateDur = 0 (disabled)
+  payloadCfg[3] = 0x00;  // reserved = 0
+  payloadCfg[4] = 0x60;  // flags - set extintWake & extintBackup bits
+  payloadCfg[5] = 0x18;  // flags - updateEPH, updateRTC
+  payloadCfg[6] = 0x00;  // flags - mode = ON/OFF
+  payloadCfg[7] = 0x00;  // flags - none
+  payloadCfg[8] = 0x0;  // Update period = 10000ms
+  payloadCfg[9] = 0x0;
+  payloadCfg[10] = 0x00;
+  payloadCfg[11] = 0x00;
+  payloadCfg[12] = 0x0;  // Search period = 10000ms
+  payloadCfg[13] = 0x0;
+  payloadCfg[14] = 0x00;
+  payloadCfg[15] = 0x00;
+  payloadCfg[20] = 0x02;  // onTime period = 10000ms
+  payloadCfg[21] = 0x00;
+  payloadCfg[22] = 0x00;  // minAcqTime = 0
+  payloadCfg[23] = 0x00;
+
+
+  if (!sendCommand(packetCfg, maxWait)) {
+    if ( _printDebug == true )
+      _debugSerial->println("failed to set PM2 config");
+    return (false);
+  }
+  return (true);
+}
+
+//  Poll to see if we have received a PVT response from the module
+boolean SFE_UBLOX_GPS::pollPVT() {
+  if (packetCfg.valid == true)
+  {
+    //Did we receive a config packet that matches the cls/id we requested?
+    if (packetCfg.cls == UBX_CLASS_NAV && packetCfg.id == UBX_NAV_PVT)
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("CLS/ID match!"));
+      }
+      return (true); //If the packet we just sent was a NAV packet then we'll just get data back
+    }
+    else
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->print(F("Packet didn't match CLS/ID"));
+        printPacket(&packetCfg);
+      }
+      return (false);
+    }
+  }
+}
+
+boolean SFE_UBLOX_GPS::setPortTXReady(uint8_t portID, uint16_t txready, uint16_t maxWait)
+{
+  //Get the current config values for this port ID
+  if (getPortSettings(portID) == false)
+    return (false); //Something went wrong. Bail.
+
+  //Yes, this is the depreciated way to do it but it's still supported on v27 so it
+  //covers both ZED-F9P (v27) and SAM-M8Q (v18)
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_PRT;
+  packetCfg.len = 20;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[2] = txready;
+  payloadCfg[3] = txready >> 8;
+
+  return (sendCommand(packetCfg, maxWait));
+}
+
+// Get the current nav engine settings
+boolean SFE_UBLOX_GPS::getNavEngineSettings(uint16_t maxWait) {
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAV5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait));
+}
+
+// configure navigation engine settings
+boolean SFE_UBLOX_GPS::setNavEngineSettings(uint8_t dynMode, uint8_t fixMode, uint8_t minElev, uint8_t staticHoldVelocity, uint16_t staticHoldDistance, uint16_t maxWait) {
+  if (getNavEngineSettings() == false) //Ask module for the current Nav Engine settings. Loads into payloadCfg.
+    return (false);
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAV5;
+  packetCfg.len = 36;
+  packetCfg.startingSpot = 0;
+
+  //payloadCfg should be loaded with poll response. Modify only the bits we care about
+  payloadCfg[0] = 0x47;                       // parameter bit mask (lsb)
+  payloadCfg[1] = 0x01;                       // parameter bit mask (msb)
+  payloadCfg[2] = dynMode;                    // dynamic platform mode
+  payloadCfg[3] = fixMode;                    // position fix mode
+  payloadCfg[12] = minElev;                   // minimum elevation for a GNSS satellite to be used in NAV
+  payloadCfg[22] = staticHoldVelocity;        // static hold threshold velocity (cm/s)
+  payloadCfg[28] = staticHoldDistance & 0xFF; // static hold distance (m) lsb
+  payloadCfg[29] = staticHoldDistance >> 8;   // static hold distance (m) msb
+
+  return (sendCommand(packetCfg, maxWait));   //Wait for ack
+}
+
+
+// Get the current nav engine expert settings
+boolean SFE_UBLOX_GPS::getNavEngineXSettings(uint16_t maxWait) {
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(packetCfg, maxWait));
+}
+
+// configure navigation engine expert settings
+boolean SFE_UBLOX_GPS::setNavEngineXSettings(uint8_t minSV, uint8_t maxSV, uint8_t minCNO, uint8_t iniFix3D, uint16_t maxWait) {
+  if (getNavEngineXSettings() == false) //Ask module for the current Nav Engine settings. Loads into payloadCfg.
+    return (false);
+
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_NAVX5;
+  packetCfg.len = 40;
+  packetCfg.startingSpot = 0;
+
+  //payloadCfg should be loaded with poll response. Modify only the bits we care about
+  payloadCfg[0] = 0x4C;                       // parameter bit mask (lsb)
+  payloadCfg[1] = 0x00;                       // parameter bit mask (msb)
+  payloadCfg[2] = 0;                          // parameter bit mask (lsb)
+  payloadCfg[3] = 0;                          // parameter bit mask (msb)
+  payloadCfg[10] = minSV;                     // minimum number of satellites for navigation
+  payloadCfg[11] = maxSV;                     // maximum number of satellites for navigation
+  payloadCfg[12] = minCNO;                    // Minimum satellite signal level for navigation
+  payloadCfg[14] = iniFix3D;                  // initial fix must be 3D
+
+  return (sendCommand(packetCfg, maxWait));   //Wait for ack
+}
