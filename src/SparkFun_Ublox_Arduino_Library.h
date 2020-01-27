@@ -336,6 +336,7 @@ public:
 	uint8_t SIV;			 //Number of satellites used in position solution
 	uint8_t fixType;		 //Tells us when we have a solution aka lock
 	uint8_t carrierSolution; //Tells us when we have an RTK float/fixed solution
+	bool    gnssFixOK;       // valid fix (i.e within DOP & accuracy masks)
 	int32_t groundSpeed;	 //mm/s
 	int32_t headingOfMotion; //degrees * 10^-5
 	uint16_t pDOP;			 //Positional dilution of precision

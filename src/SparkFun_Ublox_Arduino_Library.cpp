@@ -512,6 +512,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
       fixType = extractByte(20 - startingSpot);
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
+      gnssFixOK = extractByte(21 - startingSpot) & 0x01;
       SIV = extractByte(23 - startingSpot);
       longitude = extractLong(24 - startingSpot);
       latitude = extractLong(28 - startingSpot);
@@ -519,7 +520,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       altitudeMSL = extractLong(36 - startingSpot);
       groundSpeed = extractLong(60 - startingSpot);
       headingOfMotion = extractLong(64 - startingSpot);
-      pDOP = extractLong(76 - startingSpot);
+      pDOP = extractInt(76 - startingSpot);
 
       //Mark all datums as fresh (not read before)
       moduleQueried.gpsYear = true;
