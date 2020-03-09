@@ -164,6 +164,7 @@ const char *SFE_UBLOX_GPS::statusString(sfe_ublox_status_e stat)
 void SFE_UBLOX_GPS::factoryReset()
 {
   // Copy default settings to permanent
+  // Note: this does not load the permanent configuration into the current configuration. Calling factoryDefault() will do that.
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_CFG;
   packetCfg.len = 13;
@@ -1205,6 +1206,31 @@ boolean SFE_UBLOX_GPS::saveConfiguration(uint16_t maxWait)
     packetCfg.payload[x] = 0;
 
   packetCfg.payload[4] = 0xFF; //Set any bit in the saveMask field to save current config to Flash and BBR
+  packetCfg.payload[5] = 0xFF;
+
+  if (sendCommand(packetCfg, maxWait) == false)
+    return (false); //If command send fails then bail
+
+  return (true);
+}
+
+//Save the selected configuration sub-sections to flash and BBR (battery backed RAM)
+//This still works but it is the old way of configuring ublox modules. See getVal and setVal for the new methods
+boolean SFE_UBLOX_GPS::saveConfigSelective(uint32_t configMask, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_CFG;
+  packetCfg.len = 12;
+  packetCfg.startingSpot = 0;
+
+  //Clear packet payload
+  for (uint8_t x = 0; x < packetCfg.len; x++)
+    packetCfg.payload[x] = 0;
+
+  packetCfg.payload[4] = configMask & 0xFF; //Set the appropriate bits in the saveMask field to save current config to Flash and BBR
+  packetCfg.payload[5] = (configMask >> 8) & 0xFF;
+  packetCfg.payload[6] = (configMask >> 16) & 0xFF;
+  packetCfg.payload[7] = (configMask >> 24) & 0xFF;
 
   if (sendCommand(packetCfg, maxWait) == false)
     return (false); //If command send fails then bail
@@ -1226,7 +1252,9 @@ boolean SFE_UBLOX_GPS::factoryDefault(uint16_t maxWait)
     packetCfg.payload[x] = 0;
 
   packetCfg.payload[0] = 0xFF; //Set any bit in the clearMask field to clear saved config
+  packetCfg.payload[1] = 0xFF;
   packetCfg.payload[8] = 0xFF; //Set any bit in the loadMask field to discard current config and rebuild from lower non-volatile memory layers
+  packetCfg.payload[9] = 0xFF;
 
   if (sendCommand(packetCfg, maxWait) == false)
     return (false); //If command send fails then bail
