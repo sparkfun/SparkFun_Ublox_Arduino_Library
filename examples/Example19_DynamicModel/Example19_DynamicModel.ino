@@ -1,7 +1,7 @@
 /*
   Set Dynamic Model
   By: Paul Clark (PaulZC)
-  Date: December 18th, 2019
+  Date: March 9th, 2020
   
   Based extensively on Example3_GetPosition
   By: Nathan Seidle
@@ -74,7 +74,7 @@ void setup()
     Serial.println("Dynamic platform model changed successfully!");
   }
 
-  //myGPS.saveConfiguration(); //Uncomment this line to save the current settings to flash and BBR
+  //myGPS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
 }
 
 void loop()

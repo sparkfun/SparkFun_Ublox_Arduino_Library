@@ -350,6 +350,18 @@ const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_8; //All fields in I2C group are cur
 
 const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
 
+// Configuration Sub-Section mask definitions for saveConfigSelective (UBX-CFG-CFG)
+const uint32_t VAL_CFG_SUBSEC_IOPORT = 0x00000001; // ioPort - communications port settings (causes IO system reset!)
+const uint32_t VAL_CFG_SUBSEC_MSGCONF = 0x00000002; // msgConf - message configuration
+const uint32_t VAL_CFG_SUBSEC_INFMSG = 0x00000004; // infMsg - INF message configuration
+const uint32_t VAL_CFG_SUBSEC_NAVCONF = 0x00000008; // navConf - navigation configuration
+const uint32_t VAL_CFG_SUBSEC_RXMCONF = 0x00000010; // rxmConf - receiver manager configuration
+const uint32_t VAL_CFG_SUBSEC_SENCONF = 0x00000100; // senConf - sensor interface configuration (requires protocol 19+)
+const uint32_t VAL_CFG_SUBSEC_RINVCONF = 0x00000200; // rinvConf - remove inventory configuration
+const uint32_t VAL_CFG_SUBSEC_ANTCONF = 0x00000400; // antConf - antenna configuration
+const uint32_t VAL_CFG_SUBSEC_LOGCONF = 0x00000800; // logConf - logging configuration
+const uint32_t VAL_CFG_SUBSEC_FTSCONF = 0x00001000; // ftsConf - FTS configuration (FTS products only)
+
 enum dynModel // Possible values for the dynamic platform model, which provide more accuract position output for the situation. Description extracted from ZED-F9P Integration Manual
 {
 	DYN_MODEL_PORTABLE = 0, //Applications with low acceleration, e.g. portable devices. Suitable for most situations.
@@ -446,6 +458,7 @@ public:
 	uint8_t getNavigationFrequency(uint16_t maxWait = 250);					 //Get the number of nav solutions sent per second currently being output by module
 	boolean saveConfiguration(uint16_t maxWait = 250);						 //Save current configuration to flash and BBR (battery backed RAM)
 	boolean factoryDefault(uint16_t maxWait = 250);							 //Reset module to factory defaults
+  boolean saveConfigSelective(uint32_t configMask, uint16_t maxWait = 250);						 //Save the selected configuration sub-sections to flash and BBR (battery backed RAM)
 
 	sfe_ublox_status_e waitForACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250);   //Poll the module until a config packet and an ACK is received
 	sfe_ublox_status_e waitForNoACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = 250); //Poll the module until a config packet is received

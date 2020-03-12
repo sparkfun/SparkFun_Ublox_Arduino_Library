@@ -37,6 +37,7 @@ getNavigationFrequency	KEYWORD2
 
 saveConfiguration	KEYWORD2
 factoryDefault	KEYWORD2
+saveConfigSelective	KEYWORD2
 
 waitForResponse	KEYWORD2
 
