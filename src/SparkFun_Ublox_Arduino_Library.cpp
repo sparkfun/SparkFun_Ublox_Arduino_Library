@@ -941,7 +941,7 @@ boolean SFE_UBLOX_GPS::isConnected()
     packetCfg.len = 0;
     packetCfg.startingSpot = 0;
 
-    return sendCommand(packetCfg);
+    return sendCommand(packetCfg) == SFE_UBLOX_STATUS_DATA_SENT;
   }
   return false;
 }
@@ -1208,7 +1208,7 @@ boolean SFE_UBLOX_GPS::saveConfiguration(uint16_t maxWait)
   packetCfg.payload[4] = 0xFF; //Set any bit in the saveMask field to save current config to Flash and BBR
   packetCfg.payload[5] = 0xFF;
 
-  if (sendCommand(packetCfg, maxWait) == false)
+  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT)
     return (false); //If command send fails then bail
 
   return (true);
@@ -1770,7 +1770,7 @@ boolean SFE_UBLOX_GPS::setPortOutput(uint8_t portID, uint8_t outStreamSettings, 
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[14] = outStreamSettings; //OutProtocolMask LSB - Set outStream bits
 
-  return (sendCommand(packetCfg, maxWait));
+  return (sendCommand(packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT;
 }
 
 //Configure a given port to input UBX, NMEA, RTCM3 or a combination thereof
@@ -1841,7 +1841,7 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
   payloadCfg[0] = measurementRate & 0xFF; //measRate LSB
   payloadCfg[1] = measurementRate >> 8;   //measRate MSB
 
-  return (sendCommand(packetCfg, maxWait));
+  return (sendCommand(packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT;
 }
 
 //Get the rate at which the module is outputting nav solutions
@@ -1897,7 +1897,7 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   payloadCfg[1] = UBX_NAV_PVT;
   payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
 
-  bool ok = sendCommand(packetCfg, maxWait);
+  bool ok = sendCommand(packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT;
   if (ok)
   {
     autoPVT = enable;
@@ -2196,7 +2196,7 @@ boolean SFE_UBLOX_GPS::setDynamicModel(dynModel newDynamicModel, uint16_t maxWai
   packetCfg.len = 36;
   packetCfg.startingSpot = 0;
 
-  return (sendCommand(packetCfg, maxWait)); //Wait for ack
+  return (sendCommand(packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT; //Wait for ack
 }
 
 //Given a spot in the payload array, extract four bytes and build a long
