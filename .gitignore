@@ -48,3 +48,8 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# VIM backup files
+*~
+[._]*.un~
+*.swp

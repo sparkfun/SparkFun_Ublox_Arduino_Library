@@ -582,6 +582,10 @@ public:
 	//Change the dynamic platform model using UBX-CFG-NAV5
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);
 
+  boolean getUdrStatus(uint16_t maxWait = 1100);
+  boolean getInsInfo(uint16_t maxWait = 1100);
+  boolean getExternSensMeas(uint16_t maxWait = 1100);
+
 	//Survey-in specific controls
 	struct svinStructure
 	{
@@ -654,6 +658,33 @@ public:
 	uint32_t verticalAccuracy;
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
+
+  struct udrData 
+  {
+    uint8_t version; 
+    uint8_t fusionMode;
+    uint8_t numSens;
+
+    uint8_t xAngRateVald;
+    uint8_t yAngRateVald;
+    uint8_t zAngRateVald;
+    uint8_t xAccelVald;
+    uint8_t yAccelVald;
+    uint8_t zAccelVald;
+
+    int32_t xAngRate;
+    int32_t yAngRate;
+    int32_t zAngRate;
+
+    int32_t xAccel;
+    int32_t yAccel;
+    int32_t zAccel;
+
+    // The array size is based on testing directly on M8U and F9R
+    uint32_t data[7];
+    uint32_t dataType[7];
+    uint32_t timeStamp[7];
+  } imuMetric;
 
 private:
 	//Depending on the sentence type the processor will load characters into different arrays
