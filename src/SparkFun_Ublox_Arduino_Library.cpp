@@ -2812,7 +2812,7 @@ boolean SFE_UBLOX_GPS::getEsfRaw(uint16_t maxWait)
 
     uint32_t bitField = extractLong(4 + byteOffset * i);
     imuMetric.dataType[i] = (bitField && 0xFF000000) >> 23; // Repeating Blocks on the back burner...
-    imuMetric.data[i] = (bitField && 0xFFFFFF) 
+    imuMetric.data[i] = (bitField && 0xFFFFFF);
     imuMetric.timeStamp[i] = extractLong(8 + byteOffset * i); 
 
   }

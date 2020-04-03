@@ -315,6 +315,14 @@ const uint8_t UBX_ACK_NACK = 0x00;
 const uint8_t UBX_ACK_ACK = 0x01;
 const uint8_t UBX_ACK_NONE = 0x02; //Not a real value
 
+// The following constants are used to get External Sensor Measurements and Status
+// Information. 
+const uint8_t UBX_ESF_MEAS = 0x02; 
+const uint8_t UBX_ESF_RAW = 0x03; 
+const uint8_t UBX_ESF_STATUS = 0x10; 
+const uint8_t UBX_ESF_INS = 0x15; //36 bytes
+
+
 const uint8_t SVIN_MODE_DISABLE = 0x00;
 const uint8_t SVIN_MODE_ENABLE = 0x01;
 
@@ -585,6 +593,7 @@ public:
   boolean getUdrStatus(uint16_t maxWait = 1100);
   boolean getInsInfo(uint16_t maxWait = 1100);
   boolean getExternSensMeas(uint16_t maxWait = 1100);
+  boolean getEsfRaw(uint16_t maxWait = 1100);
 
 	//Survey-in specific controls
 	struct svinStructure
