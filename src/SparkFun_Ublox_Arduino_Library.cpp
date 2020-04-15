@@ -224,7 +224,12 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
     _debugSerial->println(((uint32_t)payloadCfg[10] << 16) | ((uint32_t)payloadCfg[9] << 8) | payloadCfg[8]);
   }
 
-  sendCommand(packetCfg, maxWait);
+  sfe_ublox_status_e retVal = sendCommand(packetCfg, maxWait);
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("setSerialRate: sendCommand returned: "));
+    _debugSerial->println(statusString(retVal));
+  }
 }
 
 //Changes the I2C address that the Ublox module responds to
@@ -242,7 +247,7 @@ boolean SFE_UBLOX_GPS::setI2CAddress(uint8_t deviceAddress, uint16_t maxWait)
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[4] = deviceAddress << 1; //DDC mode LSB
 
-  if (sendCommand(packetCfg, maxWait) == true)
+  if (sendCommand(packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT)
   {
     //Success! Now change our internal global.
     _gpsI2Caddress = deviceAddress; //Store the I2C address from user
@@ -975,7 +980,14 @@ boolean SFE_UBLOX_GPS::isConnected()
     packetCfg.len = 0;
     packetCfg.startingSpot = 0;
 
-    return sendCommand(packetCfg);
+    if (sendCommand(packetCfg) == SFE_UBLOX_STATUS_DATA_SENT)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
   return false;
 }
@@ -1257,7 +1269,7 @@ boolean SFE_UBLOX_GPS::saveConfiguration(uint16_t maxWait)
   packetCfg.payload[4] = 0xFF; //Set any bit in the saveMask field to save current config to Flash and BBR
   packetCfg.payload[5] = 0xFF;
 
-  if (sendCommand(packetCfg, maxWait) == false)
+  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT)
     return (false); //If command send fails then bail
 
   return (true);
@@ -1281,7 +1293,7 @@ boolean SFE_UBLOX_GPS::saveConfigSelective(uint32_t configMask, uint16_t maxWait
   packetCfg.payload[6] = (configMask >> 16) & 0xFF;
   packetCfg.payload[7] = (configMask >> 24) & 0xFF;
 
-  if (sendCommand(packetCfg, maxWait) == false)
+  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT)
     return (false); //If command send fails then bail
 
   return (true);
@@ -1305,7 +1317,7 @@ boolean SFE_UBLOX_GPS::factoryDefault(uint16_t maxWait)
   packetCfg.payload[8] = 0xFF; //Set any bit in the loadMask field to discard current config and rebuild from lower non-volatile memory layers
   packetCfg.payload[9] = 0xFF;
 
-  if (sendCommand(packetCfg, maxWait) == false)
+  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT)
     return (false); //If command send fails then bail
 
   return (true);
@@ -1364,7 +1376,14 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
   }
 
   //Send VALGET command with this key
-  if (sendCommand(packetCfg, maxWait) == false)
+
+  sfe_ublox_status_e retVal = sendCommand(packetCfg, maxWait);
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("getVal8: sendCommand returned: "));
+    _debugSerial->println(statusString(retVal));
+  }
+  if (retVal != SFE_UBLOX_STATUS_DATA_SENT)
     return (false); //If command send fails then bail
 
   //Verify the response is the correct length as compared to what the user called (did the module respond with 8-bits but the user called getVal32?)
