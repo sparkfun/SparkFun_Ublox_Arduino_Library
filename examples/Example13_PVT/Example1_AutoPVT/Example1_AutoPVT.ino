@@ -75,6 +75,11 @@ void loop()
     Serial.print(F(" SIV: "));
     Serial.print(SIV);
 
+    int PDOP = myGPS.getPDOP();
+    Serial.print(F(" PDOP: "));
+    Serial.print(PDOP);
+    Serial.print(F(" (m * 10^-2)"));    
+
     Serial.println();
   } else {
     Serial.print(".");

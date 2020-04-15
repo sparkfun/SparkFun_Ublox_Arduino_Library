@@ -722,7 +722,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       altitudeMSL = extractLong(36 - startingSpot);
       groundSpeed = extractLong(60 - startingSpot);
       headingOfMotion = extractLong(64 - startingSpot);
-      pDOP = extractLong(76 - startingSpot);
+      pDOP = extractInt(76 - startingSpot);
 
       //Mark all datums as fresh (not read before)
       moduleQueried.gpsiTOW = true;
