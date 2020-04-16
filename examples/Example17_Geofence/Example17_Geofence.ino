@@ -50,7 +50,7 @@ void setup()
   Serial.println();
 
   delay(1000); // Let the GPS power up
-  
+
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
@@ -64,7 +64,7 @@ void setup()
 
   byte fixType = 0;
 
-  while (fixType != 3)
+  while (fixType < 3)
   {
     fixType = myGPS.getFixType(); // Get the fix type
     Serial.print(F("Fix: ")); // Print it
@@ -74,6 +74,7 @@ void setup()
     else if(fixType == 2) Serial.print(F(" = 2D"));
     else if(fixType == 3) Serial.print(F(" = 3D"));
     else if(fixType == 4) Serial.print(F(" = GNSS + Dead reckoning"));
+    else if(fixType == 5) Serial.print(F(" = Time only"));
     Serial.println();
     delay(1000);
   }
@@ -89,7 +90,7 @@ void setup()
   Serial.println(longitude);
 
   uint32_t radius = 500; // Set the radius to 5m (radius is in m * 10^-2 i.e. cm)
-  
+
   byte confidence = 2; // Set the confidence level: 0=none, 1=68%, 2=95%, 3=99.7%, 4=99.99%
 
   // Call clearGeofences() to clear all existing geofences.
@@ -99,18 +100,18 @@ void setup()
   // It is possible to define up to four geofences.
   // Call addGeofence up to four times to define them.
   Serial.println(F("Setting the geofences:"));
-  
+
   Serial.print(F("addGeofence for geofence 1 returned: "));
   Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
-  
+
   radius = 1000; // 10m
   Serial.print(F("addGeofence for geofence 2 returned: "));
   Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
-  
+
   radius = 1500; // 15m
   Serial.print(F("addGeofence for geofence 3 returned: "));
   Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
-  
+
   radius = 2000; // 20m
   Serial.print(F("addGeofence for geofence 4 returned: "));
   Serial.println(myGPS.addGeofence(latitude, longitude, radius, confidence));
@@ -130,16 +131,16 @@ void loop()
     Serial.println(F(".")); // Tidy up
     return; // and go round the loop again
   }
-  
+
   Serial.print(F(". status is: ")); // Print the status
   Serial.print(currentGeofenceState.status);
-  
+
   Serial.print(F(". numFences is: ")); // Print the numFences
   Serial.print(currentGeofenceState.numFences);
-  
+
   Serial.print(F(". combState is: ")); // Print the combined state
   Serial.print(currentGeofenceState.combState);
-  
+
   if (currentGeofenceState.combState == 0)
   {
     Serial.print(F(" = Unknown"));
@@ -163,6 +164,6 @@ void loop()
     Serial.print(currentGeofenceState.states[i]);
   }
   Serial.println();
-  
+
   delay(1000);
 }

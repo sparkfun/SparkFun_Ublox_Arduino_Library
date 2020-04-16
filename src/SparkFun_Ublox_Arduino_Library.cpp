@@ -965,7 +965,7 @@ void SFE_UBLOX_GPS::sendSerialCommand(ubxPacket outgoingUBX)
 }
 
 //Returns true if I2C device ack's
-boolean SFE_UBLOX_GPS::isConnected()
+boolean SFE_UBLOX_GPS::isConnected(uint16_t maxWait)
 {
   if (commType == COMM_TYPE_I2C)
   {
@@ -980,7 +980,7 @@ boolean SFE_UBLOX_GPS::isConnected()
     packetCfg.len = 0;
     packetCfg.startingSpot = 0;
 
-    return (sendCommand(packetCfg) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are polling the RATE so we expect data and an ACK
+    return (sendCommand(packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are polling the RATE so we expect data and an ACK
   }
   return false;
 }
@@ -1343,8 +1343,19 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
   for (uint8_t x = 0; x < packetCfg.len; x++)
     packetCfg.payload[x] = 0;
 
+  //VALGET uses different memory layer definitions to VALSET
+  //because it can only return the value for one layer.
+  //So we need to fiddle the layer here.
+  //And just to complicate things further, the ZED-F9P only responds
+  //correctly to layer 0 (RAM) and layer 7 (Default)!
+  uint8_t getLayer = 7; // 7 is the "Default Layer"
+  if ((layer & VAL_LAYER_RAM) == VAL_LAYER_RAM) // Did the user request the RAM layer?
+  {
+    getLayer = 0; // Layer 0 is RAM
+  }
+
   payloadCfg[0] = 0;     //Message Version - set to 0
-  payloadCfg[1] = layer; //By default we ask for the BBR layer
+  payloadCfg[1] = getLayer; //Layer
 
   //Load key into outgoing payload
   payloadCfg[4] = key >> 8 * 0; //Key LSB
