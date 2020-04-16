@@ -590,9 +590,9 @@ public:
 	//Change the dynamic platform model using UBX-CFG-NAV5
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);
 
-  boolean getUdrStatus(uint16_t maxWait = 1100);
-  boolean getInsInfo(uint16_t maxWait = 1100);
-  boolean getExternSensMeas(uint16_t maxWait = 1100);
+  boolean getEsfStatus(uint16_t maxWait = 1100);
+  boolean getEsfInfo(uint16_t maxWait = 1100);
+  boolean getEsfMeas(uint16_t maxWait = 1100);
   boolean getEsfRaw(uint16_t maxWait = 1100);
 
 	//Survey-in specific controls
@@ -668,11 +668,12 @@ public:
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
-  struct udrData 
+#define DEF_NUM_SENS 7 
+  struct deadReckData 
   {
     uint8_t version; 
     uint8_t fusionMode;
-    uint8_t numSens;
+    uint8_t numSens = DEF_NUM_SENS;
 
     uint8_t xAngRateVald;
     uint8_t yAngRateVald;
@@ -690,10 +691,28 @@ public:
     int32_t zAccel;
 
     // The array size is based on testing directly on M8U and F9R
-    uint32_t data[7];
-    uint32_t dataType[7];
-    uint32_t timeStamp[7];
-  } imuMetric;
+    uint32_t rawData[numSens];
+    uint32_t rawDataType[numSens];
+    uint32_t rawTstamp[numSens];
+
+    uint32_t data[numSens];
+    uint32_t dataType[numSens];
+    uint32_t dataTstamp[numSens];
+  } imuData;
+
+  struct indivImuData
+  {
+    uint8_t senType;
+    bool isUsed;
+    bool isReady;
+    uint8_t calibStatus;
+    uint8_t timeStatus;
+    uint8_t freq; // Hz
+    uint8_t badMeas;
+    uint8_t badTag;
+    uint8_t missMeas;
+    uint8_t noisyMeas;
+  } ubloxSen;
 
 private:
 	//Depending on the sentence type the processor will load characters into different arrays

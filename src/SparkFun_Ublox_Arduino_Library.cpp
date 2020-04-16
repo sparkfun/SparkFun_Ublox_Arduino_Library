@@ -2709,7 +2709,7 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
   return (true);
 }
-boolean SFE_UBLOX_GPS::getUdrStatus(uint16_t maxWait)
+boolean SFE_UBLOX_GPS::getEsfStatus(uint16_t maxWait)
 {
   // Requesting Data from the receiver
   packetCfg.cls = UBX_CLASS_ESF;
@@ -2723,16 +2723,16 @@ boolean SFE_UBLOX_GPS::getUdrStatus(uint16_t maxWait)
   checkUblox();
 
   // payload should be loaded. 
-  imuMetric.version = extractByte(4); 
-  imuMetric.fusionMode = extractByte(12);
-  imuMetric.numSens = extractByte(15);
+  imuData.version = extractByte(4); 
+  imuData.fusionMode = extractByte(12);
+  imuData.numSens = extractByte(15);
 
   // Individual Status Sensor in different function
   return(true);
 }
 
 //
-boolean SFE_UBLOX_GPS::getInsInfo(uint16_t maxWait)
+boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_ESF;
   packetCfg.id = UBX_ESF_INS;
@@ -2747,26 +2747,26 @@ boolean SFE_UBLOX_GPS::getInsInfo(uint16_t maxWait)
   // Validity of each sensor value below 
   uint32_t validity = extractLong(0); 
 
-  imuMetric.xAngRateVald = (validity && 0x0080)  >> 8;
-  imuMetric.yAngRateVald = (validity && 0x0100) >> 9;  
-  imuMetric.zAngRateVald = (validity && 0x0200) >> 10;   
-  imuMetric.xAccelVald = (validity && 0x0400) >> 11;
-  imuMetric.yAccelVald = (validity && 0x0800) >> 12;
-  imuMetric.zAccelVald = (validity && 0x1000) >> 13;
+  imuData.xAngRateVald = (validity && 0x0080)  >> 8;
+  imuData.yAngRateVald = (validity && 0x0100) >> 9;  
+  imuData.zAngRateVald = (validity && 0x0200) >> 10;   
+  imuData.xAccelVald = (validity && 0x0400) >> 11;
+  imuData.yAccelVald = (validity && 0x0800) >> 12;
+  imuData.zAccelVald = (validity && 0x1000) >> 13;
 
-  imuMetric.xAngRate = extractLong(12); // deg/s
-  imuMetric.yAngRate = extractLong(16); // deg/s
-  imuMetric.zAngRate = extractLong(20); // deg/s
+  imuData.xAngRate = extractLong(12); // deg/s
+  imuData.yAngRate = extractLong(16); // deg/s
+  imuData.zAngRate = extractLong(20); // deg/s
 
-  imuMetric.xAccel = extractLong(24); // m/s
-  imuMetric.yAccel = extractLong(28); // m/s
-  imuMetric.zAccel = extractLong(32); // m/s
+  imuData.xAccel = extractLong(24); // m/s
+  imuData.yAccel = extractLong(28); // m/s
+  imuData.zAccel = extractLong(32); // m/s
 
   return(true);
 }
 
 //
-boolean SFE_UBLOX_GPS::getExternSensMeas(uint16_t maxWait)
+boolean SFE_UBLOX_GPS::getEsfMeas(uint16_t maxWait)
 { 
 
   packetCfg.cls = UBX_CLASS_ESF;
@@ -2787,14 +2787,23 @@ boolean SFE_UBLOX_GPS::getExternSensMeas(uint16_t maxWait)
   uint8_t tagValid = (flags && 0x04) >> 3;
   uint8_t numMeas = (flags && 0x1000) >> 15;
 
+  uint8_t byteOffset = 4;
+
+  for(uint8_t i=0; i<imuData.numSens; i++){
+
+    uint32_t bitField = extractLong(4 + byteOffset * i);
+    imuData.dataType[i] = (bitField && 0xFF000000) >> 23; 
+    imuData.data[i] = (bitField && 0xFFFFFF);
+    imuData.dataTStamp[i] = extractLong(8 + byteOffset * i); 
+
+  }
+
 }
 
 boolean SFE_UBLOX_GPS::getEsfRaw(uint16_t maxWait)
 {
 
-  // Need the number of sensors to know what to sample.
-  getUdrStatus();
-
+  // Need to know the number of sensor to get the correct data
   // Rate selected in UBX-CFG-MSG is not respected
   packetCfg.cls = UBX_CLASS_ESF;
   packetCfg.id = UBX_ESF_RAW;
@@ -2808,13 +2817,55 @@ boolean SFE_UBLOX_GPS::getEsfRaw(uint16_t maxWait)
 
   uint8_t byteOffset = 8;
 
-  for(uint8_t i=0; i<imuMetric.numSens; i++){
+  for(uint8_t i=0; i<imuData.numSens; i++){
 
     uint32_t bitField = extractLong(4 + byteOffset * i);
-    imuMetric.dataType[i] = (bitField && 0xFF000000) >> 23; // Repeating Blocks on the back burner...
-    imuMetric.data[i] = (bitField && 0xFFFFFF);
-    imuMetric.timeStamp[i] = extractLong(8 + byteOffset * i); 
+    imuData.rawDataType[i] = (bitField && 0xFF000000) >> 23; 
+    imuData.rawData[i] = (bitField && 0xFFFFFF);
+    imuData.rawTStamp[i] = extractLong(8 + byteOffset * i); 
 
   }
+}
+
+boolean SFE_UBLOX_GPS::getSensorStatus(uint8_t sensor)
+{
+
+  packetCfg.cls = UBX_CLASS_ESF;
+  packetCfg.id = UBX_ESF_STATUS;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(packetCfg, maxWait) == false)
+    return (false); //If command send fails then bail
+
+  uint8_t numberSens = extactByte(15)
+  if (sensor > numberSens)
+    return SFE_UBLOX_STATUS_OUT_OF_RANGE;
+
+  checkUblox();
+ 
+  uint8_t offset = 4; 
+
+  // Only the last sensor value checked will remain.
+  for(uint8_t i=0; i<sensor; i++){
+
+    uint8_t sensorFieldOne = extractByte(16 + offset * i); 
+    uint8_t sensorFieldTwo = extractByte(17 + offset * i); 
+    ublox.freq = extractByte(18 + offset * i); 
+    uint8_t sensorFieldThr = extractByte(19 + offset * i); 
+
+    ubloxSen.senType = (sensorFieldOne && 0x10) >> 5;
+    ubloxSen.isUsed = (sensorFieldOne && 0x20) >> 6; 
+    ubloxSen.isReady = (sensorFieldOne && 0x30) >> 7; 
+
+    ubloxSen.calibStatus = sensorFieldTwo && 0x03;
+    ubloxSen.timeStatus = (sensorFieldTwo && 0xC) >> 2;
+    
+    ubloxSen.badMeas = (sensorFieldThr && 0x01); 
+    ubloxSen.badTag = (sensorFieldThr && 0x02) >> 1; 
+    ubloxSen.missMeas = (sensorFieldThr && 0x04) >> 2; 
+    ubloxSen.noisyMeas = (sensorFieldThr && 0x08) >> 3; 
+  }
+  
 }
 
