@@ -431,7 +431,9 @@ public:
 	//serialPort needs to be perviously initialized to correct baud rate
 	boolean begin(Stream &serialPort); //Returns true if module is detected
 
-	boolean isConnected(); //Returns turn if device answers on _gpsI2Caddress address
+	//Returns true if device answers on _gpsI2Caddress address or via Serial
+	//maxWait is only used for Serial
+	boolean isConnected(uint16_t maxWait = 1100);
 
 	boolean checkUblox();		//Checks module with user selected commType
 	boolean checkUbloxI2C();	//Method for I2C polling of data, passing any new bytes to process()
