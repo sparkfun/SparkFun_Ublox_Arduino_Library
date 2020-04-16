@@ -45,4 +45,21 @@ void loop()
   if (myGPS.getEsfInfo())
     Serial.println(myGPS.imuMeas.fusionMode);  
 
+  if (myGPS.getEsfMeas())
+  {
+    Serial.print("X validity: ");
+    Serial.println(myGPS.imuMeas.xAngRateVald);  
+    Serial.print("X: ");
+    Serial.println(myGPS.imuMeas.xAngRate);  
+    Serial.print("Y validity: ");
+    Serial.println(myGPS.imuMeas.yAngRateVald);  
+    Serial.print("Y: ");
+    Serial.println(myGPS.imuMeas.yAngRate);  
+    Serial.print("Z validity: ");
+    Serial.println(myGPS.imuMeas.zAngRateVald);  
+    Serial.print("Z: ");
+    Serial.println(myGPS.imuMeas.zAngRate);  
+  }
+  delay(250);
+}
 
