@@ -46,11 +46,11 @@ void setup()
   }
 
   byte response;
-  response = myGPS.getVal(VAL_GROUP_I2C, VAL_ID_I2C_ADDRESS, VAL_GROUP_I2C_SIZE, VAL_LAYER_RAM);
+  response = myGPS.getVal8(VAL_GROUP_I2C, VAL_ID_I2C_ADDRESS, VAL_GROUP_I2C_SIZE, VAL_LAYER_RAM);
   Serial.print(F("I2C Address: 0x"));
   Serial.println(response >> 1, HEX); //We have to shift by 1 to get the common '7-bit' I2C address format
 
-  response = myGPS.getVal(VAL_GROUP_I2COUTPROT, VAL_ID_I2COUTPROT_NMEA, VAL_GROUP_I2COUTPROT_SIZE, VAL_LAYER_RAM);
+  response = myGPS.getVal8(VAL_GROUP_I2COUTPROT, VAL_ID_I2COUTPROT_NMEA, VAL_GROUP_I2COUTPROT_SIZE, VAL_LAYER_RAM);
   Serial.print(F("Output NMEA over I2C port: 0x"));
   Serial.print(response, HEX);
 }
