@@ -467,13 +467,13 @@ void SFE_UBLOX_GPS::process(uint8_t incoming)
       if (incoming == UBX_CLASS_ACK)
       {
         packetAck.counter = 0;
-        packetAck.valid = false;
+        packetAck.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
         ubxFrameClass = CLASS_ACK;
       }
       else
       {
         packetCfg.counter = 0;
-        packetCfg.valid = false;
+        packetCfg.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
         ubxFrameClass = CLASS_NOT_AN_ACK;
       }
     }
@@ -568,7 +568,7 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 }
 
 //Given a character, file it away into the uxb packet structure
-//Set valid = true once sentence is completely received and passes CRC
+//Set valid to VALID or NOT_VALID once sentence is completely received and passes or fails CRC
 //The payload portion of the packet can be 100s of bytes but the max array
 //size is roughly 64 bytes. startingSpot can be set so we only record
 //a subset of bytes within a larger packet.
@@ -608,7 +608,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     //Validate this sentence
     if (incomingUBX->checksumA == rollingChecksumA && incomingUBX->checksumB == rollingChecksumB)
     {
-      incomingUBX->valid = true;
+      incomingUBX->valid = SFE_UBLOX_PACKET_VALIDITY_VALID;
 
       if (_printDebug == true)
       {
@@ -617,14 +617,14 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
         _debugSerial->print(F(" Received: "));
         printPacket(incomingUBX);
 
-        if (packetCfg.valid == true)
+        if (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
           if (_printDebug == true)
           {
             _debugSerial->println(F("packetCfg now valid"));
           }
         }
-        if (packetAck.valid == true)
+        if (packetAck.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
           if (_printDebug == true)
           {
@@ -635,8 +635,10 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
 
       processUBXpacket(incomingUBX); //We've got a valid packet, now do something with it
     }
-    else
+    else  // Checksum failure
     {
+      incomingUBX->valid = SFE_UBLOX_PACKET_VALIDITY_NOT_VALID;
+
       if (_printDebug == true)
       {
         //Drive an external pin to allow for easier logic analyzation
@@ -1062,18 +1064,30 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 //"not acknowledge"(UBX-ACK-NAK) message back to the sender, depending on whether or not the message was processed correctly.
 //Some messages from other classes also use the same acknowledgement mechanism.
 
-//If the packetCfg len is 1, then we are querying the device for data
-//If the packetCfg len is >1, then we are sending a new setting
+//When we poll or get a setting, we will receive _both_ a config packet and an ACK
+//If the poll or get request is not valid, we will receive _only_ a NACK
 
-//Returns true if we got the following:
-//* If packetCfg len is 1 and we got and ACK and a valid packetCfg (module is responding with register content)
-//* If packetCfg len is >1 and we got an ACK (no valid packetCfg needed, module absorbs new register data)
-//Returns false if we timed out, got a NACK (command unknown), or had a CLS/ID mismatch
+//If we are trying to get or poll a setting, then packetCfg.len will be 0 or 1 when the packetCfg is _sent_.
+//If we poll the setting for a particular port using UBX-CFG-PRT then .len will be 1 initially
+//For all other gets or polls, .len will be 0 initially
+//(It would be possible for .len to be 2 _if_ we were using UBX-CFG-MSG to poll the settings for a particular message - but we don't use that (currently))
+
+//If the get or poll _fails_, i.e. is NACK'd, then packetCfg.len could still be 0 or 1 after the NACK is received
+//But if the get or poll is ACK'd, then packetCfg.len will have been updated by the incoming data and will always be at least 2
+
+//If we are going to set the value for a setting, then packetCfg.len will be at least 3 when the packetCfg is _sent_.
+//(UBX-CFG-MSG appears to have the shortest set length of 3 bytes)
+
+//Returns SFE_UBLOX_STATUS_DATA_RECEIVED if we got an ACK and a valid packetCfg (module is responding with register content)
+//Returns SFE_UBLOX_STATUS_DATA_SENT if we got an ACK and no packetCfg (no valid packetCfg needed, module absorbs new register data)
+//Returns SFE_UBLOX_STATUS_FAIL if we got an invalid packetCfg (checksum failure)
+//Returns SFE_UBLOX_STATUS_COMMAND_UNKNOWN if we got a NACK (command unknown)
+//Returns SFE_UBLOX_STATUS_TIMEOUT if we timed out
 sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime)
 {
   commandAck = UBX_ACK_NONE; //Reset flag
-  packetCfg.valid = false;   //This will go true when we receive a response to the packet we sent
-  packetAck.valid = false;
+  packetCfg.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;   //This will go VALID (or NOT_VALID) when we receive a response to the packet we sent
+  packetAck.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
 
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
@@ -1090,42 +1104,43 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(uint8_t requestedClass, uin
           _debugSerial->println(F(" msec"));
         }
 
-        //Are we expecting data back or just an ACK?
-        if (packetCfg.len == 1)
+        //We've got the a valid ACK for this CLS/ID, so is packetCfg valid?
+        if (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
-          //We are expecting a data response so now we verify the response packet was valid
-          if (packetCfg.valid == true)
+          //We've got a valid packetCfg, so does it match the requested Class and ID?
+          if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
           {
-            if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
-            {
-              if (_printDebug == true)
-              {
-                _debugSerial->print(F("waitForACKResponse: CLS/ID match after "));
-                _debugSerial->print(millis() - startTime);
-                _debugSerial->println(F(" msec"));
-              }
-              return (SFE_UBLOX_STATUS_DATA_RECEIVED); //Received a data and a correct ACK!
-            }
-            else
-            {
-              //Reset packet and continue checking incoming data for matching cls/id
-              if (_printDebug == true)
-              {
-                _debugSerial->println(F("waitForACKResponse: CLS/ID mismatch, continue to wait..."));
-              }
-              packetCfg.valid = false; //This will go true when we receive a response to the packet we sent
-            }
-          }
-          else
-          {
-            //We were expecting data but didn't get a valid config packet
             if (_printDebug == true)
             {
-              _debugSerial->println(F("waitForACKResponse: Invalid config packet"));
+              _debugSerial->print(F("waitForACKResponse: CLS/ID match after "));
+              _debugSerial->print(millis() - startTime);
+              _debugSerial->println(F(" msec"));
             }
-            return (SFE_UBLOX_STATUS_FAIL); //We got an ACK, we're never going to get valid config data
+            return (SFE_UBLOX_STATUS_DATA_RECEIVED); //Received a data and a correct ACK!
+          }
+          else
+          // The Class and/or ID don't match the requested ones, so keep trying...
+          {
+            //Reset packet and continue checking incoming data for matching cls/id
+            if (_printDebug == true)
+            {
+              _debugSerial->println(F("waitForACKResponse: CLS/ID mismatch, continue to wait..."));
+            }
+            packetCfg.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED; //This will go VALID (or NOT_VALID) when we receive a response to the packet we sent
           }
         }
+        //If we received an invalid packetCfg (checksum failure) then we can't trust it, including its Class and ID
+        else if (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_NOT_VALID)
+        {
+          //We were expecting data but didn't get a valid config packet
+          if (_printDebug == true)
+          {
+            _debugSerial->println(F("waitForACKResponse: Invalid config packet"));
+          }
+          return (SFE_UBLOX_STATUS_FAIL); //We got a checksum failure, we're never going to get valid config data
+        }
+        //We didn't receive a valid or invalid packetCfg, so we must have only received the ACK
+        //Let's hope this was a set?
         else
         {
           //We have sent new data. We expect an ACK but no return config packet.
@@ -1136,6 +1151,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(uint8_t requestedClass, uin
           return (SFE_UBLOX_STATUS_DATA_SENT); //New data successfully sent
         }
       }
+      //Did we receive a NACK?
       else if (commandAck == UBX_ACK_NACK)
       {
         if (_printDebug == true)
@@ -1153,7 +1169,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(uint8_t requestedClass, uin
 
   //TODO add check here if config went valid but we never got the following ack
   //Through debug warning, This command might not get an ACK
-  if (packetCfg.valid == true)
+  if (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
   {
     if (_printDebug == true)
     {
@@ -1172,12 +1188,13 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(uint8_t requestedClass, uin
 }
 
 //For non-CFG queries no ACK is sent so we use this function
-//Returns true if we got a config packet full of response data that has CLS/ID match to our query packet
-//Returns false if we timed out
+//Returns SFE_UBLOX_STATUS_DATA_RECEIVED if we got a config packet full of response data that has CLS/ID match to our query packet
+//Returns SFE_UBLOX_STATUS_CRC_FAIL if we got a corrupt config packet that has CLS/ID match to our query packet
+//Returns SFE_UBLOX_STATUS_TIMEOUT if we timed out
 sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime)
 {
-  packetCfg.valid = false; //This will go true when we receive a response to the packet we sent
-  packetAck.valid = false;
+  packetCfg.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED; //This will go VALID (or NOT_VALID) when we receive a response to the packet we sent
+  packetAck.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED;
   packetCfg.cls = 255;
   packetCfg.id = 255;
 
@@ -1187,10 +1204,10 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(uint8_t requestedClass, u
     if (checkUblox() == true) //See if new data is available. Process bytes as they come in.
     {
       //Did we receive a config packet that matches the cls/id we requested?
-      if (packetCfg.cls == requestedClass && packetCfg.id == requestedID)
+      if ((packetCfg.cls == requestedClass) && (packetCfg.id == requestedID) && (packetCfg.valid != SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED))
       {
         //This packet might be good or it might be CRC corrupt
-        if (packetCfg.valid == true)
+        if (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
           if (_printDebug == true)
           {
@@ -1200,7 +1217,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(uint8_t requestedClass, u
           }
           return (SFE_UBLOX_STATUS_DATA_RECEIVED); //We have new data to act upon
         }
-        else
+        else // if (packetCfg.valid == SFE_UBLOX_PACKET_VALIDITY_NOT_VALID)
         {
           if (_printDebug == true)
           {
@@ -1209,8 +1226,9 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(uint8_t requestedClass, u
           return (SFE_UBLOX_STATUS_CRC_FAIL); //We got the right packet but it was corrupt
         }
       }
-      else if (packetCfg.cls < 255 && packetCfg.id < 255)
+      else if ((packetCfg.cls < 255) && (packetCfg.id < 255) && (packetCfg.valid != SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED))
       {
+        //We got a valid or invalid packet but it was not the droid we were looking for
         //Reset packet and continue checking incoming data for matching cls/id
         if (_printDebug == true)
         {
@@ -1222,7 +1240,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(uint8_t requestedClass, u
           _debugSerial->println();
         }
 
-        packetCfg.valid = false; //This will go true when we receive a response to the packet we sent
+        packetCfg.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED; //This will go VALID (or NOT_VALID) when we receive a response to the packet we sent
         packetCfg.cls = 255;
         packetCfg.id = 255;
       }

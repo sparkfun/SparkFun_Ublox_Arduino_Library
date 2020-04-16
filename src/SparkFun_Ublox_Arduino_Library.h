@@ -104,6 +104,14 @@ typedef enum
 	SFE_UBLOX_STATUS_I2C_COMM_FAILURE,
 } sfe_ublox_status_e;
 
+// ubxPacket validity
+typedef enum
+{
+  SFE_UBLOX_PACKET_VALIDITY_NOT_VALID,
+  SFE_UBLOX_PACKET_VALIDITY_VALID,
+  SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED
+} sfe_ublox_packet_validity_e;
+
 //Registers
 const uint8_t UBX_SYNCH_1 = 0xB5;
 const uint8_t UBX_SYNCH_2 = 0x62;
@@ -400,7 +408,7 @@ typedef struct
 	uint8_t *payload;
 	uint8_t checksumA; //Given to us from module. Checked against the rolling calculated A/B checksums.
 	uint8_t checksumB;
-	boolean valid; //Goes true when both checksums pass
+	sfe_ublox_packet_validity_e valid; //Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
 } ubxPacket;
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
@@ -702,8 +710,8 @@ private:
 	uint8_t payloadCfg[MAX_PAYLOAD_SIZE];
 
 	//Init the packet structures and init them with pointers to the payloadAck and payloadCfg arrays
-	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, false};
-	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, false};
+	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
 	//Limit checking of new data to every X ms
 	//If we are expecting an update every X Hz then we should check every half that amount of time
