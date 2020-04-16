@@ -590,10 +590,11 @@ public:
 	//Change the dynamic platform model using UBX-CFG-NAV5
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);
 
-  boolean getEsfStatus(uint16_t maxWait = 1100);
   boolean getEsfInfo(uint16_t maxWait = 1100);
   boolean getEsfMeas(uint16_t maxWait = 1100);
-  boolean getEsfRaw(uint16_t maxWait = 1100);
+  boolean getEsfDataInfo(uint16_t maxWait = 1100);
+  boolean getEsfRawDataInfo(uint16_t maxWait = 1100);
+  sfe_ublox_status_e getSensState(uint8_t sensor, uint16_t maxWait = 1100);
 
 	//Survey-in specific controls
 	struct svinStructure
@@ -673,7 +674,6 @@ public:
   {
     uint8_t version; 
     uint8_t fusionMode;
-    uint8_t numSens = DEF_NUM_SENS;
 
     uint8_t xAngRateVald;
     uint8_t yAngRateVald;
@@ -691,27 +691,32 @@ public:
     int32_t zAccel;
 
     // The array size is based on testing directly on M8U and F9R
-    uint32_t rawData[numSens];
-    uint32_t rawDataType[numSens];
-    uint32_t rawTstamp[numSens];
+    uint32_t rawData[DEF_NUM_SENS];
+    uint32_t rawDataType[DEF_NUM_SENS];
+    uint32_t rawTStamp[DEF_NUM_SENS];
 
-    uint32_t data[numSens];
-    uint32_t dataType[numSens];
-    uint32_t dataTstamp[numSens];
-  } imuData;
+    uint32_t data[DEF_NUM_SENS];
+    uint32_t dataType[DEF_NUM_SENS];
+    uint32_t dataTStamp[DEF_NUM_SENS];
+  } imuMeas;
 
   struct indivImuData
   {
+
+    uint8_t numSens;
+
     uint8_t senType;
     bool isUsed;
     bool isReady;
     uint8_t calibStatus;
     uint8_t timeStatus;
+
     uint8_t freq; // Hz
-    uint8_t badMeas;
-    uint8_t badTag;
-    uint8_t missMeas;
-    uint8_t noisyMeas;
+
+    bool badMeas;
+    bool badTag;
+    bool missMeas;
+    bool noisyMeas;
   } ubloxSen;
 
 private:

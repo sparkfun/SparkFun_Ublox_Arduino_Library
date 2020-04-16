@@ -38,35 +38,27 @@ void setup()
   }
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-
-  if (myGPS.getUdrStatus())
-  {
-    Serial.print("Mode: ");
-    Serial.println(myGPS.imuMetric.fusionMode);  
-    Serial.print("Number of Sensors: ");
-    Serial.println(myGPS.imuMetric.numSens);  
-  }
 }
 
 void loop()
 {
-  if (myGPS.getUdrStatus())
-    Serial.println(myGPS.imuMetric.fusionMode);  
+  if (myGPS.getEsfInfo())
+    Serial.println(myGPS.imuMeas.fusionMode);  
 
-  if (myGPS.getInsInfo())
+  if (myGPS.getEsfMeas())
   {
     Serial.print("X validity: ");
-    Serial.println(myGPS.imuMetric.xAngRateVald);  
+    Serial.println(myGPS.imuMeas.xAngRateVald);  
     Serial.print("X: ");
-    Serial.println(myGPS.imuMetric.xAngRate);  
+    Serial.println(myGPS.imuMeas.xAngRate);  
     Serial.print("Y validity: ");
-    Serial.println(myGPS.imuMetric.yAngRateVald);  
+    Serial.println(myGPS.imuMeas.yAngRateVald);  
     Serial.print("Y: ");
-    Serial.println(myGPS.imuMetric.yAngRate);  
+    Serial.println(myGPS.imuMeas.yAngRate);  
     Serial.print("Z validity: ");
-    Serial.println(myGPS.imuMetric.zAngRateVald);  
+    Serial.println(myGPS.imuMeas.zAngRateVald);  
     Serial.print("Z: ");
-    Serial.println(myGPS.imuMetric.zAngRate);  
+    Serial.println(myGPS.imuMeas.zAngRate);  
   }
   delay(250);
 }
