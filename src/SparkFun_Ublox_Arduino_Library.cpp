@@ -960,7 +960,7 @@ void SFE_UBLOX_GPS::sendSerialCommand(ubxPacket outgoingUBX)
 }
 
 //Returns true if I2C device ack's
-boolean SFE_UBLOX_GPS::isConnected()
+boolean SFE_UBLOX_GPS::isConnected(uint16_t maxWait)
 {
   if (commType == COMM_TYPE_I2C)
   {
@@ -975,7 +975,7 @@ boolean SFE_UBLOX_GPS::isConnected()
     packetCfg.len = 0;
     packetCfg.startingSpot = 0;
 
-    return sendCommand(packetCfg);
+    return sendCommand(packetCfg, maxWait);
   }
   return false;
 }
