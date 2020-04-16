@@ -429,7 +429,7 @@ public:
 	// A default of 250ms for maxWait seems fine for I2C but is not enough for SerialUSB.
 	// If you know you are only going to be using I2C / Qwiic communication, you can
 	// safely reduce defaultMaxWait to 250.
-	#define defaultMaxWait 500
+	#define defaultMaxWait 1100
 
 	//By default use the default I2C address, and use Wire port
 	boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
