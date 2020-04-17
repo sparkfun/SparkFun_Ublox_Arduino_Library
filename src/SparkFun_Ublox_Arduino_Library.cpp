@@ -2725,6 +2725,7 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
   // payload should be loaded. 
   imuMeas.version = extractByte(4); 
   imuMeas.fusionMode = extractByte(12);
+  ubloxSen.numSens = extractByte(15);
 
   // Individual Status Sensor in different function
   return(true);
@@ -2867,7 +2868,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
   
 }
 
-bool SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait){
+boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait){
 
   packetCfg.cls = UBX_CLASS_NAV;
   packetCfg.id = UBX_NAV_ATT;
@@ -2883,5 +2884,7 @@ bool SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait){
   vehAtt.accRoll = extractLong(20);  
   vehAtt.accPitch = extractLong(24);  
   vehAtt.accHeading = extractLong(28);  
+
+  return true;
   
 }

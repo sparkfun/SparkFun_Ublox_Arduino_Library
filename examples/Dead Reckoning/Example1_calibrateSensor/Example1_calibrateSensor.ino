@@ -1,11 +1,9 @@
 /*
-  Some Description
   By: Elias Santistevan
   SparkFun Electronics
-  Date: February
+  Date: May, 2020
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
-
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -14,7 +12,8 @@
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a Redboard Qwiic
-  If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
+  If you don't have a platform with a Qwiic connection use the 
+  SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 
   To take advantage of the internal IMU of either the Dead Reckoning GPS
@@ -56,6 +55,7 @@ void loop()
 {
 
   if (myGPS.getEsfInfo()){
+    Serial.print("Fusion Mode: ");  
     Serial.println(myGPS.imuMeas.fusionMode);  
     if (myGPS.imuMeas.fusionMode == 1)
       Serial.println("Sensor is calibrated!");  
