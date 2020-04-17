@@ -519,9 +519,13 @@ public:
 	uint32_t getTimeOfWeek(uint16_t maxWait = getPVTmaxWait);
 
 	int32_t getHighResLatitude(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int8_t getHighResLatitudeHp(uint16_t maxWait = getHPPOSLLHmaxWait);
 	int32_t getHighResLongitude(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int8_t getHighResLongitudeHp(uint16_t maxWait = getHPPOSLLHmaxWait);
 	int32_t getElipsoid(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int8_t getElipsoidHp(uint16_t maxWait = getHPPOSLLHmaxWait);
 	int32_t getMeanSeaLevel(uint16_t maxWait = getHPPOSLLHmaxWait);
+	int8_t getMeanSeaLevelHp(uint16_t maxWait = getHPPOSLLHmaxWait);
 	int32_t getGeoidSeparation(uint16_t maxWait = getHPPOSLLHmaxWait);
 	uint32_t getHorizontalAccuracy(uint16_t maxWait = getHPPOSLLHmaxWait);
 	uint32_t getVerticalAccuracy(uint16_t maxWait = getHPPOSLLHmaxWait);
@@ -662,14 +666,18 @@ public:
 	uint8_t versionLow;		 //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
 
-	uint32_t timeOfWeek;
-	int32_t highResLatitude;
-	int32_t highResLongitude;
-	int32_t elipsoid;
-	int32_t meanSeaLevel;
-	int32_t geoidSeparation;
-	uint32_t horizontalAccuracy;
-	uint32_t verticalAccuracy;
+	uint32_t timeOfWeek; // ms
+	int32_t highResLatitude; // Degrees * 10^-7
+	int32_t highResLongitude;  // Degrees * 10^-7
+	int32_t elipsoid; // Height above ellipsoid in mm (Typo! Should be eLLipsoid! **Uncorrected for backward-compatibility.**)
+	int32_t meanSeaLevel; // Height above mean sea level in mm
+	int32_t geoidSeparation; // This seems to only be provided in NMEA GGA and GNS messages
+	uint32_t horizontalAccuracy; // mm * 10^-1 (i.e. 0.1mm)
+	uint32_t verticalAccuracy; // mm * 10^-1 (i.e. 0.1mm)
+	int8_t elipsoidHp; // High precision component of the height above ellipsoid in mm * 10^-1 (Deliberate typo! Should be eLLipsoidHp!)
+	int8_t meanSeaLevelHp; // High precision component of Height above mean sea level in mm * 10^-1
+	int8_t highResLatitudeHp; // High precision component of latitude: Degrees * 10^-9
+	int8_t highResLongitudeHp; // High precision component of longitude: Degrees * 10^-9
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
@@ -702,6 +710,7 @@ private:
 	uint32_t extractLong(uint8_t spotToStart); //Combine four bytes from payload into long
 	uint16_t extractInt(uint8_t spotToStart);  //Combine two bytes from payload into int
 	uint8_t extractByte(uint8_t spotToStart);  //Get byte from payload
+	int8_t extractSignedChar(uint8_t spotToStart);  //Get signed 8-bit value from payload
 	void addToChecksum(uint8_t incoming);	  //Given an incoming byte, adjust rollingChecksumA/B
 
 	//Variables
@@ -774,9 +783,13 @@ private:
 		uint16_t highResLongitude : 1;
 		uint16_t elipsoid : 1;
 		uint16_t meanSeaLevel : 1;
-		uint16_t geoidSeparation : 1;
+		uint16_t geoidSeparation : 1; // Redundant but kept for backward-compatibility
 		uint16_t horizontalAccuracy : 1;
 		uint16_t verticalAccuracy : 1;
+		uint16_t elipsoidHp : 1;
+		uint16_t meanSeaLevelHp : 1;
+		uint16_t highResLatitudeHp : 1;
+		uint16_t highResLongitudeHp : 1;
 	} highResModuleQueried;
 
 	uint16_t rtcmLen = 0;
