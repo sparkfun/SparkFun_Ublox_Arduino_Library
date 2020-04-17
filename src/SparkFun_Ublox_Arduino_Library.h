@@ -255,6 +255,7 @@ const uint8_t UBX_MON_TXBUF = 0x08; //Transmitter Buffer Status. Used for query 
 const uint8_t UBX_MON_VER = 0x04;   //Receiver/Software Version. Used for obtaining Protocol Version.
 
 //The following are used to configure the NAV UBX messages (navigation results messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 35-36)
+const uint8_t UBX_NAV_ATT = 0x05;		//Vehicle "Attitude" Solution
 const uint8_t UBX_NAV_CLOCK = 0x22;		//Clock Solution
 const uint8_t UBX_NAV_DOP = 0x04;		//Dilution of precision
 const uint8_t UBX_NAV_EOE = 0x61;		//End of Epoch
@@ -595,6 +596,7 @@ public:
   boolean getEsfDataInfo(uint16_t maxWait = 1100);
   boolean getEsfRawDataInfo(uint16_t maxWait = 1100);
   sfe_ublox_status_e getSensState(uint8_t sensor, uint16_t maxWait = 1100);
+  boolean getVehAtt(uint16_t maxWait = 1100);
 
 	//Survey-in specific controls
 	struct svinStructure
@@ -706,18 +708,29 @@ public:
     uint8_t numSens;
 
     uint8_t senType;
-    bool isUsed;
-    bool isReady;
+    boolean isUsed;
+    boolean isReady;
     uint8_t calibStatus;
     uint8_t timeStatus;
 
     uint8_t freq; // Hz
 
-    bool badMeas;
-    bool badTag;
-    bool missMeas;
-    bool noisyMeas;
+    boolean badMeas;
+    boolean badTag;
+    boolean missMeas;
+    boolean noisyMeas;
   } ubloxSen;
+
+  struct vehicleAttitude
+  {
+    // All values in degrees
+    int32_t roll;
+    int32_t pitch;
+    int32_t heading;
+    uint32_t accRoll;
+    uint32_t accPitch;
+    uint32_t accHeading;
+  } vehAtt;
 
 private:
 	//Depending on the sentence type the processor will load characters into different arrays

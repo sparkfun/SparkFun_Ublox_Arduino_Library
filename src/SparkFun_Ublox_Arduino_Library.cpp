@@ -2867,3 +2867,21 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
   
 }
 
+bool SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait){
+
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_ATT;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  checkUblox();
+
+  vehAtt.roll = extractLong(8);  
+  vehAtt.pitch = extractLong(12);  
+  vehAtt.heading = extractLong(16);  
+
+  vehAtt.accRoll = extractLong(20);  
+  vehAtt.accPitch = extractLong(24);  
+  vehAtt.accHeading = extractLong(28);  
+  
+}

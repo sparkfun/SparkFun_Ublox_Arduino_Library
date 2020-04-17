@@ -57,9 +57,9 @@ void loop()
 
   if (myGPS.getEsfInfo()){
     Serial.println(myGPS.imuMeas.fusionMode);  
-    if (myGPS.imuMeas.fusionMode) == 1
+    if (myGPS.imuMeas.fusionMode == 1)
       Serial.println("Sensor is calibrated!");  
   }
 
-  delay(250)
+  delay(250);
 }
