@@ -591,7 +591,7 @@ public:
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);
 
   boolean getEsfInfo(uint16_t maxWait = 1100);
-  boolean getEsfMeas(uint16_t maxWait = 1100);
+  boolean getEsfIns(uint16_t maxWait = 1100);
   boolean getEsfDataInfo(uint16_t maxWait = 1100);
   boolean getEsfRawDataInfo(uint16_t maxWait = 1100);
   sfe_ublox_status_e getSensState(uint8_t sensor, uint16_t maxWait = 1100);
@@ -691,9 +691,9 @@ public:
     int32_t zAccel;
 
     // The array size is based on testing directly on M8U and F9R
-    uint32_t rawData[DEF_NUM_SENS];
-    uint32_t rawDataType[DEF_NUM_SENS];
-    uint32_t rawTStamp[DEF_NUM_SENS];
+    uint32_t rawData;
+    uint32_t rawDataType;
+    uint32_t rawTStamp;
 
     uint32_t data[DEF_NUM_SENS];
     uint32_t dataType[DEF_NUM_SENS];

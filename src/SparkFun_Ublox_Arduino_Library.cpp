@@ -2731,7 +2731,7 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
 }
 
 //
-boolean SFE_UBLOX_GPS::getEsfMeas(uint16_t maxWait)
+boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_ESF;
   packetCfg.id = UBX_ESF_INS;
@@ -2760,8 +2760,6 @@ boolean SFE_UBLOX_GPS::getEsfMeas(uint16_t maxWait)
   imuMeas.xAccel = extractLong(24); // m/s
   imuMeas.yAccel = extractLong(28); // m/s
   imuMeas.zAccel = extractLong(32); // m/s
-
-  return(true);
 }
 
 //
@@ -2786,10 +2784,12 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   uint8_t tagValid = (flags && 0x04) >> 3;
   uint8_t numMeas = (flags && 0x1000) >> 15;
 
-  uint8_t byteOffset = 4;
-  uint8_t numSens = extractByte(15);
+  if (numMeas > DEF_NUM_SENS)
+    numMeas = DEF_NUM_SENS;
 
-  for(uint8_t i=0; i<numSens; i++){
+  uint8_t byteOffset = 4;
+
+  for(uint8_t i=0; i<numMeas; i++){
 
     uint32_t bitField = extractLong(4 + byteOffset * i);
     imuMeas.dataType[i] = (bitField && 0xFF000000) >> 23; 
@@ -2815,17 +2815,11 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   
   checkUblox();
 
-  uint8_t byteOffset = 8;
-  uint8_t numSens = extractByte(15);
+  uint32_t bitField = extractLong(4);
+  imuMeas.rawDataType = (bitField && 0xFF000000) >> 23; 
+  imuMeas.rawData = (bitField && 0xFFFFFF);
+  imuMeas.rawTStamp = extractLong(8); 
 
-  for(uint8_t i=0; i<numSens; i++){
-
-    uint32_t bitField = extractLong(4 + byteOffset * i);
-    imuMeas.rawDataType[i] = (bitField && 0xFF000000) >> 23; 
-    imuMeas.rawData[i] = (bitField && 0xFFFFFF);
-    imuMeas.rawTStamp[i] = extractLong(8 + byteOffset * i); 
-
-  }
 }
 
 sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
