@@ -1,9 +1,9 @@
 /*
   Get the high precision geodetic solution
   By: Nathan Seidle
-  Modified by: Steven Rowland
+  Modified by: Steven Rowland and Paul Clark
   SparkFun Electronics
-  Date: January 3rd, 2019
+  Date: April 17th, 2020
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
@@ -50,8 +50,8 @@ void setup()
   byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
   Serial.print("Current update rate:");
   Serial.println(rate);
-  
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+
+  //myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 }
 
 void loop()
@@ -64,36 +64,30 @@ void loop()
     Serial.print("HP Lat: ");
     int32_t latitude = myGPS.getHighResLatitude();
     Serial.print(latitude);
-    Serial.print(", HP Lon: ");
 
+    Serial.print(", HP Lon: ");
     int32_t longitude = myGPS.getHighResLongitude();
     Serial.print(longitude);
-    Serial.print(", 2D Accuracy(MM): ");
 
+    Serial.print(", Horizontal Accuracy(0.1mm): ");
     uint32_t accuracy = myGPS.getHorizontalAccuracy();
-    Serial.println(accuracy);
-    Serial.print(", Vertical Accuracy(MM): ");
+    Serial.print(accuracy);
 
+    Serial.print(", Vertical Accuracy(0.1mm): ");
     uint32_t verticalAccuracy = myGPS.getVerticalAccuracy();
     Serial.println(verticalAccuracy);
-    Serial.print(", Elipsoid(MM): ");
-    
+
+    Serial.print("Elipsoid(mm): ");
     int32_t elipsoid = myGPS.getElipsoid();
-    Serial.println(elipsoid);
-    Serial.print(", Mean Sea Level(MM): ");
-    
+    Serial.print(elipsoid);
+
+    Serial.print(", Mean Sea Level(mm): ");
     int32_t meanSeaLevel = myGPS.getMeanSeaLevel();
-    Serial.println(meanSeaLevel);
-    Serial.print(", Geoid Separation(MM): ");
-    
-    int32_t geoidSeparation = myGPS.getGeoidSeparation();
-    Serial.println(geoidSeparation);
-    Serial.print(", Time of Week(Millis): ");
-    
+    Serial.print(meanSeaLevel);
+
+    Serial.print(", Time of Week(millis): ");
     uint32_t timeOfWeek = myGPS.getTimeOfWeek();
     Serial.println(timeOfWeek);
-    Serial.print(",");
-    
   }
 
 }

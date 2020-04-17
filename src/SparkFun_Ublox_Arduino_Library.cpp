@@ -785,15 +785,22 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       highResLatitude = extractLong(12);
       elipsoid = extractLong(16);
       meanSeaLevel = extractLong(20);
-      geoidSeparation = extractLong(24);
+      highResLongitudeHp = extractSignedChar(24);
+      highResLatitudeHp = extractSignedChar(25);
+      elipsoidHp = extractSignedChar(26);
+      meanSeaLevelHp = extractSignedChar(27);
       horizontalAccuracy = extractLong(28);
       verticalAccuracy = extractLong(32);
 
       highResModuleQueried.all = true;
       highResModuleQueried.highResLatitude = true;
+      highResModuleQueried.highResLatitudeHp = true;
       highResModuleQueried.highResLongitude = true;
+      highResModuleQueried.highResLongitudeHp = true;
       highResModuleQueried.elipsoid = true;
+      highResModuleQueried.elipsoidHp = true;
       highResModuleQueried.meanSeaLevel = true;
+      highResModuleQueried.meanSeaLevelHp = true;
       highResModuleQueried.geoidSeparation = true;
       highResModuleQueried.horizontalAccuracy = true;
       highResModuleQueried.verticalAccuracy = true;
@@ -816,15 +823,23 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         _debugSerial->print(F("MSL M: "));
         _debugSerial->print(((float)(int32_t)extractLong(20)) / 1000.0f);
         _debugSerial->print(F(" "));
-        _debugSerial->print(F("GEO: "));
-        _debugSerial->print(((float)(int32_t)extractLong(24)) / 1000.0f);
+        _debugSerial->print(F("LON HP: "));
+        _debugSerial->print(extractSignedChar(24));
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("LAT HP: "));
+        _debugSerial->print(extractSignedChar(25));
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("ELI HP: "));
+        _debugSerial->print(extractSignedChar(26));
+        _debugSerial->print(F(" "));
+        _debugSerial->print(F("MSL HP: "));
+        _debugSerial->print(extractSignedChar(27));
         _debugSerial->print(F(" "));
         _debugSerial->print(F("HA 2D M: "));
-        _debugSerial->print(((float)extractLong(28)) / 1000.0f);
+        _debugSerial->print(((float)(int32_t)extractLong(28)) / 10000.0f);
         _debugSerial->print(F(" "));
         _debugSerial->print(F("VERT M: "));
-        _debugSerial->print(((float)extractLong(32)) / 1000.0f);
-        _debugSerial->print(F(" "));
+        _debugSerial->println(((float)(int32_t)extractLong(32)) / 10000.0f);
       }
     }
     break;
@@ -2287,10 +2302,16 @@ uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
   return (val);
 }
 
-//Given a spot, extract byte the payload
+//Given a spot, extract a byte from the payload
 uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
 {
   return (payloadCfg[spotToStart]);
+}
+
+//Given a spot, extract a signed 8-bit value from the payload
+int8_t SFE_UBLOX_GPS::extractSignedChar(uint8_t spotToStart)
+{
+  return ((int8_t)payloadCfg[spotToStart]);
 }
 
 //Get the current year
@@ -2431,12 +2452,28 @@ int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
   return (highResLatitude);
 }
 
+int8_t SFE_UBLOX_GPS::getHighResLatitudeHp(uint16_t maxWait /* = 250*/)
+{
+  if (highResModuleQueried.highResLatitudeHp == false)
+    getHPPOSLLH(maxWait);
+  highResModuleQueried.highResLatitudeHp = false; //Since we are about to give this to user, mark this data as stale
+  return (highResLatitudeHp);
+}
+
 int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.highResLongitude == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
   return (highResLongitude);
+}
+
+int8_t SFE_UBLOX_GPS::getHighResLongitudeHp(uint16_t maxWait /* = 250*/)
+{
+  if (highResModuleQueried.highResLongitudeHp == false)
+    getHPPOSLLH(maxWait);
+  highResModuleQueried.highResLongitudeHp = false; //Since we are about to give this to user, mark this data as stale
+  return (highResLongitudeHp);
 }
 
 int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
@@ -2447,6 +2484,14 @@ int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
   return (elipsoid);
 }
 
+int8_t SFE_UBLOX_GPS::getElipsoidHp(uint16_t maxWait /* = 250*/)
+{
+  if (highResModuleQueried.elipsoidHp == false)
+    getHPPOSLLH(maxWait);
+  highResModuleQueried.elipsoidHp = false; //Since we are about to give this to user, mark this data as stale
+  return (elipsoidHp);
+}
+
 int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.meanSeaLevel == false)
@@ -2455,6 +2500,15 @@ int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
   return (meanSeaLevel);
 }
 
+int8_t SFE_UBLOX_GPS::getMeanSeaLevelHp(uint16_t maxWait /* = 250*/)
+{
+  if (highResModuleQueried.meanSeaLevelHp == false)
+    getHPPOSLLH(maxWait);
+  highResModuleQueried.meanSeaLevelHp = false; //Since we are about to give this to user, mark this data as stale
+  return (meanSeaLevelHp);
+}
+
+// getGeoidSeparation is currently redundant. The geoid separation seems to only be provided in NMEA GGA and GNS messages.
 int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
 {
   if (highResModuleQueried.geoidSeparation == false)

@@ -118,9 +118,13 @@ getNanosecond	KEYWORD2
 getHPPOSLLH	KEYWORD2
 getTimeOfWeek	KEYWORD2
 getHighResLatitude	KEYWORD2
+getHighResLatitudeHp	KEYWORD2
 getHighResLongitude	KEYWORD2
+getHighResLongitudeHp	KEYWORD2
 getElipsoid	KEYWORD2
+getElipsoidHp	KEYWORD2
 getMeanSeaLevel	KEYWORD2
+getMeanSeaLevelHp	KEYWORD2
 getGeoidSeparation	KEYWORD2
 getHorizontalAccuracy	KEYWORD2
 getVerticalAccuracy	KEYWORD2
