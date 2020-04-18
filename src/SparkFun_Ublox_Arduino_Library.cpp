@@ -712,7 +712,6 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       // This is potentially risky as we are saying that we saw the requested Class and ID
       // but that the packet checksum failed. Potentially it could be the class or ID bytes
       // that caused the checksum error!
-
       if ((incomingUBX->cls == requestedClass) && (incomingUBX->id == requestedID))
       {
         incomingUBX->classAndIDmatch = SFE_UBLOX_PACKET_VALIDITY_NOT_VALID; // If we have a match, set the classAndIDmatch flag to not valid
@@ -945,6 +944,59 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendCommand(ubxPacket outgoingUBX, uint16_t ma
         _debugSerial->println(F("sendCommand: Waiting for No ACK response"));
       }
       retVal = waitForNoACKResponse(&outgoingUBX, outgoingUBX.cls, outgoingUBX.id, maxWait); //Wait for Ack response
+    }
+  }
+  return retVal;
+}
+
+//Given a custom packet and payload, send everything including CRC bytes via I2C port
+sfe_ublox_status_e SFE_UBLOX_GPS::sendCustomCommand(ubxPacket *outgoingUBX, uint16_t maxWait)
+{
+  sfe_ublox_status_e retVal = SFE_UBLOX_STATUS_SUCCESS;
+
+  calcChecksum(outgoingUBX); //Sets checksum A and B bytes of the packet
+
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("\nSending: "));
+    printPacket(outgoingUBX);
+  }
+
+  if (commType == COMM_TYPE_I2C)
+  {
+    retVal = sendI2cCommand(*outgoingUBX, maxWait);
+    if (retVal != SFE_UBLOX_STATUS_SUCCESS)
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("Send I2C Command failed"));
+      }
+      return retVal;
+    }
+  }
+  else if (commType == COMM_TYPE_SERIAL)
+  {
+    sendSerialCommand(*outgoingUBX);
+  }
+
+  if (maxWait > 0)
+  {
+    //Depending on what we just sent, either we need to look for an ACK or not
+    if (outgoingUBX->cls == UBX_CLASS_CFG)
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("sendCommand: Waiting for ACK response"));
+      }
+      retVal = waitForACKResponse(outgoingUBX, outgoingUBX->cls, outgoingUBX->id, maxWait); //Wait for Ack response
+    }
+    else
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("sendCommand: Waiting for No ACK response"));
+      }
+      retVal = waitForNoACKResponse(outgoingUBX, outgoingUBX->cls, outgoingUBX->id, maxWait); //Wait for Ack response
     }
   }
   return retVal;

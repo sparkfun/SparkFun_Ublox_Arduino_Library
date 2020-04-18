@@ -27,6 +27,7 @@ processNMEA	KEYWORD2
 
 calcChecksum	KEYWORD2
 sendCommand	KEYWORD2
+sendCustomCommand	KEYWORD2
 printPacket	KEYWORD2
 setI2CAddress	KEYWORD2
 setSerialRate	KEYWORD2

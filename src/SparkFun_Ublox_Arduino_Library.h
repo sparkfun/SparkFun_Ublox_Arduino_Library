@@ -409,7 +409,7 @@ typedef struct
 	uint8_t checksumA; //Given to us from module. Checked against the rolling calculated A/B checksums.
 	uint8_t checksumB;
 	sfe_ublox_packet_validity_e valid; //Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
-	sfe_ublox_packet_validity_e classAndIDmatch; // Goes from flase to true when the Class and ID match the requestedClass and requestedID
+	sfe_ublox_packet_validity_e classAndIDmatch; // Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
 } ubxPacket;
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
@@ -463,6 +463,7 @@ public:
 
 	void calcChecksum(ubxPacket *msg);											   //Sets the checksumA and checksumB of a given messages
 	sfe_ublox_status_e sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = defaultMaxWait); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
+	sfe_ublox_status_e sendCustomCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait); //This allows custom packets to be used
 	sfe_ublox_status_e sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250);
 	void sendSerialCommand(ubxPacket outgoingUBX);
 
