@@ -2434,7 +2434,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     {
       _debugSerial->println(F("getPVT: Autoreporting"));
     }
-    checkUblox();
+    checkUblox(UBX_CLASS_NAV, UBX_NAV_PVT);
     return moduleQueried.all;
   }
   else if (autoPVT && !autoPVTImplicitUpdate)
