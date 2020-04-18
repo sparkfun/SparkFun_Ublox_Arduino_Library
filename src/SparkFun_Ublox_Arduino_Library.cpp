@@ -698,7 +698,6 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX)
     {
       _debugSerial->println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
     }
-    Serial.println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
   }
 }
 
