@@ -409,6 +409,7 @@ typedef struct
 	uint8_t checksumA; //Given to us from module. Checked against the rolling calculated A/B checksums.
 	uint8_t checksumB;
 	sfe_ublox_packet_validity_e valid; //Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
+	sfe_ublox_packet_validity_e classAndIDmatch; // Goes from flase to true when the Class and ID match the requestedClass and requestedID
 } ubxPacket;
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
@@ -448,13 +449,13 @@ public:
 	//maxWait is only used for Serial
 	boolean isConnected(uint16_t maxWait = 1100);
 
-	boolean checkUblox();		//Checks module with user selected commType
-	boolean checkUbloxI2C();	//Method for I2C polling of data, passing any new bytes to process()
-	boolean checkUbloxSerial(); //Method for serial polling of data, passing any new bytes to process()
+	boolean checkUblox(uint8_t requestedClass = 255, uint8_t requestedID = 255);		//Checks module with user selected commType
+	boolean checkUbloxI2C(uint8_t requestedClass = 255, uint8_t requestedID = 255);	//Method for I2C polling of data, passing any new bytes to process()
+	boolean checkUbloxSerial(uint8_t requestedClass = 255, uint8_t requestedID = 255); //Method for serial polling of data, passing any new bytes to process()
 
-	void process(uint8_t incoming);							   //Processes NMEA and UBX binary sentences one byte at a time
-	void processUBX(uint8_t incoming, ubxPacket *incomingUBX); //Given a character, file it away into the uxb packet structure
-	void processRTCMframe(uint8_t incoming);				   //Monitor the incoming bytes for start and length bytes
+	void process(uint8_t incoming, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Processes NMEA and UBX binary sentences one byte at a time
+	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Given a character, file it away into the uxb packet structure
+	void processRTCMframe(uint8_t incoming);				  //Monitor the incoming bytes for start and length bytes
 	void processRTCM(uint8_t incoming) __attribute__((weak));  //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
 
 	void processUBXpacket(ubxPacket *msg);				   //Once a packet has been received and validated, identify this packet's class/id and update internal flags
@@ -729,8 +730,8 @@ private:
 	uint8_t payloadCfg[MAX_PAYLOAD_SIZE];
 
 	//Init the packet structures and init them with pointers to the payloadAck and payloadCfg arrays
-	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
 	//Limit checking of new data to every X ms
 	//If we are expecting an update every X Hz then we should check every half that amount of time
@@ -740,7 +741,6 @@ private:
 	unsigned long lastCheck = 0;
 	boolean autoPVT = false;			  //Whether autoPVT is enabled or not
 	boolean autoPVTImplicitUpdate = true; // Whether autoPVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
-	uint8_t commandAck = UBX_ACK_NONE;	//This goes to UBX_ACK_ACK after we send a command and it's ack'd
 	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
