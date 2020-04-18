@@ -430,7 +430,7 @@ boolean SFE_UBLOX_GPS::checkUbloxSerial(ubxPacket *incomingUBX, uint8_t requeste
 //Take a given byte and file it into the proper array
 void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
-  if (currentSentence == NONE || currentSentence == NMEA)
+  if ((currentSentence == NONE) || (currentSentence == NMEA))
   {
     if (incoming == 0xB5) //UBX binary frames start with 0xB5, aka μ
     {
@@ -462,9 +462,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
   if (currentSentence == UBX)
   {
     //Decide what type of response this is
-    if (ubxFrameCounter == 0 && incoming != 0xB5)      //ISO 'μ'
+    if ((ubxFrameCounter == 0) && (incoming != 0xB5))      //ISO 'μ'
       currentSentence = NONE;                          //Something went wrong. Reset.
-    else if (ubxFrameCounter == 1 && incoming != 0x62) //ASCII 'b'
+    else if ((ubxFrameCounter == 1) && (incoming != 0x62)) //ASCII 'b'
       currentSentence = NONE;                          //Something went wrong. Reset.
     else if (ubxFrameCounter == 2)                     //Class
     {
@@ -587,18 +587,54 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
   if (incomingUBX->counter == 0)
   {
     incomingUBX->cls = incoming;
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("processUBX: Class   : 0x"));
+      _debugSerial->print(incomingUBX->cls, HEX);
+      _debugSerial->print(F(" CSUMA: 0x"));
+      _debugSerial->print(rollingChecksumA, HEX);
+      _debugSerial->print(F(" CSUMB: 0x"));
+      _debugSerial->println(rollingChecksumB, HEX);
+    }
   }
   else if (incomingUBX->counter == 1)
   {
     incomingUBX->id = incoming;
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("processUBX: ID     : 0x"));
+      _debugSerial->print(incomingUBX->id, HEX);
+      _debugSerial->print(F(" CSUMA: 0x"));
+      _debugSerial->print(rollingChecksumA, HEX);
+      _debugSerial->print(F(" CSUMB: 0x"));
+      _debugSerial->println(rollingChecksumB, HEX);
+    }
   }
   else if (incomingUBX->counter == 2) //Len LSB
   {
     incomingUBX->len = incoming;
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("processUBX: LEN_LSB: 0x"));
+      _debugSerial->print(incomingUBX->len, HEX);
+      _debugSerial->print(F(" CSUMA: 0x"));
+      _debugSerial->print(rollingChecksumA, HEX);
+      _debugSerial->print(F(" CSUMB: 0x"));
+      _debugSerial->println(rollingChecksumB, HEX);
+    }
   }
   else if (incomingUBX->counter == 3) //Len MSB
   {
     incomingUBX->len |= incoming << 8;
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("processUBX: LEN_MSB: 0x"));
+      _debugSerial->print(incoming, HEX);
+      _debugSerial->print(F(" CSUMA: 0x"));
+      _debugSerial->print(rollingChecksumA, HEX);
+      _debugSerial->print(F(" CSUMB: 0x"));
+      _debugSerial->println(rollingChecksumB, HEX);
+    }
   }
   else if (incomingUBX->counter == incomingUBX->len + 4) //ChecksumA
   {
@@ -651,31 +687,19 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
 
         if (incomingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
-          if (_printDebug == true)
-          {
             _debugSerial->println(F("packetCfg now valid"));
-          }
         }
         if (packetAck.valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
-          if (_printDebug == true)
-          {
             _debugSerial->println(F("packetAck now valid"));
-          }
         }
         if (incomingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
-          if (_printDebug == true)
-          {
             _debugSerial->println(F("packetCfg classAndIDmatch"));
-          }
         }
         if (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         {
-          if (_printDebug == true)
-          {
             _debugSerial->println(F("packetAck classAndIDmatch"));
-          }
         }
       }
 
