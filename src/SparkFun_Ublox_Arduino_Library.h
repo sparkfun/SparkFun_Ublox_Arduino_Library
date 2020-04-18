@@ -449,11 +449,11 @@ public:
 	//maxWait is only used for Serial
 	boolean isConnected(uint16_t maxWait = 1100);
 
-	boolean checkUblox(uint8_t requestedClass = 255, uint8_t requestedID = 255);		//Checks module with user selected commType
-	boolean checkUbloxI2C(uint8_t requestedClass = 255, uint8_t requestedID = 255);	//Method for I2C polling of data, passing any new bytes to process()
-	boolean checkUbloxSerial(uint8_t requestedClass = 255, uint8_t requestedID = 255); //Method for serial polling of data, passing any new bytes to process()
+	boolean checkUblox(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255);		//Checks module with user selected commType
+	boolean checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255);	//Method for I2C polling of data, passing any new bytes to process()
+	boolean checkUbloxSerial(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Method for serial polling of data, passing any new bytes to process()
 
-	void process(uint8_t incoming, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Processes NMEA and UBX binary sentences one byte at a time
+	void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Processes NMEA and UBX binary sentences one byte at a time
 	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Given a character, file it away into the uxb packet structure
 	void processRTCMframe(uint8_t incoming);				  //Monitor the incoming bytes for start and length bytes
 	void processRTCM(uint8_t incoming) __attribute__((weak));  //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
@@ -481,8 +481,8 @@ public:
 	boolean factoryDefault(uint16_t maxWait = defaultMaxWait);							  //Reset module to factory defaults
 	boolean saveConfigSelective(uint32_t configMask, uint16_t maxWait = defaultMaxWait); //Save the selected configuration sub-sections to flash and BBR (battery backed RAM)
 
-	sfe_ublox_status_e waitForACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);   //Poll the module until a config packet and an ACK is received
-	sfe_ublox_status_e waitForNoACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait); //Poll the module until a config packet is received
+	sfe_ublox_status_e waitForACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);   //Poll the module until a config packet and an ACK is received
+	sfe_ublox_status_e waitForNoACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait); //Poll the module until a config packet is received
 
 // getPVT will only return data once in each navigation cycle. By default, that is once per second.
 // Therefore we should set getPVTmaxWait to slightly longer than that.
