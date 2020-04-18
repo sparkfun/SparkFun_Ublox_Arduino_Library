@@ -611,7 +611,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
     currentSentence = NONE; //We're done! Reset the sentence to being looking for a new start char
 
     //Validate this sentence
-    if (incomingUBX->checksumA == rollingChecksumA && incomingUBX->checksumB == rollingChecksumB)
+    if ((incomingUBX->checksumA == rollingChecksumA) && (incomingUBX->checksumB == rollingChecksumB))
     {
       incomingUBX->valid = SFE_UBLOX_PACKET_VALIDITY_VALID;
 
