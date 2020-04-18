@@ -437,10 +437,6 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, uint8_t requestedClass, uint8_t re
       //This is the start of a binary sentence. Reset flags.
       //We still don't know the response class
       ubxFrameCounter = 0;
-
-      rollingChecksumA = 0; //Reset our rolling checksums
-      rollingChecksumB = 0;
-
       currentSentence = UBX;
     }
     else if (incoming == '$')
@@ -468,6 +464,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, uint8_t requestedClass, uint8_t re
       currentSentence = NONE;                          //Something went wrong. Reset.
     else if (ubxFrameCounter == 2)                     //Class
     {
+      //Reset our rolling checksums here (not when we receive the 0xB5)
+      rollingChecksumA = 0;
+      rollingChecksumB = 0;
       //We can now identify the type of response
       if (incoming == UBX_CLASS_ACK)
       {
@@ -587,54 +586,54 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
   if (incomingUBX->counter == 0)
   {
     incomingUBX->cls = incoming;
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("processUBX: Class   : 0x"));
-      _debugSerial->print(incomingUBX->cls, HEX);
-      _debugSerial->print(F(" CSUMA: 0x"));
-      _debugSerial->print(rollingChecksumA, HEX);
-      _debugSerial->print(F(" CSUMB: 0x"));
-      _debugSerial->println(rollingChecksumB, HEX);
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("processUBX: Class  : 0x"));
+    //   _debugSerial->print(incomingUBX->cls, HEX);
+    //   _debugSerial->print(F(" CSUMA: 0x"));
+    //   _debugSerial->print(rollingChecksumA, HEX);
+    //   _debugSerial->print(F(" CSUMB: 0x"));
+    //   _debugSerial->println(rollingChecksumB, HEX);
+    // }
   }
   else if (incomingUBX->counter == 1)
   {
     incomingUBX->id = incoming;
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("processUBX: ID     : 0x"));
-      _debugSerial->print(incomingUBX->id, HEX);
-      _debugSerial->print(F(" CSUMA: 0x"));
-      _debugSerial->print(rollingChecksumA, HEX);
-      _debugSerial->print(F(" CSUMB: 0x"));
-      _debugSerial->println(rollingChecksumB, HEX);
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("processUBX: ID     : 0x"));
+    //   _debugSerial->print(incomingUBX->id, HEX);
+    //   _debugSerial->print(F(" CSUMA: 0x"));
+    //   _debugSerial->print(rollingChecksumA, HEX);
+    //   _debugSerial->print(F(" CSUMB: 0x"));
+    //   _debugSerial->println(rollingChecksumB, HEX);
+    // }
   }
   else if (incomingUBX->counter == 2) //Len LSB
   {
     incomingUBX->len = incoming;
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("processUBX: LEN_LSB: 0x"));
-      _debugSerial->print(incomingUBX->len, HEX);
-      _debugSerial->print(F(" CSUMA: 0x"));
-      _debugSerial->print(rollingChecksumA, HEX);
-      _debugSerial->print(F(" CSUMB: 0x"));
-      _debugSerial->println(rollingChecksumB, HEX);
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("processUBX: LEN_LSB: 0x"));
+    //   _debugSerial->print(incomingUBX->len, HEX);
+    //   _debugSerial->print(F(" CSUMA: 0x"));
+    //   _debugSerial->print(rollingChecksumA, HEX);
+    //   _debugSerial->print(F(" CSUMB: 0x"));
+    //   _debugSerial->println(rollingChecksumB, HEX);
+    // }
   }
   else if (incomingUBX->counter == 3) //Len MSB
   {
     incomingUBX->len |= incoming << 8;
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("processUBX: LEN_MSB: 0x"));
-      _debugSerial->print(incoming, HEX);
-      _debugSerial->print(F(" CSUMA: 0x"));
-      _debugSerial->print(rollingChecksumA, HEX);
-      _debugSerial->print(F(" CSUMB: 0x"));
-      _debugSerial->println(rollingChecksumB, HEX);
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("processUBX: LEN_MSB: 0x"));
+    //   _debugSerial->print(incoming, HEX);
+    //   _debugSerial->print(F(" CSUMA: 0x"));
+    //   _debugSerial->print(rollingChecksumA, HEX);
+    //   _debugSerial->print(F(" CSUMB: 0x"));
+    //   _debugSerial->println(rollingChecksumB, HEX);
+    // }
   }
   else if (incomingUBX->counter == incomingUBX->len + 4) //ChecksumA
   {
