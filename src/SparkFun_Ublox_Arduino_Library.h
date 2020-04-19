@@ -466,10 +466,9 @@ public:
 	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
 
 	void calcChecksum(ubxPacket *msg);											   //Sets the checksumA and checksumB of a given messages
-	sfe_ublox_status_e sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = defaultMaxWait); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
-	sfe_ublox_status_e sendCustomCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait); //This allows custom packets to be used
-	sfe_ublox_status_e sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250);
-	void sendSerialCommand(ubxPacket outgoingUBX);
+	sfe_ublox_status_e sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
+	sfe_ublox_status_e sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait = 250);
+	void sendSerialCommand(ubxPacket *outgoingUBX);
 
 	void printPacket(ubxPacket *packet); //Useful for debugging
 

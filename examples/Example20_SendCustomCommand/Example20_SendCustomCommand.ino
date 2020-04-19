@@ -1,5 +1,5 @@
 /*
-  sendCustomCommand
+  Send Custom Command
   By: Paul Clark (PaulZC)
   Date: April 18th, 2020
 
@@ -13,12 +13,12 @@
   through the library but it would always appear to timeout as
   some of the internal functions referred to the internal private
   struct packetCfg.
-  The most recent version of the library allows sendCustomCommand to
+  The most recent version of the library allows sendCommand to
   use a custom packet as if it were packetCfg and so:
-  - sendCustomCommand will return a sfe_ublox_status_e enum as if
-    sendCommand had been called from within the library
+  - sendCommand will return a sfe_ublox_status_e enum as if
+    it had been called from within the library
   - the custom packet will be updated with data returned by the module
-    (previously this was not possible)
+    (previously this was not possible from outside the library)
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -81,7 +81,7 @@ void setup()
   // sfe_ublox_packet_validity_e valid            : Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
   // sfe_ublox_packet_validity_e classAndIDmatch  : Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
 
-  // sendCustomCommand will return:
+  // sendCommand will return:
   // SFE_UBLOX_STATUS_DATA_RECEIVED if the data we requested was read / polled successfully
   // SFE_UBLOX_STATUS_DATA_SENT     if the data we sent was writted successfully (ACK'd)
   // Other values indicate errors. Please see the sfe_ublox_status_e enum for further details.
@@ -96,21 +96,21 @@ void setup()
   customCfg.len = 0; // Setting the len (length) to zero let's us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  // We also need to tell sendCustomCommand how long it should wait for a reply
+  // We also need to tell sendCommand how long it should wait for a reply
   uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
 
   // Now let's read the current navigation model settings. The results will be loaded into customCfg.
-  if (myGPS.sendCustomCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("sendCustomCommand (poll) failed! Trying again..."));
+    Serial.println(F("sendCommand (poll) failed! Trying again..."));
     // We need to reset the packet before we try again as the values could have changed
     customCfg.cls = UBX_CLASS_CFG;
     customCfg.id = UBX_CFG_NAV5;
     customCfg.len = 0;
     customCfg.startingSpot = 0;
-    if (myGPS.sendCustomCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     {
-      Serial.println(F("sendCustomCommand (poll) failed again! Freezing."));
+      Serial.println(F("sendCommand (poll) failed again! Freezing."));
       while (1)
         ;
     }
@@ -136,12 +136,12 @@ void setup()
   }
 
   // We don't need to update customCfg.len as it will have been set to 36 (0x24)
-  // when sendCustomCommand read the data
+  // when sendCommand read the data
 
   // Now we write the custom packet back again to change the setting
-  if (myGPS.sendCustomCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("sendCustomCommand (set) failed! Freezing."));
+    Serial.println(F("sendCommand (set) failed! Freezing."));
     while (1)
       ;
   }
@@ -158,9 +158,9 @@ void setup()
   customCfg.len = 0;
   customCfg.startingSpot = 0;
 
-  if (myGPS.sendCustomCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("sendCustomCommand (poll) failed! Freezing."));
+    Serial.println(F("sendCommand (poll) failed! Freezing."));
     while (1)
       ;
   }
