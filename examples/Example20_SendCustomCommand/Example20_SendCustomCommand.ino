@@ -85,11 +85,10 @@ void setup()
   // SFE_UBLOX_STATUS_DATA_RECEIVED if the data we requested was read / polled successfully
   // SFE_UBLOX_STATUS_DATA_SENT     if the data we sent was writted successfully (ACK'd)
   // Other values indicate errors. Please see the sfe_ublox_status_e enum for further details.
-  // If you see a failure you can of course simply try sending the same command again.
 
   // Referring to the u-blox M8 Receiver Description and Protocol Specification we see that
   // the dynamic model is configured using the UBX-CFG-NAV5 message. So let's load our
-  // custom packet with the correct information so we can read (poll) the current settings.
+  // custom packet with the correct information so we can read (poll / get) the current settings.
 
   customCfg.cls = UBX_CLASS_CFG; // This is the message Class
   customCfg.id = UBX_CFG_NAV5; // This is the message ID
@@ -102,18 +101,9 @@ void setup()
   // Now let's read the current navigation model settings. The results will be loaded into customCfg.
   if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("sendCommand (poll) failed! Trying again..."));
-    // We need to reset the packet before we try again as the values could have changed
-    customCfg.cls = UBX_CLASS_CFG;
-    customCfg.id = UBX_CFG_NAV5;
-    customCfg.len = 0;
-    customCfg.startingSpot = 0;
-    if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-    {
-      Serial.println(F("sendCommand (poll) failed again! Freezing."));
-      while (1)
-        ;
-    }
+    Serial.println(F("sendCommand (poll) failed! Freezing..."));
+    while (1)
+      ;
   }
 
   // Referring to the message definition for UBX-CFG-NAV5 we see that we need to change

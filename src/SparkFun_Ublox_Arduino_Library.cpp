@@ -128,7 +128,7 @@ const char *SFE_UBLOX_GPS::statusString(sfe_ublox_status_e stat)
     return "Timeout";
     break;
   case SFE_UBLOX_STATUS_COMMAND_UNKNOWN:
-    return "Command Unknown";
+    return "Command Unknown (NACK)";
     break;
   case SFE_UBLOX_STATUS_OUT_OF_RANGE:
     return "Out of range";
@@ -153,6 +153,9 @@ const char *SFE_UBLOX_GPS::statusString(sfe_ublox_status_e stat)
     break;
   case SFE_UBLOX_STATUS_I2C_COMM_FAILURE:
     return "I2C Comm Failure";
+    break;
+  case SFE_UBLOX_STATUS_DATA_OVERWRITTEN:
+    return "Data Packet Overwritten";
     break;
   default:
     return "Unknown Status";
@@ -2059,18 +2062,11 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false); //If command send fails then bail
 
-  if (_printDebug == true)
-  {
-    _debugSerial->print(F("setNavigationFrequency packetCfg.len is "));
-    _debugSerial->println(packetCfg.len);
-  }
-
   uint16_t measurementRate = 1000 / navFreq;
 
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[0] = measurementRate & 0xFF; //measRate LSB
   payloadCfg[1] = measurementRate >> 8;   //measRate MSB
-  //packetCfg.len = 6;
 
   return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
