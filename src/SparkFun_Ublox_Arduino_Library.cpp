@@ -1233,7 +1233,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
-        && (outgoingUBX->class == requestedClass)
+        && (outgoingUBX->cls == requestedClass)
         && (outgoingUBX->id == requestedID))
       {
         if (_printDebug == true)
@@ -1248,7 +1248,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       // We can be confident that the data packet (if we are going to get one) will always arrive
       // before the matching ACK. So if we accidentally sent a config packet which only produces an ACK
       // then outgoingUBX->classAndIDmatch will be NOT_DEFINED and the packetAck.classAndIDmatch will VALID.
-      // We should not check outgoingUBX->valid, outgoingUBX->class or outgoingUBX->id
+      // We should not check outgoingUBX->valid, outgoingUBX->cls or outgoingUBX->id
       // as these may have been changed by a PVT packet.
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED)
         && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID))
@@ -1263,14 +1263,14 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       }
 
       // If both the outgoingUBX->classAndIDmatch and packetAck.classAndIDmatch are VALID
-      // but the outgoingUBX->class or ID no longer match then we can be confident that we had
+      // but the outgoingUBX->cls or ID no longer match then we can be confident that we had
       // valid data but it has been or is currently being overwritten by another packet (e.g. PVT).
       // If (e.g.) a PVT packet is _being_ received: outgoingUBX->valid will be NOT_DEFINED
       // If (e.g.) a PVT packet _has been_ received: outgoingUBX->valid will be VALID (or just possibly NOT_VALID)
       // So we cannot use outgoingUBX->valid as part of this check.
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
-        && !((outgoingUBX->class != requestedClass)
+        && !((outgoingUBX->cls != requestedClass)
         || (outgoingUBX->id != requestedID)))
       {
         if (_printDebug == true)
@@ -1300,7 +1300,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       // If our packet was not-acknowledged (NACK) we do not receive a data packet - we only get the NACK.
       // So you would expect outgoingUBX->valid and outgoingUBX->classAndIDmatch to still be NOT_DEFINED
       // But if a full PVT packet arrives afterwards outgoingUBX->valid could be VALID (or just possibly NOT_VALID)
-      // but outgoingUBX->class and outgoingUBX->id would not match...
+      // but outgoingUBX->cls and outgoingUBX->id would not match...
       // So I think this is telling us we need a special state for packetAck.classAndIDmatch to tell us
       // the packet was definitely NACK'd otherwise we are possibly just guessing...
       else if (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_NOTACKNOWLEDGED)
@@ -1320,7 +1320,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_NOT_VALID)
         && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
-        && (outgoingUBX->class == requestedClass)
+        && (outgoingUBX->cls == requestedClass)
         && (outgoingUBX->id == requestedID))
       {
         if (_printDebug == true)
@@ -1370,7 +1370,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
   if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
     && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED)
     && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
-    && (outgoingUBX->class == requestedClass)
+    && (outgoingUBX->cls == requestedClass)
     && (outgoingUBX->id == requestedID))
   {
     if (_printDebug == true)
@@ -1416,7 +1416,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
       // then we can be confident that the data in outgoingUBX is valid
       if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID)
-        && (outgoingUBX->class == requestedClass)
+        && (outgoingUBX->cls == requestedClass)
         && (outgoingUBX->id == requestedID))
       {
         if (_printDebug == true)
@@ -1429,13 +1429,13 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
       }
 
       // If the outgoingUBX->classAndIDmatch is VALID
-      // but the outgoingUBX->class or ID no longer match then we can be confident that we had
+      // but the outgoingUBX->cls or ID no longer match then we can be confident that we had
       // valid data but it has been or is currently being overwritten by another packet (e.g. PVT).
       // If (e.g.) a PVT packet is _being_ received: outgoingUBX->valid will be NOT_DEFINED
       // If (e.g.) a PVT packet _has been_ received: outgoingUBX->valid will be VALID (or just possibly NOT_VALID)
       // So we cannot use outgoingUBX->valid as part of this check.
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
-        && !((outgoingUBX->class != requestedClass)
+        && !((outgoingUBX->cls != requestedClass)
         || (outgoingUBX->id != requestedID)))
       {
         if (_printDebug == true)
@@ -1457,7 +1457,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
           _debugSerial->print(F("waitForNoACKResponse: valid but UNWANTED data after "));
           _debugSerial->print(millis() - startTime);
           _debugSerial->print(F(" msec. Class: "));
-          _debugSerial->print(outgoingUBX->class);
+          _debugSerial->print(outgoingUBX->cls);
           _debugSerial->print(F(" ID: "));
           _debugSerial->print(outgoingUBX->id);
         }

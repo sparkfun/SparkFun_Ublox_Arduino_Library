@@ -97,7 +97,7 @@ void setup()
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
   // We also need to tell sendCustomCommand how long it should wait for a reply
-  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need longer)
+  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
 
   // Now let's read the current navigation model settings. The results will be loaded into customCfg.
   if (myGPS.sendCustomCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
