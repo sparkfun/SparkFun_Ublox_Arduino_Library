@@ -2112,6 +2112,12 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
   if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false); //If command send fails then bail
 
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("setNavigationFrequency packetCfg.len is "));
+    _debugSerial->println(packetCfg.len);
+  }
+
   uint16_t measurementRate = 1000 / navFreq;
 
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
