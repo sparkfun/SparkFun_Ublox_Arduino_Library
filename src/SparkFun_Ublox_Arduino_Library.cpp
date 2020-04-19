@@ -1246,7 +1246,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       }
 
       // We can be confident that the data packet (if we are going to get one) will always arrive
-      // before the matching ACK. So if we accidentally sent a config packet which only produces an ACK
+      // before the matching ACK. So if we sent a config packet which only produces an ACK
       // then outgoingUBX->classAndIDmatch will be NOT_DEFINED and the packetAck.classAndIDmatch will VALID.
       // We should not check outgoingUBX->valid, outgoingUBX->cls or outgoingUBX->id
       // as these may have been changed by a PVT packet.
@@ -1255,7 +1255,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       {
         if (_printDebug == true)
         {
-          _debugSerial->print(F("waitForACKResponse: NO DATA and VALID ACK after "));
+          _debugSerial->print(F("waitForACKResponse: no data and valid ACK after "));
           _debugSerial->print(millis() - startTime);
           _debugSerial->println(F(" msec"));
         }
@@ -2117,6 +2117,7 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
   //payloadCfg is now loaded with current bytes. Change only the ones we need to
   payloadCfg[0] = measurementRate & 0xFF; //measRate LSB
   payloadCfg[1] = measurementRate >> 8;   //measRate MSB
+  packetCfg.len = 6; // Bug fix!
 
   return ((sendCommand(packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }

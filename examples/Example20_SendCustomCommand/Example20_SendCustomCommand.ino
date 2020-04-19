@@ -150,6 +150,25 @@ void setup()
     Serial.println(F("Dynamic platform model updated."));
   }
 
+  // Now let's read the navigation model settings again to see if the change was successful.
+
+  // We need to reset the packet before we try again as the values could have changed
+  customCfg.cls = UBX_CLASS_CFG;
+  customCfg.id = UBX_CFG_NAV5;
+  customCfg.len = 0;
+  customCfg.startingSpot = 0;
+
+  if (myGPS.sendCustomCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  {
+    Serial.println(F("sendCustomCommand (poll) failed! Freezing."));
+    while (1)
+      ;
+  }
+
+  // Print the current dynamic model
+  Serial.print(F("The new dynamic model is: "));
+  Serial.println(customPayload[2]);
+
   //myGPS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
 }
 
