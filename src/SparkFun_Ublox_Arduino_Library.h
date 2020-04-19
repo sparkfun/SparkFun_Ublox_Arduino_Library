@@ -99,9 +99,10 @@ typedef enum
 	SFE_UBLOX_STATUS_INVALID_OPERATION,
 	SFE_UBLOX_STATUS_MEM_ERR,
 	SFE_UBLOX_STATUS_HW_ERR,
-	SFE_UBLOX_STATUS_DATA_SENT,
-	SFE_UBLOX_STATUS_DATA_RECEIVED,
+	SFE_UBLOX_STATUS_DATA_SENT, // This indicates that a 'set' was successful
+	SFE_UBLOX_STATUS_DATA_RECEIVED, // This indicates that a 'get' (poll) was successful
 	SFE_UBLOX_STATUS_I2C_COMM_FAILURE,
+	SFE_UBLOX_STATUS_DATA_OVERWRITTEN // This is an error - the data was valid but has been or _is being_ overwritten by another packet
 } sfe_ublox_status_e;
 
 // ubxPacket validity
@@ -109,7 +110,8 @@ typedef enum
 {
   SFE_UBLOX_PACKET_VALIDITY_NOT_VALID,
   SFE_UBLOX_PACKET_VALIDITY_VALID,
-  SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED
+  SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED,
+	SFE_UBLOX_PACKET_NOTACKNOWLEDGED // This indicates that we received a NACK
 } sfe_ublox_packet_validity_e;
 
 //Registers
@@ -438,7 +440,9 @@ public:
 	// A default of 250ms for maxWait seems fine for I2C but is not enough for SerialUSB.
 	// If you know you are only going to be using I2C / Qwiic communication, you can
 	// safely reduce defaultMaxWait to 250.
+	#ifndef defaultMaxWait // Let's allow the user to define their own value if they want to
 	#define defaultMaxWait 1100
+	#endif
 
 	//By default use the default I2C address, and use Wire port
 	boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
