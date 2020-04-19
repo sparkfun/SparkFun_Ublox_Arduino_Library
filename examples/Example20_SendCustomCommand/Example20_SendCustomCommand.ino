@@ -101,7 +101,7 @@ void setup()
   // Now let's read the current navigation model settings. The results will be loaded into customCfg.
   if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("sendCommand (poll) failed! Freezing..."));
+    Serial.println(F("sendCommand (poll / get) failed! Freezing..."));
     while (1)
       ;
   }
@@ -114,7 +114,7 @@ void setup()
   Serial.print(customPayload[2]);
 
   // Let's change it
-  if (customPayload[2] != 0x04) // If it is current not 4, change it to 4
+  if (customPayload[2] != 0x04) // If it is currently not 4, change it to 4
   {
     Serial.println(F(". Changing it to 4."));
     customPayload[2] = 0x04;
