@@ -50,8 +50,15 @@ void setup()
       ;
   }
 
+  // Check that this platform supports 64-bit (8 byte) double
+  if (sizeof(double) < 8)
+  {
+    Serial.println(F("Warning! Your platform does not support 64-bit double."));
+    Serial.println(F("The latitude and longitude will be inaccurate."));
+  }
+
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  
+
   //myGPS.setNavigationFrequency(20); //Set output to 20 times a second
 
   byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
