@@ -443,8 +443,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
       currentSentence = UBX;
       //Reset the packetBuf.counter even though we will need to reset it again when ubxFrameCounter == 2
       packetBuf.counter = 0;
-      //We should not ignore this payload - yet
-      ignoreThisPayload = false;
+      ignoreThisPayload = false; //We should not ignore this payload - yet
       //Store data in packetBuf until we know if we have a requested class and ID match
       activePacketBuffer = SFE_UBLOX_PACKET_PACKETBUF;
     }
@@ -471,19 +470,18 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
       currentSentence = NONE;                          //Something went wrong. Reset.
     else if ((ubxFrameCounter == 1) && (incoming != 0x62)) //ASCII 'b'
       currentSentence = NONE;                          //Something went wrong. Reset.
+    // Note to future self:
+    // There may be some duplication / redundancy in the next few lines as processUBX will also
+    // load information into packetBuf, but we'll do it here too for clarity
     else if (ubxFrameCounter == 2) //Class
     {
       // Record the class in packetBuf until we know what to do with it
       packetBuf.cls = incoming; // (Duplication)
-      //Reset our rolling checksums here (not when we receive the 0xB5)
-      rollingChecksumA = 0;
+      rollingChecksumA = 0; //Reset our rolling checksums here (not when we receive the 0xB5)
       rollingChecksumB = 0;
-      //Reset the packetBuf.counter (again)
-      packetBuf.counter = 0;
+      packetBuf.counter = 0; //Reset the packetBuf.counter (again)
+      packetBuf.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED; // Reset the packet validity (redundant?)
     }
-    // Note to future self:
-    // There may be some duplication / redundancy in the next few lines as processUBX will also
-    // load information into packetBuf, but we'll do it here too for clarity
     else if (ubxFrameCounter == 3) //ID
     {
       // Record the ID in packetBuf until we know what to do with it
@@ -498,11 +496,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           //This is not an ACK and we have a class and ID match
           //So start diverting data into incomingUBX (usually packetCfg)
           activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
-          //Copy the class and ID into incomingUBX (usually packetCfg)
-          incomingUBX->cls = packetBuf.cls;
+          incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
           incomingUBX->id = packetBuf.id;
-          //Copy over the .counter too
-          incomingUBX->counter = packetBuf.counter;
+          incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
         }
         else
         {
@@ -570,17 +566,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
         && (packetBuf.payload[0] == requestedClass) // and if the class matches
         && (packetBuf.payload[1] == requestedID)) // and if the ID matches
       {
-        if (packetBuf.len != 2) // Check if length is not 2 (hopefully this is impossible!)
-        {
-          if (_printDebug == true)
-          {
-            _debugSerial->print(F("process: ACK received with .len != 2: Class: 0x"));
-            _debugSerial->print(packetBuf.payload[0], HEX);
-            _debugSerial->print(F(" ID: 0x"));
-            _debugSerial->println(packetBuf.payload[1], HEX);
-          }
-        }
-        else
+        if (packetBuf.len == 2) // Check if .len is 2
         {
           // Then this is a matching ACK so copy it into packetAck
           activePacketBuffer = SFE_UBLOX_PACKET_PACKETACK;
@@ -590,6 +576,16 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           packetAck.counter = packetBuf.counter;
           packetAck.payload[0] = packetBuf.payload[0];
           packetAck.payload[1] = packetBuf.payload[1];
+        }
+        else // Length is not 2 (hopefully this is impossible!)
+        {
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("process: ACK received with .len != 2: Class: 0x"));
+            _debugSerial->print(packetBuf.payload[0], HEX);
+            _debugSerial->print(F(" ID: 0x"));
+            _debugSerial->println(packetBuf.payload[1], HEX);
+          }
         }
       }
     }
@@ -728,7 +724,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
     //Validate this sentence
     if ((incomingUBX->checksumA == rollingChecksumA) && (incomingUBX->checksumB == rollingChecksumB))
     {
-      incomingUBX->valid = SFE_UBLOX_PACKET_VALIDITY_VALID;
+      incomingUBX->valid = SFE_UBLOX_PACKET_VALIDITY_VALID; // Flag the packet as valid
 
       // Let's check if the class and ID match the requestedClass and requestedID
       // Remember - this could be a data packet or an ACK packet
@@ -794,6 +790,12 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       // but that the packet checksum failed. Potentially it could be the class or ID bytes
       // that caused the checksum error!
       if ((incomingUBX->cls == requestedClass) && (incomingUBX->id == requestedID))
+      {
+        incomingUBX->classAndIDmatch = SFE_UBLOX_PACKET_VALIDITY_NOT_VALID; // If we have a match, set the classAndIDmatch flag to not valid
+      }
+      // If this is an ACK then let's check if the class and ID match the requestedClass and requestedID
+      else if ((incomingUBX->cls == UBX_CLASS_ACK)
+        && (incomingUBX->payload[0] == requestedClass) && (incomingUBX->payload[1] == requestedID))
       {
         incomingUBX->classAndIDmatch = SFE_UBLOX_PACKET_VALIDITY_NOT_VALID; // If we have a match, set the classAndIDmatch flag to not valid
       }
