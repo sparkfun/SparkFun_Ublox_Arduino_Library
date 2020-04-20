@@ -13,21 +13,15 @@
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a Redboard Qwiic
   If you don't have a platform with a Qwiic connection use the 
-  SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
+	SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 
-  To take advantage of the internal IMU of either the Dead Reckoning GPS
-  boards (ZED-F9R, NEO-M8U), you must first calibrate them. This includes securing the GPS module
-  to your vehicle so that it is stable within 2 degrees and that the frame of
-  reference of the board is consistent with the picture outlined in the
-  Receiver-Description-Prot-Spec Datasheet under Automotive/Untethered Dead
-  Reckoning. You may also check either the ZED-F9R or NEO-M8U Hookup Guide for
-  more information. After the board is secure, you'll need to put the module
-  through certain conditions for proper calibration: acceleration, turning,
-  stopping for a few minutes, getting to a speed over 30km/h all under a clear sky 
-  with good GNSS signal. This example simply looks at the
-  "fusionMode" status which indicates whether the SparkFun Dead Reckoning is
-  not-calibrated - 0, or calibrated - 1.  
+	After calibrating the module and securing it to your vehicle such that it's
+  stable within 2 degrees, and the board is oriented correctly with regards to
+  the vehicle's frame, you can now read the vehicle's "attitude". The attitude
+  includes the vehicle's heading, pitch, and roll. You can also check the
+  accuracy of those readings. 
+
 */
 
 #include <Wire.h> //Needed for I2C to GPS
@@ -50,17 +44,37 @@ void setup()
   }
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+
+  if (myGPS.getEsfInfo()){
+
+    Serial.print("Fusion Mode: ");  
+    Serial.println(myGPS.imuMeas.fusionMode);  
+
+    if (myGPS.imuMeas.fusionMode == 1){
+      Serial.println("Fusion Mode is Initialized!");  
+		}
+		else {
+      Serial.println("Fusion Mode is either disabled or not initialized - Freezing!");  
+			Serial.println("Please see Example 1 description at top for more information.");
+		}
+  }
 }
 
 void loop()
 {
-
-  if (myGPS.getEsfInfo()){
-    Serial.print("Fusion Mode: ");  
-    Serial.println(myGPS.imuMeas.fusionMode);  
-    if (myGPS.imuMeas.fusionMode == 1)
-      Serial.println("Sensor is calibrated!");  
-  }
-
-  delay(250);
+		myGPS.getVehAtt(); // Give the sensor you want to check on. 
+		Serial.print("Roll: "); 
+		Serial.println(myGPS.vehAtt.roll);
+		Serial.print("Pitch: "); 
+		Serial.println(myGPS.vehAtt.pitch);
+		Serial.print("Heading: "); 
+		Serial.println(myGPS.vehAtt.heading);
+		Serial.print("Roll Accuracy: "); 
+		Serial.println(myGPS.vehAtt.accRoll);
+		Serial.print("Pitch Accuracy: "); 
+		Serial.println(myGPS.vehAtt.accPitch);
+		Serial.print("Heading Accuracy: "); 
+		Serial.println(myGPS.vehAtt.accHeading);
 }
+
+
