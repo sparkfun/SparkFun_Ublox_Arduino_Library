@@ -114,6 +114,15 @@ typedef enum
 	SFE_UBLOX_PACKET_NOTACKNOWLEDGED // This indicates that we received a NACK
 } sfe_ublox_packet_validity_e;
 
+// Identify which packet buffer is in use:
+// packetCfg (or a custom packet), packetAck or packetBuf
+typedef enum
+{
+  SFE_UBLOX_PACKET_PACKETCFG,
+  SFE_UBLOX_PACKET_PACKETACK,
+  SFE_UBLOX_PACKET_PACKETBUF
+} sfe_ublox_packet_buffer_e;
+
 //Registers
 const uint8_t UBX_SYNCH_1 = 0xB5;
 const uint8_t UBX_SYNCH_2 = 0x62;
@@ -729,13 +738,21 @@ private:
 
 	boolean _printDebug = false; //Flag to print the serial commands we are sending to the Serial port for debug
 
+	//The packet buffers
 	//These are pointed at from within the ubxPacket
-	uint8_t payloadAck[2];
-	uint8_t payloadCfg[MAX_PAYLOAD_SIZE];
+	uint8_t payloadAck[2]; // Holds the requested ACK/NACK
+	uint8_t payloadCfg[MAX_PAYLOAD_SIZE]; // Holds the requested data packet
+	uint8_t payloadBuf[2]; // Temporary buffer used to screen incoming packets (same size as Ack)
 
-	//Init the packet structures and init them with pointers to the payloadAck and payloadCfg arrays
+	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg and payloadBuf arrays
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetBuf = {0, 0, 0, 0, 0, payloadBuf, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+	//Identify which buffer is in use
+	//Data is stored in packetBuf until the requested class and ID can be validated
+	//If a match is seen, data is diverted into packetAck or packetCfg
+	sfe_ublox_packet_buffer_e activePacketBuffer = SFE_UBLOX_PACKET_PACKETBUF;
 
 	//Limit checking of new data to every X ms
 	//If we are expecting an update every X Hz then we should check every half that amount of time
