@@ -1,7 +1,7 @@
 /*
   Send Custom Command
   By: Paul Clark (PaulZC)
-  Date: April 18th, 2020
+  Date: April 20th, 2020
 
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
@@ -32,16 +32,16 @@
   Open the serial monitor at 115200 baud to see the output
 */
 
+#define NAV_RATE 20 // The new navigation rate in Hz (measurements per second)
+
 #include <Wire.h> //Needed for I2C to GPS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
-
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(115200); // You may need to increase this for high navigation rates!
   while (!Serial)
     ; //Wait for user to open terminal
   Serial.println("SparkFun Ublox Example");
@@ -59,10 +59,7 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
-  // Let's configure the module's dynamic platform model as if we were using setDynamicModel
-  // Possible values are:
-  // 0 (PORTABLE),   2 (STATIONARY), 3 (PEDESTRIAN), 4 (AUTOMOTIVE), 5 (SEA),
-  // 6 (AIRBORNE1g), 7 (AIRBORNE2g), 8 (AIRBORNE4g), 9 (WRIST),     10 (BIKE)
+  // Let's configure the module's navigation rate as if we were using setNavigationFrequency
 
   // Let's create our custom packet
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
@@ -87,18 +84,18 @@ void setup()
   // Other values indicate errors. Please see the sfe_ublox_status_e enum for further details.
 
   // Referring to the u-blox M8 Receiver Description and Protocol Specification we see that
-  // the dynamic model is configured using the UBX-CFG-NAV5 message. So let's load our
+  // the navigation rate is configured using the UBX-CFG-RATE message. So let's load our
   // custom packet with the correct information so we can read (poll / get) the current settings.
 
   customCfg.cls = UBX_CLASS_CFG; // This is the message Class
-  customCfg.id = UBX_CFG_NAV5; // This is the message ID
+  customCfg.id = UBX_CFG_RATE; // This is the message ID
   customCfg.len = 0; // Setting the len (length) to zero let's us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
   // We also need to tell sendCommand how long it should wait for a reply
   uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
 
-  // Now let's read the current navigation model settings. The results will be loaded into customCfg.
+  // Now let's read the current navigation rate. The results will be loaded into customCfg.
   if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("sendCommand (poll / get) failed! Freezing..."));
@@ -106,26 +103,26 @@ void setup()
       ;
   }
 
-  // Referring to the message definition for UBX-CFG-NAV5 we see that we need to change
-  // byte 2 to update the dynamic platform model.
+  // Referring to the message definition for UBX-CFG-RATE we see that the measurement rate
+  // is stored in payload bytes 0 and 1 as a uint16_t in LSB-first (little endian) format
 
-  // Print the current dynamic model
-  Serial.print(F("The current dynamic model is: "));
-  Serial.print(customPayload[2]);
+  uint16_t rate = (customPayload[1] << 8) | customPayload[0]; // Extract the current rate (ms)
+  float f_rate = 1000.0 / ((float)rate); // Convert the navigation rate to Hz (measurements per second)
+
+  // Print the current measurement rate
+  Serial.print(F("The current measurement rate is: "));
+  Serial.println(f_rate, 1);
 
   // Let's change it
-  if (customPayload[2] != 0x04) // If it is currently not 4, change it to 4
-  {
-    Serial.println(F(". Changing it to 4."));
-    customPayload[2] = 0x04;
-  }
-  else // If it is already 4, change it to 2
-  {
-    Serial.println(F(". Changing it to 2."));
-    customPayload[2] = 0x02;
-  }
+  rate = 1000 / NAV_RATE; // Load the new value into rate
+  customPayload[0] = rate & 0xFF; // Store it in the payload
+  customPayload[1] = rate >> 8;
 
-  // We don't need to update customCfg.len as it will have been set to 36 (0x24)
+  // Print the new measurement rate
+  Serial.print(F("The new measurement rate will be: "));
+  Serial.println(NAV_RATE);
+
+  // We don't need to update customCfg.len as it will have been set to 6
   // when sendCommand read the data
 
   // Now we write the custom packet back again to change the setting
@@ -137,53 +134,28 @@ void setup()
   }
   else
   {
-    Serial.println(F("Dynamic platform model updated."));
+    Serial.println(F("Navigation rate updated. Here we go..."));
   }
 
-  // Now let's read the navigation model settings again to see if the change was successful.
-
-  // We need to reset the packet before we try again as the values could have changed
-  customCfg.cls = UBX_CLASS_CFG;
-  customCfg.id = UBX_CFG_NAV5;
-  customCfg.len = 0;
-  customCfg.startingSpot = 0;
-
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-  {
-    Serial.println(F("sendCommand (poll) failed! Freezing."));
-    while (1)
-      ;
-  }
-
-  // Print the current dynamic model
-  Serial.print(F("The new dynamic model is: "));
-  Serial.println(customPayload[2]);
+  myGPS.setAutoPVT(true); // Enable AutoPVT. The module will generate measurements automatically without being polled.
 
   //myGPS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
 }
 
 void loop()
 {
-  //Query module only every second. Doing it more often will just cause I2C traffic.
-  //The module only responds when a new position is available
-  if (millis() - lastTime > 1000)
-  {
-    lastTime = millis(); //Update the timer
-
-    long latitude = myGPS.getLatitude();
+  //Query the module as fast as possible
+    int32_t latitude = myGPS.getLatitude();
     Serial.print(F("Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.getLongitude();
-    Serial.print(F(" Long: "));
+    int32_t longitude = myGPS.getLongitude();
+    Serial.print(F(" Lon: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
 
-    long altitude = myGPS.getAltitude();
+    int32_t altitude = myGPS.getAltitude();
     Serial.print(F(" Alt: "));
     Serial.print(altitude);
-    Serial.print(F(" (mm)"));
-
-    Serial.println();
-  }
+    Serial.println(F(" (mm)"));
 }
