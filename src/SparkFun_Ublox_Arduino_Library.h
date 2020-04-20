@@ -99,9 +99,10 @@ typedef enum
 	SFE_UBLOX_STATUS_INVALID_OPERATION,
 	SFE_UBLOX_STATUS_MEM_ERR,
 	SFE_UBLOX_STATUS_HW_ERR,
-	SFE_UBLOX_STATUS_DATA_SENT,
-	SFE_UBLOX_STATUS_DATA_RECEIVED,
+	SFE_UBLOX_STATUS_DATA_SENT, // This indicates that a 'set' was successful
+	SFE_UBLOX_STATUS_DATA_RECEIVED, // This indicates that a 'get' (poll) was successful
 	SFE_UBLOX_STATUS_I2C_COMM_FAILURE,
+	SFE_UBLOX_STATUS_DATA_OVERWRITTEN // This is an error - the data was valid but has been or _is being_ overwritten by another packet
 } sfe_ublox_status_e;
 
 // ubxPacket validity
@@ -109,7 +110,8 @@ typedef enum
 {
   SFE_UBLOX_PACKET_VALIDITY_NOT_VALID,
   SFE_UBLOX_PACKET_VALIDITY_VALID,
-  SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED
+  SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED,
+	SFE_UBLOX_PACKET_NOTACKNOWLEDGED // This indicates that we received a NACK
 } sfe_ublox_packet_validity_e;
 
 //Registers
@@ -409,6 +411,7 @@ typedef struct
 	uint8_t checksumA; //Given to us from module. Checked against the rolling calculated A/B checksums.
 	uint8_t checksumB;
 	sfe_ublox_packet_validity_e valid; //Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
+	sfe_ublox_packet_validity_e classAndIDmatch; // Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
 } ubxPacket;
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
@@ -437,7 +440,9 @@ public:
 	// A default of 250ms for maxWait seems fine for I2C but is not enough for SerialUSB.
 	// If you know you are only going to be using I2C / Qwiic communication, you can
 	// safely reduce defaultMaxWait to 250.
+	#ifndef defaultMaxWait // Let's allow the user to define their own value if they want to
 	#define defaultMaxWait 1100
+	#endif
 
 	//By default use the default I2C address, and use Wire port
 	boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
@@ -448,22 +453,22 @@ public:
 	//maxWait is only used for Serial
 	boolean isConnected(uint16_t maxWait = 1100);
 
-	boolean checkUblox();		//Checks module with user selected commType
-	boolean checkUbloxI2C();	//Method for I2C polling of data, passing any new bytes to process()
-	boolean checkUbloxSerial(); //Method for serial polling of data, passing any new bytes to process()
+	boolean checkUblox(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255);		//Checks module with user selected commType
+	boolean checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255);	//Method for I2C polling of data, passing any new bytes to process()
+	boolean checkUbloxSerial(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Method for serial polling of data, passing any new bytes to process()
 
-	void process(uint8_t incoming);							   //Processes NMEA and UBX binary sentences one byte at a time
-	void processUBX(uint8_t incoming, ubxPacket *incomingUBX); //Given a character, file it away into the uxb packet structure
-	void processRTCMframe(uint8_t incoming);				   //Monitor the incoming bytes for start and length bytes
+	void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Processes NMEA and UBX binary sentences one byte at a time
+	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Given a character, file it away into the uxb packet structure
+	void processRTCMframe(uint8_t incoming);				  //Monitor the incoming bytes for start and length bytes
 	void processRTCM(uint8_t incoming) __attribute__((weak));  //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
 
 	void processUBXpacket(ubxPacket *msg);				   //Once a packet has been received and validated, identify this packet's class/id and update internal flags
 	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
 
 	void calcChecksum(ubxPacket *msg);											   //Sets the checksumA and checksumB of a given messages
-	sfe_ublox_status_e sendCommand(ubxPacket outgoingUBX, uint16_t maxWait = defaultMaxWait); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
-	sfe_ublox_status_e sendI2cCommand(ubxPacket outgoingUBX, uint16_t maxWait = 250);
-	void sendSerialCommand(ubxPacket outgoingUBX);
+	sfe_ublox_status_e sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
+	sfe_ublox_status_e sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait = 250);
+	void sendSerialCommand(ubxPacket *outgoingUBX);
 
 	void printPacket(ubxPacket *packet); //Useful for debugging
 
@@ -480,8 +485,8 @@ public:
 	boolean factoryDefault(uint16_t maxWait = defaultMaxWait);							  //Reset module to factory defaults
 	boolean saveConfigSelective(uint32_t configMask, uint16_t maxWait = defaultMaxWait); //Save the selected configuration sub-sections to flash and BBR (battery backed RAM)
 
-	sfe_ublox_status_e waitForACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);   //Poll the module until a config packet and an ACK is received
-	sfe_ublox_status_e waitForNoACKResponse(uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait); //Poll the module until a config packet is received
+	sfe_ublox_status_e waitForACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);   //Poll the module until a config packet and an ACK is received
+	sfe_ublox_status_e waitForNoACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait); //Poll the module until a config packet is received
 
 // getPVT will only return data once in each navigation cycle. By default, that is once per second.
 // Therefore we should set getPVTmaxWait to slightly longer than that.
@@ -729,8 +734,8 @@ private:
 	uint8_t payloadCfg[MAX_PAYLOAD_SIZE];
 
 	//Init the packet structures and init them with pointers to the payloadAck and payloadCfg arrays
-	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
 	//Limit checking of new data to every X ms
 	//If we are expecting an update every X Hz then we should check every half that amount of time
@@ -740,7 +745,6 @@ private:
 	unsigned long lastCheck = 0;
 	boolean autoPVT = false;			  //Whether autoPVT is enabled or not
 	boolean autoPVTImplicitUpdate = true; // Whether autoPVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
-	uint8_t commandAck = UBX_ACK_NONE;	//This goes to UBX_ACK_ACK after we send a command and it's ack'd
 	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
