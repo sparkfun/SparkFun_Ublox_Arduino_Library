@@ -481,6 +481,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
       rollingChecksumB = 0;
       packetBuf.counter = 0; //Reset the packetBuf.counter (again)
       packetBuf.valid = SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED; // Reset the packet validity (redundant?)
+      packetBuf.startingSpot = incomingUBX->startingSpot; //Copy the startingSpot
     }
     else if (ubxFrameCounter == 3) //ID
     {
@@ -1313,6 +1314,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       // If (e.g.) a PVT packet is _being_ received: outgoingUBX->valid will be NOT_DEFINED
       // If (e.g.) a PVT packet _has been_ received: outgoingUBX->valid will be VALID (or just possibly NOT_VALID)
       // So we cannot use outgoingUBX->valid as part of this check.
+      // Note: the addition of packetBuf should make this check redundant!
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && !((outgoingUBX->cls != requestedClass)
@@ -1348,6 +1350,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       // but outgoingUBX->cls and outgoingUBX->id would not match...
       // So I think this is telling us we need a special state for packetAck.classAndIDmatch to tell us
       // the packet was definitely NACK'd otherwise we are possibly just guessing...
+      // Note: the addition of packetBuf changes the logic of this, but we'll leave the code as is for now.
       else if (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_NOTACKNOWLEDGED)
       {
         if (_printDebug == true)
@@ -1481,6 +1484,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
       // If (e.g.) a PVT packet is _being_ received: outgoingUBX->valid will be NOT_DEFINED
       // If (e.g.) a PVT packet _has been_ received: outgoingUBX->valid will be VALID (or just possibly NOT_VALID)
       // So we cannot use outgoingUBX->valid as part of this check.
+      // Note: the addition of packetBuf should make this check redundant!
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID)
         && !((outgoingUBX->cls != requestedClass)
         || (outgoingUBX->id != requestedID)))
