@@ -93,7 +93,7 @@ typedef enum
 	SFE_UBLOX_STATUS_FAIL,
 	SFE_UBLOX_STATUS_CRC_FAIL,
 	SFE_UBLOX_STATUS_TIMEOUT,
-	SFE_UBLOX_STATUS_COMMAND_UNKNOWN,
+	SFE_UBLOX_STATUS_COMMAND_NACK, // Indicates that the command was unrecognised, invalid or that the module is too busy to respond
 	SFE_UBLOX_STATUS_OUT_OF_RANGE,
 	SFE_UBLOX_STATUS_INVALID_ARG,
 	SFE_UBLOX_STATUS_INVALID_OPERATION,
@@ -742,12 +742,15 @@ private:
 	//These are pointed at from within the ubxPacket
 	uint8_t payloadAck[2]; // Holds the requested ACK/NACK
 	uint8_t payloadCfg[MAX_PAYLOAD_SIZE]; // Holds the requested data packet
-	uint8_t payloadBuf[2]; // Temporary buffer used to screen incoming packets (same size as Ack)
+	uint8_t payloadBuf[2]; // Temporary buffer used to screen incoming packets or dump unrequested packets
 
 	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg and payloadBuf arrays
 	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 	ubxPacket packetBuf = {0, 0, 0, 0, 0, payloadBuf, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+	//Flag if this packet is unrequested (and so should be ignored and not copied into packetCfg or packetAck)
+	boolean ignoreThisPayload = false;
 
 	//Identify which buffer is in use
 	//Data is stored in packetBuf until the requested class and ID can be validated
