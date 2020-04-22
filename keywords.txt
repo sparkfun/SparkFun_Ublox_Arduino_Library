@@ -136,6 +136,7 @@ getGeofenceState	KEYWORD2
 setDynamicModel	KEYWORD2
 getDynamicModel	KEYWORD2
 powerSaveMode	KEYWORD2
+getPowerSaveMode	KEYWORD2
 
 configureMessage	KEYWORD2
 enableMessage	KEYWORD2

@@ -1,7 +1,7 @@
 /*
   Power Save Mode
   By: Paul Clark (PaulZC)
-  Date: December 18th, 2019
+  Date: April 22nd, 2020
 
   Based extensively on Example3_GetPosition
   By: Nathan Seidle
@@ -82,7 +82,7 @@ void loop()
       // Put the GNSS into power save mode
       // (If you want to disable power save mode, call myGPS.powerSaveMode(false) instead)
       // This will fail on the ZED (protocol version >= 27) as UBX-CFG-RXM is not supported
-      if (myGPS.powerSaveMode())
+      if (myGPS.powerSaveMode()) // Defaults to true
         Serial.println(F("Power Save Mode enabled."));
       else
         Serial.println(F("***!!! Power Save Mode FAILED !!!***"));
@@ -94,6 +94,34 @@ void loop()
         Serial.println(F("Power Save Mode disabled."));
       else
         Serial.println(F("***!!! Power Save Disable FAILED !!!***"));
+    }
+
+    // Read and print the new low power mode
+    uint8_t lowPowerMode = myGPS.getPowerSaveMode();
+    if (lowPowerMode == 255)
+    {
+      Serial.println(F("***!!! getPowerSaveMode FAILED !!!***"));
+    }
+    else
+    {
+      Serial.print(F("The low power mode is: "));
+      Serial.print(lowPowerMode);
+      if (lowPowerMode == 0)
+      {
+        Serial.println(F(" (Continuous)"));
+      }
+      else if (lowPowerMode == 1)
+      {
+        Serial.println(F(" (Power Save)"));
+      }
+      else if (lowPowerMode == 4)
+      {
+        Serial.println(F(" (Continuous)"));
+      }
+      else
+      {
+        Serial.println(F(" (Unknown!)"));
+      }
     }
   }
 
