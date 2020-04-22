@@ -1,8 +1,8 @@
 /*
   Set Dynamic Model
   By: Paul Clark (PaulZC)
-  Date: March 9th, 2020
-  
+  Date: April 22nd, 2020
+
   Based extensively on Example3_GetPosition
   By: Nathan Seidle
   SparkFun Electronics
@@ -18,7 +18,7 @@
   SEA, AIRBORNE1g, AIRBORNE2g, AIRBORNE4g, WRIST, BIKE
 
   Note: Long/lat are large numbers because they are * 10^7. To convert lat/long
-  to something google maps understands simply divide the numbers by 10,000,000. We 
+  to something google maps understands simply divide the numbers by 10,000,000. We
   do this so that we don't have to use floating point numbers.
 
   Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
@@ -47,9 +47,11 @@ void setup()
   Serial.begin(115200);
   while (!Serial)
     ; //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println(F("SparkFun Ublox Example"));
 
   Wire.begin();
+
+  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
@@ -58,7 +60,6 @@ void setup()
       ;
   }
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
   // If we are going to change the dynamic platform model, let's do it here.
@@ -67,11 +68,23 @@ void setup()
 
   if (myGPS.setDynamicModel(DYN_MODEL_PORTABLE) == false) // Set the dynamic model to PORTABLE
   {
-    Serial.println("***!!! Warning: setDynamicModel failed !!!***");
+    Serial.println(F("***!!! Warning: setDynamicModel failed !!!***"));
   }
   else
   {
-    Serial.println("Dynamic platform model changed successfully!");
+    Serial.println(F("Dynamic platform model changed successfully!"));
+  }
+
+  // Let's read the new dynamic model to see if it worked
+  uint8_t newDynamicModel = myGPS.getDynamicModel();
+  if (newDynamicModel == 255)
+  {
+    Serial.println(F("***!!! Warning: getDynamicModel failed !!!***"));
+  }
+  else
+  {
+    Serial.print(F("The new dynamic model is: "));
+    Serial.println(newDynamicModel);
   }
 
   //myGPS.saveConfigSelective(VAL_CFG_SUBSEC_NAVCONF); //Uncomment this line to save only the NAV settings to flash and BBR
