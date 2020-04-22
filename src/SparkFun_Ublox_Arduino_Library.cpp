@@ -867,6 +867,9 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
 }
 
 //Once a packet has been received and validated, identify this packet's class/id and update internal flags
+//Note: if the user requests a PVT or a HPPOSLLH message using a custom packet, the data extraction will
+//      not work as expected beacuse extractLong etc are hardwired to packetCfg payloadCfg. Ideally
+//      extractLong etc should be updated so they receive a pointer to the packet buffer.
 void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 {
   switch (msg->cls)
