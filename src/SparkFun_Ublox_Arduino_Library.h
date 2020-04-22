@@ -614,6 +614,7 @@ public:
 	geofenceParams currentGeofenceParams;																														 // Global to store the geofence parameters
 
 	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 1100);
+	uint8_t getPowerSaveMode(uint16_t maxWait = 1100); // Returns 255 if the sendCommand fails
 
 	//Change the dynamic platform model using UBX-CFG-NAV5
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);

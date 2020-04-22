@@ -2510,6 +2510,42 @@ boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
+// Get Power Save Mode
+// Returns the current Low Power Mode using UBX-CFG-RXM
+// Returns 255 if the sendCommand fails
+uint8_t SFE_UBLOX_GPS::getPowerSaveMode(uint16_t maxWait)
+{
+  // Let's begin by checking the Protocol Version as UBX_CFG_RXM is not supported on the ZED (protocol >= 27)
+  uint8_t protVer = getProtocolVersionHigh(maxWait);
+  /*
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("Protocol version is "));
+    _debugSerial->println(protVer);
+  }
+  */
+  if (protVer >= 27)
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("powerSaveMode (UBX-CFG-RXM) is not supported by this protocol version"));
+    }
+    return (255);
+  }
+
+  // Now let's read the power setting using UBX-CFG-RXM
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RXM;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current power management settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (255);
+
+  return (payloadCfg[1]); // Return the low power mode
+}
+
 //Change the dynamic platform model using UBX-CFG-NAV5
 //Possible values are:
 //PORTABLE,STATIONARY,PEDESTRIAN,AUTOMOTIVE,SEA,
