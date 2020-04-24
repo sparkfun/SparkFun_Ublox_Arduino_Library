@@ -54,7 +54,7 @@ Documentation
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
-Polling vs. auto-reporting
+Polling vs. Auto-Reporting
 --------------------------
 
 This library supports two modes of operation for getting navigation information with the `getPVT`
@@ -89,7 +89,7 @@ sketch calls `getLatitude`, etc. and retrieve the data of the most recent of tho
 
 Products That Use This Library
 ---------------------------------
-
+* [GPS-16481](https://www.sparkfun.com/products/16481) - SparkFun GPS-RTK-SMA ZED-F9P
 * [GPS-15136](https://www.sparkfun.com/products/15136) - SparkFun GPS-RTK2 ZED-F9P
 * [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun GPS-RTK NEO-M8P-2
 * [GPS-15210](https://www.sparkfun.com/products/15210) - SparkFun GPS Breakout - Chip Antenna, SAM-M8Q (Qwiic)
