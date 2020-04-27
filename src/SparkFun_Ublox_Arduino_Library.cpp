@@ -266,7 +266,13 @@ void SFE_UBLOX_GPS::setNMEAOutputPort(Stream &nmeaOutputPort)
 }
 
 //Called regularly to check for available bytes on the user' specified port
-boolean SFE_UBLOX_GPS::checkUblox(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
+boolean SFE_UBLOX_GPS::checkUblox(uint8_t requestedClass, uint8_t requestedID)
+{
+  return checkUbloxInternal(&packetCfg, requestedClass, requestedID);
+}
+
+//Called regularly to check for available bytes on the user' specified port
+boolean SFE_UBLOX_GPS::checkUbloxInternal(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
   if (commType == COMM_TYPE_I2C)
     return (checkUbloxI2C(incomingUBX, requestedClass, requestedID));
@@ -585,7 +591,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
             _debugSerial->print(F("process: ACK received with .len != 2: Class: 0x"));
             _debugSerial->print(packetBuf.payload[0], HEX);
             _debugSerial->print(F(" ID: 0x"));
-            _debugSerial->println(packetBuf.payload[1], HEX);
+            _debugSerial->print(packetBuf.payload[1], HEX);
+            _debugSerial->print(F(" len: "));
+            _debugSerial->println(packetBuf.len);
           }
         }
       }
@@ -780,7 +788,11 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         }
       }
 
-      processUBXpacket(incomingUBX); //We've got a valid packet, now do something with it
+      //We've got a valid packet, now do something with it but only if ignoreThisPayload is false
+      if (ignoreThisPayload == false)
+      {
+        processUBXpacket(incomingUBX);
+      }
     }
     else  // Checksum failure
     {
@@ -1217,12 +1229,21 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
     _debugSerial->print(F(" Len: 0x"));
     _debugSerial->print(packet->len, HEX);
 
-    _debugSerial->print(F(" Payload:"));
-
-    for (int x = 0; x < packet->len; x++)
+    // Only print the payload is ignoreThisPayload is false otherwise
+    // we could be printing gibberish from beyond the end of packetBuf
+    if (ignoreThisPayload == false)
     {
-      _debugSerial->print(F(" "));
-      _debugSerial->print(packet->payload[x], HEX);
+      _debugSerial->print(F(" Payload:"));
+
+      for (int x = 0; x < packet->len; x++)
+      {
+        _debugSerial->print(F(" "));
+        _debugSerial->print(packet->payload[x], HEX);
+      }
+    }
+    else
+    {
+      _debugSerial->print(F(" Payload: IGNORED"));
     }
     _debugSerial->println();
   }
@@ -1274,7 +1295,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    if (checkUblox(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
+    if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
     {
       // If both the outgoingUBX->classAndIDmatch and packetAck.classAndIDmatch are VALID
       // and outgoingUBX->valid is _still_ VALID and the class and ID _still_ match
@@ -1410,7 +1431,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
         }
       }
 
-    } //checkUblox == true
+    } //checkUbloxInternal == true
 
     delayMicroseconds(500);
   } //while (millis() - startTime < maxTime)
@@ -1461,7 +1482,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    if (checkUblox(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
+    if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
     {
 
       // If outgoingUBX->classAndIDmatch is VALID
@@ -2703,7 +2724,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     {
       _debugSerial->println(F("getPVT: Autoreporting"));
     }
-    checkUblox(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVT);
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVT);
     return moduleQueried.all;
   }
   else if (autoPVT && !autoPVTImplicitUpdate)

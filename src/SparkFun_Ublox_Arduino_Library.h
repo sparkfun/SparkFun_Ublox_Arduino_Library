@@ -462,12 +462,15 @@ public:
 	//maxWait is only used for Serial
 	boolean isConnected(uint16_t maxWait = 1100);
 
-	boolean checkUblox(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255);		//Checks module with user selected commType
-	boolean checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255);	//Method for I2C polling of data, passing any new bytes to process()
-	boolean checkUbloxSerial(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Method for serial polling of data, passing any new bytes to process()
+	//Changed in V1.8.1: provides backward compatibility for the examples that call checkUblox directly
+	//Will default to using packetCfg to look for explicit autoPVT packets so they get processed correctly by processUBX
+	boolean checkUblox(uint8_t requestedClass = UBX_CLASS_NAV, uint8_t requestedID = UBX_NAV_PVT);		//Checks module with user selected commType
 
-	void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Processes NMEA and UBX binary sentences one byte at a time
-	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Given a character, file it away into the uxb packet structure
+	boolean checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);	//Method for I2C polling of data, passing any new bytes to process()
+	boolean checkUbloxSerial(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Method for serial polling of data, passing any new bytes to process()
+
+	void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Processes NMEA and UBX binary sentences one byte at a time
+	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Given a character, file it away into the uxb packet structure
 	void processRTCMframe(uint8_t incoming);				  //Monitor the incoming bytes for start and length bytes
 	void processRTCM(uint8_t incoming) __attribute__((weak));  //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
 
@@ -723,6 +726,7 @@ private:
 	} commType = COMM_TYPE_I2C; //Controls which port we look to for incoming bytes
 
 	//Functions
+	boolean checkUbloxInternal(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255);		//Checks module with user selected commType
 	uint32_t extractLong(uint8_t spotToStart); //Combine four bytes from payload into long
 	uint16_t extractInt(uint8_t spotToStart);  //Combine two bytes from payload into int
 	uint8_t extractByte(uint8_t spotToStart);  //Get byte from payload
