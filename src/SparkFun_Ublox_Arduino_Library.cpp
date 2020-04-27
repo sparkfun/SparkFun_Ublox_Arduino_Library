@@ -2717,7 +2717,7 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
-  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
 
   checkUblox();
@@ -2739,7 +2739,7 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
-  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
 
   checkUblox();
@@ -2772,7 +2772,7 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
-  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
   
   checkUblox();
@@ -2811,7 +2811,7 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
-  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
   
   checkUblox();
@@ -2831,7 +2831,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
-  if (sendCommand(packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (SFE_UBLOX_STATUS_FAIL); //If command send fails then bail
 
   ubloxSen.numSens  = extractByte(15);
@@ -2874,6 +2874,9 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait){
   packetCfg.id = UBX_NAV_ATT;
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (SFE_UBLOX_STATUS_FAIL); //If command send fails then bail
 
   checkUblox();
 
