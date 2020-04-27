@@ -585,7 +585,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
             _debugSerial->print(F("process: ACK received with .len != 2: Class: 0x"));
             _debugSerial->print(packetBuf.payload[0], HEX);
             _debugSerial->print(F(" ID: 0x"));
-            _debugSerial->println(packetBuf.payload[1], HEX);
+            _debugSerial->print(packetBuf.payload[1], HEX);
+            _debugSerial->print(F(" len: "));
+            _debugSerial->println(packetBuf.len);
           }
         }
       }
@@ -780,7 +782,11 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         }
       }
 
-      processUBXpacket(incomingUBX); //We've got a valid packet, now do something with it
+      //We've got a valid packet, now do something with it but only if ignoreThisPayload is false
+      if (ignoreThisPayload == false)
+      {
+        processUBXpacket(incomingUBX);
+      }
     }
     else  // Checksum failure
     {
@@ -1217,12 +1223,21 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
     _debugSerial->print(F(" Len: 0x"));
     _debugSerial->print(packet->len, HEX);
 
-    _debugSerial->print(F(" Payload:"));
-
-    for (int x = 0; x < packet->len; x++)
+    // Only print the payload is ignoreThisPayload is false otherwise
+    // we could be printing gibberish from beyond the end of packetBuf
+    if (ignoreThisPayload == false)
     {
-      _debugSerial->print(F(" "));
-      _debugSerial->print(packet->payload[x], HEX);
+      _debugSerial->print(F(" Payload:"));
+
+      for (int x = 0; x < packet->len; x++)
+      {
+        _debugSerial->print(F(" "));
+        _debugSerial->print(packet->payload[x], HEX);
+      }
+    }
+    else
+    {
+      _debugSerial->print(F(" Payload: IGNORED"));
     }
     _debugSerial->println();
   }
