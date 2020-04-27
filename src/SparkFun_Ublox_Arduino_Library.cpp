@@ -266,7 +266,13 @@ void SFE_UBLOX_GPS::setNMEAOutputPort(Stream &nmeaOutputPort)
 }
 
 //Called regularly to check for available bytes on the user' specified port
-boolean SFE_UBLOX_GPS::checkUblox(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
+boolean SFE_UBLOX_GPS::checkUblox(uint8_t requestedClass, uint8_t requestedID)
+{
+  return checkUbloxInternal(&packetCfg, requestedClass, requestedID);
+}
+
+//Called regularly to check for available bytes on the user' specified port
+boolean SFE_UBLOX_GPS::checkUbloxInternal(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
   if (commType == COMM_TYPE_I2C)
     return (checkUbloxI2C(incomingUBX, requestedClass, requestedID));
@@ -1289,7 +1295,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    if (checkUblox(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
+    if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
     {
       // If both the outgoingUBX->classAndIDmatch and packetAck.classAndIDmatch are VALID
       // and outgoingUBX->valid is _still_ VALID and the class and ID _still_ match
@@ -1425,7 +1431,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
         }
       }
 
-    } //checkUblox == true
+    } //checkUbloxInternal == true
 
     delayMicroseconds(500);
   } //while (millis() - startTime < maxTime)
@@ -1476,7 +1482,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
   unsigned long startTime = millis();
   while (millis() - startTime < maxTime)
   {
-    if (checkUblox(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
+    if (checkUbloxInternal(outgoingUBX, requestedClass, requestedID) == true) //See if new data is available. Process bytes as they come in.
     {
 
       // If outgoingUBX->classAndIDmatch is VALID
@@ -2718,7 +2724,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     {
       _debugSerial->println(F("getPVT: Autoreporting"));
     }
-    checkUblox(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVT);
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVT);
     return moduleQueried.all;
   }
   else if (autoPVT && !autoPVTImplicitUpdate)
