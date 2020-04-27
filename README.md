@@ -44,17 +44,17 @@ Need a library for the Ublox and Particle? Checkout the [Particle library](https
 Repository Contents
 -------------------
 
-* **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE. 
+* **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE.
 * **/src** - Source files for the library (.cpp, .h).
-* **keywords.txt** - Keywords from this library that will be highlighted in the Arduino IDE. 
-* **library.properties** - General library properties for the Arduino package manager. 
+* **keywords.txt** - Keywords from this library that will be highlighted in the Arduino IDE.
+* **library.properties** - General library properties for the Arduino package manager.
 
 Documentation
 --------------
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
-Polling vs. auto-reporting
+Polling vs. Auto-Reporting
 --------------------------
 
 This library supports two modes of operation for getting navigation information with the `getPVT`
@@ -85,11 +85,11 @@ As an example, assume that the GPS is set to produce 5 navigation
 solutions per second and that the sketch only calls getPVT once a second, then the GPS will queue 5
 packets in its internal buffer (about 500 bytes) and the library will read those when getPVT is
 called, update its internal copy of the nav data 5 times, and return `true` to the sketch. The
-skecth calls `getLatitude`, etc. and retrieve the data of the most recent of those 5 packets.
+sketch calls `getLatitude`, etc. and retrieve the data of the most recent of those 5 packets.
 
-Products That Use This Library 
+Products That Use This Library
 ---------------------------------
-
+* [GPS-16481](https://www.sparkfun.com/products/16481) - SparkFun GPS-RTK-SMA ZED-F9P
 * [GPS-15136](https://www.sparkfun.com/products/15136) - SparkFun GPS-RTK2 ZED-F9P
 * [GPS-15005](https://www.sparkfun.com/products/15005) - SparkFun GPS-RTK NEO-M8P-2
 * [GPS-15210](https://www.sparkfun.com/products/15210) - SparkFun GPS Breakout - Chip Antenna, SAM-M8Q (Qwiic)
@@ -102,7 +102,7 @@ Products That Use This Library
 License Information
 -------------------
 
-This product is _**open source**_! 
+This product is _**open source**_!
 
 Various bits of the code have different licenses applied. Anything SparkFun wrote is beerware; if you see me (or any other SparkFun employee) at the local, and you've found our code helpful, please buy us a round!
 
@@ -111,4 +111,3 @@ Please use, reuse, and modify these files as you see fit. Please maintain attrib
 Distributed as-is; no warranty is given.
 
 - Your friends at SparkFun.
-
