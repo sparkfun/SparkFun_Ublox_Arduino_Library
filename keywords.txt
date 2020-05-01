@@ -144,6 +144,13 @@ disableMessage	KEYWORD2
 enableNMEAMessage	KEYWORD2
 disableNMEAMessage	KEYWORD2
 
+getEsfInfo	KEYWORD2
+getEsfIns	KEYWORD2
+getEsfDataInfo	KEYWORD2
+getEsfRawDataInfo	KEYWORD2
+
+getSensState	KEYWORD2
+getVehAtt	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
@@ -211,3 +218,8 @@ DYN_MODEL_AIRBORNE2g	LITERAL1
 DYN_MODEL_AIRBORNE4g	LITERAL1
 DYN_MODEL_WRIST	LITERAL1
 DYN_MODEL_BIKE	LITERAL1
+
+UBX_ESF_STATUS	LITERAL1
+UBX_ESF_RAW	LITERAL1
+UBX_ESF_MEAS	LITERAL1
+UBX_ESF_INS	LITERAL1
