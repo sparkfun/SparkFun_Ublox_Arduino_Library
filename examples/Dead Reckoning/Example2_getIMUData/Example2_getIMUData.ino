@@ -31,7 +31,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println(F("SparkFun Ublox Example"));
 
   Wire.begin();
 
@@ -45,15 +45,15 @@ void setup()
 
   if (myGPS.getEsfInfo()){
 
-    Serial.print("Fusion Mode: ");  
+    Serial.print(F("Fusion Mode: "));  
     Serial.println(myGPS.imuMeas.fusionMode);  
 
     if (myGPS.imuMeas.fusionMode == 1){
-      Serial.println("Fusion Mode is Initialized!");  
+      Serial.println(F("Fusion Mode is Initialized!"));  
 		}
 		else {
-      Serial.println("Fusion Mode is either disabled or not initialized - Freezing!");  
-			Serial.println("Please see Example 1 description at top for more information.");
+      Serial.println(F("Fusion Mode is either disabled or not initialized - Freezing!"));  
+			Serial.println(F("Please see Example 1 description at top for more information."));
 		}
   }
 }
@@ -63,17 +63,17 @@ void loop()
 
   if (myGPS.getEsfIns())
   {
-    Serial.print("X: ");
+    Serial.print(F("X: "));
     Serial.println(myGPS.imuMeas.xAngRate);  
-    Serial.print("Y: ");
+    Serial.print(F("Y: "));
     Serial.println(myGPS.imuMeas.yAngRate);  
-    Serial.print("Z: ");
+    Serial.print(F("Z: "));
     Serial.println(myGPS.imuMeas.zAngRate);  
-    Serial.print("X Acceleration: ");
+    Serial.print(F("X Acceleration: "));
     Serial.println(myGPS.imuMeas.xAccel);  
-    Serial.print("Y Acceleration: ");
+    Serial.print(F("Y Acceleration: "));
     Serial.println(myGPS.imuMeas.yAccel);  
-    Serial.print("Z Acceleration: ");
+    Serial.print(F("Z Acceleration: "));
     Serial.println(myGPS.imuMeas.zAccel);  
 		// These values also have "validity checks" that can be provided by the
 		// ublox library, add "Vald" to values: e.g. xAngRateVald or xAccelVald. 

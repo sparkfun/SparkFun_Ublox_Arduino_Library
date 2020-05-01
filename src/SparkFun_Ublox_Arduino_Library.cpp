@@ -3219,6 +3219,8 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   imuMeas.xAccel = extractLong(24); // m/s
   imuMeas.yAccel = extractLong(28); // m/s
   imuMeas.zAccel = extractLong(32); // m/s
+
+  return(true);
 }
 
 //
@@ -3257,6 +3259,8 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
 
   }
 
+  return(true);
+
 }
 
 boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
@@ -3279,6 +3283,7 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   imuMeas.rawData = (bitField && 0xFFFFFF);
   imuMeas.rawTStamp = extractLong(8); 
 
+  return(true);
 }
 
 sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
@@ -3295,7 +3300,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
   ubloxSen.numSens  = extractByte(15);
 
   if (sensor > ubloxSen.numSens)
-    return SFE_UBLOX_STATUS_OUT_OF_RANGE;
+    return (SFE_UBLOX_STATUS_OUT_OF_RANGE);
 
   checkUblox();
  
@@ -3322,7 +3327,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
     ubloxSen.noisyMeas = (sensorFieldThr && 0x08) >> 3; 
   }
 
-  return SFE_UBLOX_STATUS_SUCCESS;
+  return (SFE_UBLOX_STATUS_SUCCESS);
   
 }
 
@@ -3346,6 +3351,6 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait){
   vehAtt.accPitch = extractLong(24);  
   vehAtt.accHeading = extractLong(28);  
 
-  return true;
+  return (true);
   
 }

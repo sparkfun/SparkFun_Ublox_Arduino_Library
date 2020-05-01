@@ -17,7 +17,7 @@
   Open the serial monitor at 115200 baud to see the output
 
   To take advantage of the internal IMU of either the Dead Reckoning GPS
-  boards (ZED-F9R, NEO-M8U), you must first calibrate them. This includes securing the GPS module
+  boards (ZED-F9R, NEO-M8U), you must first calibrate it. This includes securing the GPS module
   to your vehicle so that it is stable within 2 degrees and that the frame of
   reference of the board is consistent with the picture outlined in the
   Receiver-Description-Prot-Spec Datasheet under Automotive/Untethered Dead
@@ -39,7 +39,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println(F("SparkFun Ublox Example"));
 
   Wire.begin();
 
@@ -56,10 +56,10 @@ void loop()
 {
 
   if (myGPS.getEsfInfo()){
-    Serial.print("Fusion Mode: ");  
+    Serial.print(F("Fusion Mode: "));  
     Serial.println(myGPS.imuMeas.fusionMode);  
     if (myGPS.imuMeas.fusionMode == 1)
-      Serial.println("Sensor is calibrated!");  
+      Serial.println(F("Sensor is calibrated!"));  
   }
 
   delay(250);

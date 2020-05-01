@@ -35,7 +35,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println(F("SparkFun Ublox Example"));
 
   Wire.begin();
 
@@ -52,15 +52,15 @@ void setup()
 	// speed sensor attached to the module. 
   if (myGPS.getEsfInfo()){
 
-    Serial.print("Fusion Mode: ");  
+    Serial.print(F("Fusion Mode: "));  
     Serial.println(myGPS.imuMeas.fusionMode);  
 
     if (myGPS.imuMeas.fusionMode == 1){
-      Serial.println("Fusion Mode is Initialized!");  
+      Serial.println(F("Fusion Mode is Initialized!"));  
 		}
 		else {
-      Serial.println("Fusion Mode is either disabled or not initialized - Freezing!");  
-			Serial.println("Please see Example 1 description at top for more information.");
+      Serial.println(F("Fusion Mode is either disabled or not initialized - Freezing!"));  
+			Serial.println(F("Please see Example 1 description at top for more information."));
 		}
   }
 }
@@ -70,25 +70,25 @@ void loop()
 
 	for(int i=1; i<=myGPS.ubloxSen.numSens; i++){
 		myGPS.getSensState(i); // Give the sensor you want to check on. 
-		Serial.print("Sensor Data Type: "); //See ublox receiver description
+		Serial.print(F("Sensor Data Type: ")); //See ublox receiver description
                                        //or our hookup guide for information on the
                                        //return value.
 		Serial.println(myGPS.ubloxSen.senType);
-		Serial.print("Being Used: "); 
+		Serial.print(F("Being Used: ")); 
     Serial.println(myGPS.ubloxSen.isUsed);
-		Serial.print("Is Ready: "); 
+		Serial.print(F("Is Ready: ")); 
     Serial.println(myGPS.ubloxSen.isReady);
-		Serial.print("Calibration Status: "); 
+		Serial.print(F("Calibration Status: ")); 
     Serial.println(myGPS.ubloxSen.calibStatus);
-		Serial.print("Time Status: "); 
+		Serial.print(F("Time Status: ")); 
     Serial.println(myGPS.ubloxSen.timeStatus);
-		Serial.print("Bad Measure: "); 
+		Serial.print(F("Bad Measure: ")); 
     Serial.println(myGPS.ubloxSen.timeStatus);
-		Serial.print("Bad Time Tag: "); 
+		Serial.print(F("Bad Time Tag: ")); 
     Serial.println(myGPS.ubloxSen.badTag);
-		Serial.print("Missed Measure : "); 
+		Serial.print(F("Missed Measure : ")); 
     Serial.println(myGPS.ubloxSen.missMeas);
-		Serial.print("Noisy Measure: "); 
+		Serial.print(F("Noisy Measure: ")); 
     Serial.println(myGPS.ubloxSen.noisyMeas);
 	}
 

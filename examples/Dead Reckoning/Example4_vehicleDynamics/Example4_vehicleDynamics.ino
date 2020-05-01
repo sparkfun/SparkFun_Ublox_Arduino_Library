@@ -33,7 +33,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println(F("SparkFun Ublox Example"));
 
   Wire.begin();
 
@@ -47,15 +47,15 @@ void setup()
 
   if (myGPS.getEsfInfo()){
 
-    Serial.print("Fusion Mode: ");  
+    Serial.print(F("Fusion Mode: "));  
     Serial.println(myGPS.imuMeas.fusionMode);  
 
     if (myGPS.imuMeas.fusionMode == 1){
-      Serial.println("Fusion Mode is Initialized!");  
+      Serial.println(F("Fusion Mode is Initialized!"));  
 		}
 		else {
-      Serial.println("Fusion Mode is either disabled or not initialized - Freezing!");  
-			Serial.println("Please see Example 1 description at top for more information.");
+      Serial.println(F("Fusion Mode is either disabled or not initialized - Freezing!"));  
+			Serial.println(F("Please see Example 1 description at top for more information."));
 		}
   }
 }
@@ -63,18 +63,20 @@ void setup()
 void loop()
 {
 		myGPS.getVehAtt(); // Give the sensor you want to check on. 
-		Serial.print("Roll: "); 
+		Serial.print(F("Roll: ")); 
 		Serial.println(myGPS.vehAtt.roll);
-		Serial.print("Pitch: "); 
+		Serial.print(F("Pitch: ")); 
 		Serial.println(myGPS.vehAtt.pitch);
-		Serial.print("Heading: "); 
+		Serial.print(F("Heading: ")); 
 		Serial.println(myGPS.vehAtt.heading);
-		Serial.print("Roll Accuracy: "); 
+		Serial.print(F("Roll Accuracy: ")); 
 		Serial.println(myGPS.vehAtt.accRoll);
-		Serial.print("Pitch Accuracy: "); 
+		Serial.print(F("Pitch Accuracy: ")); 
 		Serial.println(myGPS.vehAtt.accPitch);
-		Serial.print("Heading Accuracy: "); 
+		Serial.print(F("Heading Accuracy: ")); 
 		Serial.println(myGPS.vehAtt.accHeading);
+
+    delay(250);
 }
 
 
