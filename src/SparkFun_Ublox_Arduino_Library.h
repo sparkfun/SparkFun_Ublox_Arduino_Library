@@ -274,6 +274,7 @@ const uint8_t UBX_MON_TXBUF = 0x08; //Transmitter Buffer Status. Used for query 
 const uint8_t UBX_MON_VER = 0x04;   //Receiver/Software Version. Used for obtaining Protocol Version.
 
 //The following are used to configure the NAV UBX messages (navigation results messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 35-36)
+const uint8_t UBX_NAV_ATT = 0x05;		//Vehicle "Attitude" Solution
 const uint8_t UBX_NAV_CLOCK = 0x22;		//Clock Solution
 const uint8_t UBX_NAV_DOP = 0x04;		//Dilution of precision
 const uint8_t UBX_NAV_EOE = 0x61;		//End of Epoch
@@ -333,6 +334,14 @@ const uint8_t UBX_RTCM_1230 = 0xE6; //GLONASS code-phase biases, set to once eve
 const uint8_t UBX_ACK_NACK = 0x00;
 const uint8_t UBX_ACK_ACK = 0x01;
 const uint8_t UBX_ACK_NONE = 0x02; //Not a real value
+
+// The following constants are used to get External Sensor Measurements and Status
+// Information. 
+const uint8_t UBX_ESF_MEAS = 0x02; 
+const uint8_t UBX_ESF_RAW = 0x03; 
+const uint8_t UBX_ESF_STATUS = 0x10; 
+const uint8_t UBX_ESF_INS = 0x15; //36 bytes
+
 
 const uint8_t SVIN_MODE_DISABLE = 0x00;
 const uint8_t SVIN_MODE_ENABLE = 0x01;
@@ -623,6 +632,13 @@ public:
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);
 	uint8_t getDynamicModel(uint16_t maxWait = 1100); // Get the dynamic model - returns 255 if the sendCommand fails
 
+  boolean getEsfInfo(uint16_t maxWait = 1100);
+  boolean getEsfIns(uint16_t maxWait = 1100);
+  boolean getEsfDataInfo(uint16_t maxWait = 1100);
+  boolean getEsfRawDataInfo(uint16_t maxWait = 1100);
+  sfe_ublox_status_e getSensState(uint8_t sensor, uint16_t maxWait = 1100);
+  boolean getVehAtt(uint16_t maxWait = 1100);
+
 	//Survey-in specific controls
 	struct svinStructure
 	{
@@ -699,6 +715,67 @@ public:
 	int8_t highResLongitudeHp; // High precision component of longitude: Degrees * 10^-9
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
+
+#define DEF_NUM_SENS 7 
+  struct deadReckData 
+  {
+    uint8_t version; 
+    uint8_t fusionMode;
+
+    uint8_t xAngRateVald;
+    uint8_t yAngRateVald;
+    uint8_t zAngRateVald;
+    uint8_t xAccelVald;
+    uint8_t yAccelVald;
+    uint8_t zAccelVald;
+
+    int32_t xAngRate;
+    int32_t yAngRate;
+    int32_t zAngRate;
+
+    int32_t xAccel;
+    int32_t yAccel;
+    int32_t zAccel;
+
+    // The array size is based on testing directly on M8U and F9R
+    uint32_t rawData;
+    uint32_t rawDataType;
+    uint32_t rawTStamp;
+
+    uint32_t data[DEF_NUM_SENS];
+    uint32_t dataType[DEF_NUM_SENS];
+    uint32_t dataTStamp[DEF_NUM_SENS];
+  } imuMeas;
+
+  struct indivImuData
+  {
+
+    uint8_t numSens;
+
+    uint8_t senType;
+    boolean isUsed;
+    boolean isReady;
+    uint8_t calibStatus;
+    uint8_t timeStatus;
+
+    uint8_t freq; // Hz
+
+    boolean badMeas;
+    boolean badTag;
+    boolean missMeas;
+    boolean noisyMeas;
+  } ubloxSen;
+
+  struct vehicleAttitude
+  {
+    // All values in degrees
+    int32_t roll;
+    int32_t pitch;
+    int32_t heading;
+    uint32_t accRoll;
+    uint32_t accPitch;
+    uint32_t accHeading;
+  } vehAtt;
 
 private:
 	//Depending on the sentence type the processor will load characters into different arrays
