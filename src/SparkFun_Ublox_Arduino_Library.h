@@ -609,6 +609,7 @@ public:
 	uint8_t getProtocolVersionHigh(uint16_t maxWait = 500); //Returns the PROTVER XX.00 from UBX-MON-VER register
 	uint8_t getProtocolVersionLow(uint16_t maxWait = 500);  //Returns the PROTVER 00.XX from UBX-MON-VER register
 	boolean getProtocolVersion(uint16_t maxWait = 500);		//Queries module, loads low/high bytes
+	boolean getModuleInfo(uint16_t maxWait = 500);			//Queries module, texts
 
 	boolean getRELPOSNED(uint16_t maxWait = 1100); //Get Relative Positioning Information of the NED frame
 
@@ -677,6 +678,15 @@ public:
 		bool refPosMiss;
 		bool refObsMiss;
 	} relPosInfo;
+
+	//Module infomation
+	struct minfoStructure
+	{
+		char swVersion[30];
+		char hwVersion[10];
+		uint8_t extensionNo;
+		char extension[10][30];
+	} minfo;
 
 	//The major datums we want to globally store
 	uint16_t gpsYear;

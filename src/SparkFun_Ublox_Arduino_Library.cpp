@@ -3081,6 +3081,44 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
   return (false); //We failed
 }
 
+//Get the information of the Ublox module we're communicating with
+//They are strings, so easy to read. Parsing is up to you!
+boolean SFE_UBLOX_GPS::getModuleInfo(uint16_t maxWait)
+{
+  //Send packet with only CLS and ID, length of zero. This will cause the module to respond with the contents of that CLS/ID.
+  packetCfg.cls = UBX_CLASS_MON;
+  packetCfg.id = UBX_MON_VER;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (false); //If command send fails then bail
+
+  int position = 0;
+  for (int i = 0; i < 30; i++)
+  {
+    minfo.swVersion[i] = payloadCfg[position];
+    position++;
+  }
+  for (int i = 0; i < 10; i++)
+  {
+    minfo.hwVersion[i] = payloadCfg[position];
+    position++;
+  }
+
+  while (packetCfg.len >= position + 30)
+  {
+    for (int i = 0; i < 30; i++)
+    {
+      minfo.extension[minfo.extensionNo][i] = payloadCfg[position];
+      position++;
+    }
+    minfo.extensionNo++;
+  }
+
+  return (true); //We failed
+}
+
 //Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
 void SFE_UBLOX_GPS::flushPVT()
 {
