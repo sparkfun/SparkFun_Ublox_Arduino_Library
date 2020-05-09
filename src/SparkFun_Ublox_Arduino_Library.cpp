@@ -2177,7 +2177,7 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
 
   //This will load the payloadCfg array with current settings of the given register
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-    return (0);                                                           //If command send fails then bail
+    return (false);                                                       //If command send fails then bail
 
   uint16_t measurementRate = 0;
 
@@ -2233,18 +2233,24 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
 //Configure a given message type for a given port (UART1, I2C, SPI, etc)
 boolean SFE_UBLOX_GPS::configureMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t sendRate, uint16_t maxWait)
 {
+  //Poll for the current settings for a given message
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_MSG;
-  packetCfg.len = 8;
+  packetCfg.len = 2;
   packetCfg.startingSpot = 0;
 
-  //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  payloadCfg[0] = msgClass;
+  payloadCfg[1] = msgID;
 
-  packetCfg.payload[0] = msgClass;
-  packetCfg.payload[1] = msgID;
-  packetCfg.payload[2 + portID] = sendRate; //Send rate is relative to the event a message is registered on. For example, if the rate of a navigation message is set to 2, the message is sent every 2nd navigation solution.
+  //This will load the payloadCfg array with current settings of the given register
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);                                                       //If command send fails then bail
+
+  //Now send it back with new mods
+  packetCfg.len = 8;
+
+  //payloadCfg is now loaded with current bytes. Change only the ones we need to
+  payloadCfg[2 + portID] = sendRate; //Send rate is relative to the event a message is registered on. For example, if the rate of a navigation message is set to 2, the message is sent every 2nd navigation solution.
 
   return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
