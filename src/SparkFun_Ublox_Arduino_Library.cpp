@@ -1196,13 +1196,13 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
   {
     _debugSerial->print(F("CLS:"));
     if (packet->cls == UBX_CLASS_NAV) //1
-      _debugSerial->print("NAV");
+      _debugSerial->print(F("NAV"));
     else if (packet->cls == UBX_CLASS_ACK) //5
-      _debugSerial->print("ACK");
+      _debugSerial->print(F("ACK"));
     else if (packet->cls == UBX_CLASS_CFG) //6
-      _debugSerial->print("CFG");
+      _debugSerial->print(F("CFG"));
     else if (packet->cls == UBX_CLASS_MON) //0x0A
-      _debugSerial->print("MON");
+      _debugSerial->print(F("MON"));
     else
     {
       _debugSerial->print(F("0x"));
@@ -1211,11 +1211,11 @@ void SFE_UBLOX_GPS::printPacket(ubxPacket *packet)
 
     _debugSerial->print(F(" ID:"));
     if (packet->cls == UBX_CLASS_NAV && packet->id == UBX_NAV_PVT)
-      _debugSerial->print("PVT");
+      _debugSerial->print(F("PVT"));
     else if (packet->cls == UBX_CLASS_CFG && packet->id == UBX_CFG_RATE)
-      _debugSerial->print("RATE");
+      _debugSerial->print(F("RATE"));
     else if (packet->cls == UBX_CLASS_CFG && packet->id == UBX_CFG_CFG)
-      _debugSerial->print("SAVE");
+      _debugSerial->print(F("SAVE"));
     else
     {
       _debugSerial->print(F("0x"));
