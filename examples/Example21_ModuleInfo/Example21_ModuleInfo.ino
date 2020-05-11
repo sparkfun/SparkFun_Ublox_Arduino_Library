@@ -3,12 +3,15 @@
   using a custom command.
   By: @mayopan
   Date: May 9th, 2020
+
   Based on:
   Send Custom Command
   By: Paul Clark (PaulZC)
   Date: April 20th, 2020
+
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
+
   Previously it was possible to create and send a custom packet
   through the library but it would always appear to timeout as
   some of the internal functions referred to the internal private
@@ -19,11 +22,13 @@
     it had been called from within the library
   - the custom packet will be updated with data returned by the module
     (previously this was not possible from outside the library)
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
   NEO-M8P RTK: https://www.sparkfun.com/products/15005
   SAM-M8Q: https://www.sparkfun.com/products/15106
+
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a BlackBoard
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
@@ -42,7 +47,7 @@ class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GPS
 public:
     boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
 
-    struct minfoStructure // Structure to hold the module info (uses 340 bytes of RAM)
+    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
     {
         char swVersion[30];
         char hwVersion[10];
@@ -134,19 +139,20 @@ boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
     // Other values indicate errors. Please see the sfe_ublox_status_e enum for further details.
 
     // Referring to the u-blox M8 Receiver Description and Protocol Specification we see that
-    // the navigation rate is configured using the UBX-CFG-RATE message. So let's load our
-    // custom packet with the correct information so we can read (poll / get) the current settings.
+    // the module information can be read using the UBX-MON-VER message. So let's load our
+    // custom packet with the correct information so we can read (poll / get) the module information.
 
     customCfg.cls = UBX_CLASS_MON; // This is the message Class
     customCfg.id = UBX_MON_VER;    // This is the message ID
     customCfg.len = 0;             // Setting the len (length) to zero let's us poll the current settings
     customCfg.startingSpot = 0;    // Always set the startingSpot to zero (unless you really know what you are doing)
 
-    // We also need to tell sendCommand how long it should wait for a reply
-    //  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+    // Now let's send the command. The module info is returned in customPayload
 
     if (sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
         return (false); //If command send fails then bail
+
+    // Now let's extract the module info from customPayload    
 
     uint16_t position = 0;
     for (int i = 0; i < 30; i++)
