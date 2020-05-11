@@ -615,7 +615,7 @@ public:
 
 	boolean getRELPOSNED(uint16_t maxWait = 1100); //Get Relative Positioning Information of the NED frame
 
-	void enableDebugging(Stream &debugPort = Serial);  //Given a port to print to, enable debug messages
+	void enableDebugging(Stream &debugPort = Serial, boolean printLimitedDebug = false);  //Given a port to print to, enable debug messages. Default to all, not limited.
 	void disableDebugging(void);					   //Turn off debug statements
 	void debugPrint(char *message);					   //Safely print debug statements
 	void debugPrintln(char *message);				   //Safely print debug statements
@@ -823,6 +823,7 @@ private:
 	//This can be changed using the ublox configuration software
 
 	boolean _printDebug = false; //Flag to print the serial commands we are sending to the Serial port for debug
+	boolean _printLimitedDebug = false; //Flag to print limited debug messages. Useful for I2C debugging or high navigation rates
 
 	//The packet buffers
 	//These are pointed at from within the ubxPacket

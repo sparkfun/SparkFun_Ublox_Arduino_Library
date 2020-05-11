@@ -83,15 +83,22 @@ boolean SFE_UBLOX_GPS::begin(Stream &serialPort)
 
 //Enable or disable the printing of sent/response HEX values.
 //Use this in conjunction with 'Transport Logging' from the Universal Reader Assistant to see what they're doing that we're not
-void SFE_UBLOX_GPS::enableDebugging(Stream &debugPort)
+void SFE_UBLOX_GPS::enableDebugging(Stream &debugPort, boolean printLimitedDebug)
 {
   _debugSerial = &debugPort; //Grab which port the user wants us to use for debugging
-
-  _printDebug = true; //Should we print the commands we send? Good for debugging
+  if (printLimitedDebug == false)
+  {
+    _printDebug = true; //Should we print the commands we send? Good for debugging
+  }
+  else
+  {
+    _printLimitedDebug = true; //Should we print limited debug messages? Good for debugging high navigation rates
+  }
 }
 void SFE_UBLOX_GPS::disableDebugging(void)
 {
   _printDebug = false; //Turn off extra print statements
+  _printLimitedDebug = false;
 }
 
 //Safely print messages
@@ -302,9 +309,9 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
       if (lsb == 0xFF)
       {
         //I believe this is a Ublox bug. Device should never present an 0xFF.
-        if (_printDebug == true)
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
         {
-          _debugSerial->println(F("checkUbloxI2C: Ublox bug, no bytes available"));
+          _debugSerial->println(F("checkUbloxI2C: Ublox bug, length lsb is 0xFF"));
         }
         if (checksumFailurePin >= 0)
         {
@@ -336,7 +343,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
       //Clear the MSbit
       bytesAvailable &= ~((uint16_t)1 << 15);
 
-      if (_printDebug == true)
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
       {
         _debugSerial->print(F("checkUbloxI2C: Bytes available error:"));
         _debugSerial->println(bytesAvailable);
@@ -395,7 +402,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
           {
             if (incoming == 0x7F)
             {
-              if (_printDebug == true)
+              if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
               {
                 _debugSerial->println(F("checkUbloxU2C: Ublox error, module not ready with data"));
               }
@@ -809,7 +816,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         incomingUBX->classAndIDmatch = SFE_UBLOX_PACKET_VALIDITY_NOT_VALID; // If we have a match, set the classAndIDmatch flag to not valid
       }
 
-      if (_printDebug == true)
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
       {
         //Drive an external pin to allow for easier logic analyzation
         if (checksumFailurePin >= 0)
