@@ -77,8 +77,17 @@
 #endif
 
 // Define Serial for SparkFun SAMD based boards.
-#if defined(ARDUINO_ARCH_SAMD)
-#define Serial SerialUSB
+// Boards like the RedBoard Turbo use SerialUSB (not Serial).
+// But other boards like the SAMD51 Thing Plus use Serial (not SerialUSB).
+// The next nine lines let the code compile cleanly on as many SAMD boards as possible.
+#if defined(ARDUINO_ARCH_SAMD) // Is this a SAMD board?
+	#if defined(USB_VID) // Is the USB Vendor ID defined?
+		#if (USB_VID == 0x1B4F) // Is this a SparkFun board?
+			#if !defined(ARDUINO_SAMD51_THING_PLUS) // If it is not a SAMD51 Thing Plus
+				#define Serial SerialUSB // Define Serial as SerialUSB
+			#endif
+		#endif
+	#endif
 #endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
