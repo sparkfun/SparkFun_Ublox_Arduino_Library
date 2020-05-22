@@ -110,10 +110,11 @@ void loop()
 
 boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
 {
-    myGPS.minfo.hwVersion[0] = NULL;
-    myGPS.minfo.swVersion[0] = NULL;
+    myGPS.minfo.hwVersion[0] = 0;
+    myGPS.minfo.swVersion[0] = 0;
     for (int i = 0; i < 10; i++)
-        myGPS.minfo.extension[i][0] = NULL;
+        myGPS.minfo.extension[i][0] = 0;
+    myGPS.minfo.extensionNo = 0;
 
     // Let's create our custom packet
     uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
@@ -152,7 +153,7 @@ boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
     if (sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
         return (false); //If command send fails then bail
 
-    // Now let's extract the module info from customPayload    
+    // Now let's extract the module info from customPayload
 
     uint16_t position = 0;
     for (int i = 0; i < 30; i++)
