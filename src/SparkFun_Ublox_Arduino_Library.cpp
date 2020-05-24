@@ -1147,19 +1147,17 @@ boolean SFE_UBLOX_GPS::isConnected(uint16_t maxWait)
   if (commType == COMM_TYPE_I2C)
   {
     _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-    return _i2cPort->endTransmission() == 0;
+    if (_i2cPort->endTransmission() != 0)
+      return false; //Sensor did not ack
   }
-  else if (commType == COMM_TYPE_SERIAL)
-  {
-    // Query navigation rate to see whether we get a meaningful response
-    packetCfg.cls = UBX_CLASS_CFG;
-    packetCfg.id = UBX_CFG_RATE;
-    packetCfg.len = 0;
-    packetCfg.startingSpot = 0;
 
-    return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are polling the RATE so we expect data and an ACK
-  }
-  return false;
+  // Query navigation rate to see whether we get a meaningful response
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_RATE;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are polling the RATE so we expect data and an ACK
 }
 
 //Given a message, calc and store the two byte "8-Bit Fletcher" checksum over the entirety of the message
@@ -2012,17 +2010,17 @@ boolean SFE_UBLOX_GPS::setSurveyMode(uint8_t mode, uint16_t observationTime, flo
     packetCfg.payload[x] = 0;
 
   //payloadCfg should be loaded with poll response. Now modify only the bits we care about
-  payloadCfg[2] = mode; //Set mode. Survey-In and Disabled are most common. Use ECEF (not LAT/LON/ALT). 
+  payloadCfg[2] = mode; //Set mode. Survey-In and Disabled are most common. Use ECEF (not LAT/LON/ALT).
 
   //svinMinDur is U4 (uint32_t) but we'll only use a uint16_t (waiting more than 65535 seconds seems excessive!)
   payloadCfg[24] = observationTime & 0xFF; //svinMinDur in seconds
   payloadCfg[25] = observationTime >> 8;   //svinMinDur in seconds
-  payloadCfg[26] = 0;   //Truncate to 16 bits
-  payloadCfg[27] = 0;   //Truncate to 16 bits
+  payloadCfg[26] = 0;                      //Truncate to 16 bits
+  payloadCfg[27] = 0;                      //Truncate to 16 bits
 
   //svinAccLimit is U4 (uint32_t) in 0.1mm.
   uint32_t svinAccLimit = (uint32_t)(requiredAccuracy * 10000.0); //Convert m to 0.1mm
-  payloadCfg[28] = svinAccLimit & 0xFF;             //svinAccLimit in 0.1mm increments
+  payloadCfg[28] = svinAccLimit & 0xFF;                           //svinAccLimit in 0.1mm increments
   payloadCfg[29] = svinAccLimit >> 8;
   payloadCfg[30] = svinAccLimit >> 16;
   payloadCfg[31] = svinAccLimit >> 24;
@@ -2079,7 +2077,7 @@ boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
   uint32_t tempFloat = extractLong(28);
   svin.meanAccuracy = ((float)tempFloat) / 10000.0; //Convert 0.1mm to m
 
-  svin.valid = payloadCfg[36]; //1 if survey-in position is valid, 0 otherwise
+  svin.valid = payloadCfg[36];  //1 if survey-in position is valid, 0 otherwise
   svin.active = payloadCfg[37]; //1 if survey-in in progress, 0 otherwise
 
   return (true);
