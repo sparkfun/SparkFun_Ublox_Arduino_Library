@@ -938,6 +938,49 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.headingOfMotion = true;
       moduleQueried.pDOP = true;
     }
+    else if (msg->id == UBX_NAV_TIMEUTC && msg->len == 20)
+    {
+      timeOfWeek = extractLong(0);
+      gpsMillisecond = extractLong(0) % 1000; //Get last three digits of iTOW
+      // extractLong(4); // time accuracy estimate
+      gpsYear = extractInt(12);
+      gpsMonth = extractByte(14);
+      gpsDay = extractByte(15);
+      gpsHour = extractByte(16);
+      gpsMinute = extractByte(17);
+      gpsSecond = extractByte(18);
+      gpsNanosecond = extractLong(8); //Includes milliseconds
+      uint8_t valid = extractByte(19);
+      bool gotTime = (valid & 4) ? true : false; // assume all other fields filled once we have TUTC
+
+      //Mark all datums as fresh (not read before)
+      moduleQueried.gpsiTOW = gotTime; // valid tow
+      moduleQueried.gpsYear = gotTime; // valid week num
+      moduleQueried.gpsMonth = gotTime;
+      moduleQueried.gpsDay = gotTime; // valid UTC
+      moduleQueried.gpsHour = gotTime;
+      moduleQueried.gpsMinute = gotTime;
+      moduleQueried.gpsSecond = gotTime;
+      moduleQueried.gpsNanosecond = gotTime;
+    }
+    else if (msg->id == UBX_NAV_POSLLH && msg->len == 28)
+    {
+      timeOfWeek = extractLong(0);
+      longitude = extractLong(4);
+      latitude = extractLong(8);
+      altitude = extractLong(12);
+      altitudeMSL = extractLong(16);
+      horizontalAccuracy = extractLong(20);
+      verticalAccuracy = extractLong(24);
+
+      moduleQueried.gpsiTOW = true;
+      moduleQueried.longitude = true;
+      moduleQueried.latitude = true;
+      moduleQueried.altitude = true;
+      moduleQueried.altitudeMSL = true;
+      highResModuleQueried.horizontalAccuracy = true;
+      highResModuleQueried.verticalAccuracy = true;
+    }
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
     {
       timeOfWeek = extractLong(4);
@@ -1000,6 +1043,13 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         _debugSerial->print(F(" "));
         _debugSerial->print(F("VERT M: "));
         _debugSerial->println(((float)(int32_t)extractLong(32)) / 10000.0f);
+      }
+    }
+    else {
+      if (_printDebug == true)
+      {
+        _debugSerial->print(F("Unexpected nav packet "));
+        _debugSerial->println(msg->id);
       }
     }
     break;
@@ -2644,7 +2694,7 @@ int8_t SFE_UBLOX_GPS::extractSignedChar(uint8_t spotToStart)
 uint16_t SFE_UBLOX_GPS::getYear(uint16_t maxWait)
 {
   if (moduleQueried.gpsYear == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsYear = false; //Since we are about to give this to user, mark this data as stale
   return (gpsYear);
 }
@@ -2653,7 +2703,7 @@ uint16_t SFE_UBLOX_GPS::getYear(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
 {
   if (moduleQueried.gpsMonth == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsMonth = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMonth);
 }
@@ -2662,7 +2712,7 @@ uint8_t SFE_UBLOX_GPS::getMonth(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 {
   if (moduleQueried.gpsDay == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsDay = false; //Since we are about to give this to user, mark this data as stale
   return (gpsDay);
 }
@@ -2671,7 +2721,7 @@ uint8_t SFE_UBLOX_GPS::getDay(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 {
   if (moduleQueried.gpsHour == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsHour = false; //Since we are about to give this to user, mark this data as stale
   return (gpsHour);
 }
@@ -2680,7 +2730,7 @@ uint8_t SFE_UBLOX_GPS::getHour(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 {
   if (moduleQueried.gpsMinute == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsMinute = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMinute);
 }
@@ -2689,7 +2739,7 @@ uint8_t SFE_UBLOX_GPS::getMinute(uint16_t maxWait)
 uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsSecond == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsSecond = false; //Since we are about to give this to user, mark this data as stale
   return (gpsSecond);
 }
@@ -2698,7 +2748,7 @@ uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
 uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsiTOW == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
   return (gpsMillisecond);
 }
@@ -2707,7 +2757,7 @@ uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getNanosecond(uint16_t maxWait)
 {
   if (moduleQueried.gpsNanosecond == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsNanosecond = false; //Since we are about to give this to user, mark this data as stale
   return (gpsNanosecond);
 }
@@ -2762,10 +2812,72 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
   }
 }
 
+// Update time info (using appropriate call for the chip series)
+boolean SFE_UBLOX_GPS::getTimeData(uint16_t maxWait)
+{
+  return getProtocolVersionHigh(maxWait) < 15 ? getTIMEUTC(maxWait) : getPVT(maxWait);
+}
+
+// Update position info (using appropriate call for the chip series)
+boolean SFE_UBLOX_GPS::getPositionData(uint16_t maxWait)
+{
+  return getProtocolVersionHigh(maxWait) < 20 ? getPOSLLH(maxWait) : getPVT(maxWait);
+}
+
+//Get time (for use on chips with protocol version 14 and earlier)
+boolean SFE_UBLOX_GPS::getTIMEUTC(uint16_t maxWait)
+{
+  debugPrintln((char *)F("getTIMEUTC: Polling"));
+
+  //The GPS is not automatically reporting navigation position so we have to poll explicitly
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_TIMEUTC;
+  packetCfg.len = 0;
+  //packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes Note:now hard-coded in processUBX
+
+  //The data is parsed as part of processing the response
+  sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (true);
+
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("getTIMEUTC retVal: "));
+    _debugSerial->println(statusString(retVal));
+  }
+  return (false);
+}
+
+//Get posllh (fos use on chips with protocol version 19 and earlier)
+boolean SFE_UBLOX_GPS::getPOSLLH(uint16_t maxWait)
+{
+  debugPrintln((char *)F("getPOSLLH: Polling"));
+
+  //The GPS is not automatically reporting navigation position so we have to poll explicitly
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_POSLLH;
+  packetCfg.len = 0;
+  //packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes Note:now hard-coded in processUBX
+
+  //The data is parsed as part of processing the response
+  sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+  if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (true);
+
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("getPOSLLH retVal: "));
+    _debugSerial->println(statusString(retVal));
+  }
+  return (false);
+}
+
 uint32_t SFE_UBLOX_GPS::getTimeOfWeek(uint16_t maxWait /* = 250*/)
 {
   if (moduleQueried.gpsiTOW == false)
-    getPVT(maxWait);
+    getTimeData(maxWait);
   moduleQueried.gpsiTOW = false; //Since we are about to give this to user, mark this data as stale
   return (timeOfWeek);
 }
@@ -2895,7 +3007,7 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 {
   if (moduleQueried.latitude == false)
-    getPVT(maxWait);
+    getPositionData(maxWait);
   moduleQueried.latitude = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2907,7 +3019,7 @@ int32_t SFE_UBLOX_GPS::getLatitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 {
   if (moduleQueried.longitude == false)
-    getPVT(maxWait);
+    getPositionData(maxWait);
   moduleQueried.longitude = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2918,7 +3030,7 @@ int32_t SFE_UBLOX_GPS::getLongitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 {
   if (moduleQueried.altitude == false)
-    getPVT(maxWait);
+    getPositionData(maxWait);
   moduleQueried.altitude = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
@@ -2931,7 +3043,7 @@ int32_t SFE_UBLOX_GPS::getAltitude(uint16_t maxWait)
 int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
 {
   if (moduleQueried.altitudeMSL == false)
-    getPVT(maxWait);
+    getPositionData(maxWait);
   moduleQueried.altitudeMSL = false; //Since we are about to give this to user, mark this data as stale
   moduleQueried.all = false;
 
