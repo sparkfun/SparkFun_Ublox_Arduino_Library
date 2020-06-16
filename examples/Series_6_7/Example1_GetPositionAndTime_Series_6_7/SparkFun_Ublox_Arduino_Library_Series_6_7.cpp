@@ -5,17 +5,17 @@
 
   This copy includes changes by @blazczak and @geeksville to
   provide support for the older series 6 and 7 modules.
-  
+
   Disclaimer: SparkFun has not verified this copy of the library on either series 6 or 7.
   It should work, it looks like it will work, but we have no way of confirming this.
   We cannot guarantee that it will work reliably in your application.
- 
-	Do you like this library? Help support SparkFun. Buy a board!
-	https://www.sparkfun.com/products/15136
-	https://www.sparkfun.com/products/15005
-	https://www.sparkfun.com/products/15733
-	https://www.sparkfun.com/products/15193
-	https://www.sparkfun.com/products/15210
+
+  Do you like this library? Help support SparkFun. Buy a board!
+  https://www.sparkfun.com/products/15136
+  https://www.sparkfun.com/products/15005
+  https://www.sparkfun.com/products/15733
+  https://www.sparkfun.com/products/15193
+  https://www.sparkfun.com/products/15210
 
 	Original library written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
 
