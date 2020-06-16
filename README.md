@@ -22,6 +22,7 @@ U-blox makes some incredible GPS receivers covering everything from low-cost, hi
 
 This library can be installed via the Arduino Library manager. Search for **SparkFun Ublox**.
 
+Although not an integrated part of the library, you will find an example of how to communicate with the older series 6 and 7 modules in the [examples folder](./examples/Series_6_7).
 
 Max (400kHz) I2C Support
 -------------------
@@ -36,15 +37,16 @@ Want to help? Please do! We are always looking for ways to improve and build out
 
 Thanks to:
 
-* [trycoon](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/pull/7) for fixing the lack of I2C buffer length defines
-* [tve](https://github.com/tve) for building out serial additions and examples
-* [Redstoned](https://github.com/Redstoned) and [davidallenmann](https://github.com/davidallenmann) for adding PVT date and time
-* [wittend](https://forum.sparkfun.com/viewtopic.php?t=49874) for pointing out the RTCM print bug
+* [trycoon](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/pull/7) for fixing the lack of I2C buffer length defines.
+* [tve](https://github.com/tve) for building out serial additions and examples.
+* [Redstoned](https://github.com/Redstoned) and [davidallenmann](https://github.com/davidallenmann) for adding PVT date and time.
+* [wittend](https://forum.sparkfun.com/viewtopic.php?t=49874) for pointing out the RTCM print bug.
 * Big thanks to [PaulZC](https://github.com/PaulZC) for implementing the combined key ValSet method, geofence functions, better saveConfig handling, as well as a bunch of small fixes.
-* [RollieRowland](https://github.com/RollieRowland) for adding HPPOSLLH (High Precision Geodetic Position)
-* [tedder](https://github.com/tedder) for moving iTOW to PVT instead of HPPOS and comment cleanup
-* [grexjmo](https://github.com/grexjmo) for pushing for a better NMEA sentence configuration method
+* [RollieRowland](https://github.com/RollieRowland) for adding HPPOSLLH (High Precision Geodetic Position).
+* [tedder](https://github.com/tedder) for moving iTOW to PVT instead of HPPOS and comment cleanup.
+* [grexjmo](https://github.com/grexjmo) for pushing for a better NMEA sentence configuration method.
 * [averywallis](https://github.com/averywallis) for adding good comments to the various constants.
+* [blazczak](https://github.com/blazczak) and [geeksville](https://github.com/geeksville) for adding support for the series 6 and 7 modules.
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_u-blox_Particle_Library) fork.
 
