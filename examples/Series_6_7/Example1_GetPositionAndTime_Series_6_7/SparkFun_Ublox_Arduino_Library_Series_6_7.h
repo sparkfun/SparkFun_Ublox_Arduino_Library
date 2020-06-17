@@ -1,50 +1,50 @@
 /*
-	This is a library written for the Ublox ZED-F9P and NEO-M8P-2
+  This is a library written for the Ublox ZED-F9P and NEO-M8P-2
 
   Updated: June 16th, 2020
 
   This copy includes changes by @blazczak and @geeksville to
   provide support for the older series 6 and 7 modules.
-  
+
   Disclaimer: SparkFun has not verified this copy of the library on either series 6 or 7.
   It should work, it looks like it will work, but we have no way of confirming this.
   We cannot guarantee that it will work reliably in your application.
- 
-	Do you like this library? Help support SparkFun. Buy a board!
-	https://www.sparkfun.com/products/15136
-	https://www.sparkfun.com/products/15005
-	https://www.sparkfun.com/products/15733
-	https://www.sparkfun.com/products/15193
-	https://www.sparkfun.com/products/15210
 
-	Original library written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+  Do you like this library? Help support SparkFun. Buy a board!
+  https://www.sparkfun.com/products/15136
+  https://www.sparkfun.com/products/15005
+  https://www.sparkfun.com/products/15733
+  https://www.sparkfun.com/products/15193
+  https://www.sparkfun.com/products/15210
 
-	This library handles configuring and handling the responses
-	from a Ublox GPS module. Works with most modules from Ublox including
-	the Zed-F9P, NEO-M8P-2, NEO-M9N, ZOE-M8Q, SAM-M8Q, and many others.
+  Original library written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
 
-	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
+  This library handles configuring and handling the responses
+  from a Ublox GPS module. Works with most modules from Ublox including
+  the Zed-F9P, NEO-M8P-2, NEO-M9N, ZOE-M8Q, SAM-M8Q, and many others.
 
-	Development environment specifics:
-	Arduino IDE 1.8.5
+  https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
 
-	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
-	The MIT License (MIT)
-	Copyright (c) 2016 SparkFun Electronics
-	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-	associated documentation files (the "Software"), to deal in the Software without restriction,
-	including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to
-	do so, subject to the following conditions:
+  Development environment specifics:
+  Arduino IDE 1.8.5
 
-	The above copyright notice and this permission notice shall be included in all copies or substantial
-	portions of the Software.
+  SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
+  The MIT License (MIT)
+  Copyright (c) 2016 SparkFun Electronics
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+  and/or sell copies of the Software, and to permit persons to whom the Software is furnished to
+  do so, subject to the following conditions:
 
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
-	NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  The above copyright notice and this permission notice shall be included in all copies or substantial
+  portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #ifndef SPARKFUN_UBLOX_ARDUINO_LIBRARY_H
