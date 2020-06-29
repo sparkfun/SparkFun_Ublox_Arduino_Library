@@ -88,7 +88,19 @@ void loop()
     Serial.print(":");
     Serial.print(myGPS.getMinute());
     Serial.print(":");
-    Serial.println(myGPS.getSecond());
+    Serial.print(myGPS.getSecond());
+
+    Serial.print("  Time is ");
+    if (myGPS.getTimeValid() == false)
+    {
+      Serial.print("not ");
+    }
+    Serial.print("valid  Date is ");
+    if (myGPS.getDateValid() == false)
+    {
+      Serial.print("not ");
+    }
+    Serial.print("valid");
 
     Serial.println();
   }

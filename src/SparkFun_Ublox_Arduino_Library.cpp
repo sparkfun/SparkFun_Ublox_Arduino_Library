@@ -903,6 +903,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gpsHour = extractByte(8);
       gpsMinute = extractByte(9);
       gpsSecond = extractByte(10);
+      gpsDateValid = extractByte(11) & 0x01;
+      gpsTimeValid = (extractByte(11) & 0x02) >> 1;
       gpsNanosecond = extractLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
@@ -924,6 +926,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.gpsHour = true;
       moduleQueried.gpsMinute = true;
       moduleQueried.gpsSecond = true;
+      moduleQueried.gpsDateValid = true;
+      moduleQueried.gpsTimeValid = true;
       moduleQueried.gpsNanosecond = true;
 
       moduleQueried.all = true;
@@ -2694,6 +2698,24 @@ uint8_t SFE_UBLOX_GPS::getSecond(uint16_t maxWait)
   return (gpsSecond);
 }
 
+//Get the current date validity
+bool SFE_UBLOX_GPS::getDateValid(uint16_t maxWait)
+{
+  if (moduleQueried.gpsDateValid == false)
+    getPVT(maxWait);
+  moduleQueried.gpsDateValid = false; //Since we are about to give this to user, mark this data as stale
+  return (gpsDateValid);
+}
+
+//Get the current time validity
+bool SFE_UBLOX_GPS::getTimeValid(uint16_t maxWait)
+{
+  if (moduleQueried.gpsTimeValid == false)
+    getPVT(maxWait);
+  moduleQueried.gpsTimeValid = false; //Since we are about to give this to user, mark this data as stale
+  return (gpsTimeValid);
+}
+
 //Get the current millisecond
 uint16_t SFE_UBLOX_GPS::getMillisecond(uint16_t maxWait)
 {
@@ -3090,6 +3112,8 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.gpsHour = false;
   moduleQueried.gpsMinute = false;
   moduleQueried.gpsSecond = false;
+  moduleQueried.gpsDateValid = false;
+  moduleQueried.gpsTimeValid = false;
   moduleQueried.gpsNanosecond = false;
 
   moduleQueried.all = false;

@@ -555,6 +555,8 @@ public:
 	uint16_t getMillisecond(uint16_t maxWait = getPVTmaxWait);
 	int32_t getNanosecond(uint16_t maxWait = getPVTmaxWait);
 	uint32_t getTimeOfWeek(uint16_t maxWait = getPVTmaxWait);
+	bool getDateValid(uint16_t maxWait = getPVTmaxWait);
+	bool getTimeValid(uint16_t maxWait = getPVTmaxWait);
 
 	int32_t getHighResLatitude(uint16_t maxWait = getHPPOSLLHmaxWait);
 	int8_t getHighResLatitudeHp(uint16_t maxWait = getHPPOSLLHmaxWait);
@@ -699,6 +701,8 @@ public:
 	uint8_t gpsSecond;
 	uint16_t gpsMillisecond;
 	int32_t gpsNanosecond;
+	bool gpsDateValid;
+	bool gpsTimeValid;
 
 	int32_t latitude;		 //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude;		 //Degrees * 10^-7 (more accurate than floats)
@@ -879,6 +883,8 @@ private:
 		uint32_t gpsHour : 1;
 		uint32_t gpsMinute : 1;
 		uint32_t gpsSecond : 1;
+		uint32_t gpsDateValid : 1;
+		uint32_t gpsTimeValid : 1;
 		uint32_t gpsNanosecond : 1;
 
 		uint32_t all : 1;
