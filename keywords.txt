@@ -114,6 +114,8 @@ getMinute	KEYWORD2
 getSecond	KEYWORD2
 getMillisecond	KEYWORD2
 getNanosecond	KEYWORD2
+getDateValid	KEYWORD2
+getTimeValid	KEYWORD2
 
 getHPPOSLLH	KEYWORD2
 getTimeOfWeek	KEYWORD2
