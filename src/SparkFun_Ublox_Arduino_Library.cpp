@@ -2600,6 +2600,7 @@ boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
 
 // Powers off the GPS device for a given duration to reduce power consumption.
 // While powered off it can be woken up by creating a falling or rising voltage edge on the specified pin.
+// WARNING: The GPS seems to detect small voltage edges on the interrupt pin. Works best when Microcontroller is in deepsleep.
 // WARNING: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
 boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wakeupPin, boolean forceWhileUsb, uint16_t maxWait)
 {
