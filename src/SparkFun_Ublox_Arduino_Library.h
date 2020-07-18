@@ -641,6 +641,8 @@ public:
 
 	boolean powerSaveMode(bool power_save = true, uint16_t maxWait = 1100);
 	uint8_t getPowerSaveMode(uint16_t maxWait = 1100); // Returns 255 if the sendCommand fails
+	boolean powerOff(uint32_t durationInMs, uint16_t maxWait = 1100);
+	boolean powerOffWithInterrupt(uint32_t durationInMs, uint8_t wakeupPin = 1, boolean forceWhileUsb = true, uint16_t maxWait = 1100);
 
 	//Change the dynamic platform model using UBX-CFG-NAV5
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = 1100);

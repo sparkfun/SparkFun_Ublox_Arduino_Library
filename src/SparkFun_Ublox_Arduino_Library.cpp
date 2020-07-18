@@ -2569,6 +2569,113 @@ uint8_t SFE_UBLOX_GPS::getPowerSaveMode(uint16_t maxWait)
   return (payloadCfg[1]); // Return the low power mode
 }
 
+// Powers off the GPS device for a given duration to reduce power consumption.
+// WARNING: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
+{
+  // use durationInMs = 0 for infinite duration
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("Powering off for "));
+    _debugSerial->print(durationInMs);
+    _debugSerial->println(" ms");
+  }
+
+  // Power off device using UBX-RXM-PMREQ
+  packetCfg.cls = UBX_CLASS_RXM;  // 0x02
+  packetCfg.id =  UBX_RXM_PMREQ;  // 0x41
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  // duration
+  // big endian to little endian, switch byte order
+  payloadCfg[0] = (durationInMs >> (8*0)) & 0xff;
+  payloadCfg[1] = (durationInMs >> (8*1)) & 0xff;
+  payloadCfg[2] = (durationInMs >> (8*2)) & 0xff;
+  payloadCfg[3] = (durationInMs >> (8*3)) & 0xff;
+
+  // check for "not acknowledged" command
+  return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+}
+
+// Powers off the GPS device for a given duration to reduce power consumption.
+// While powered off it can be woken up by creating a falling or rising voltage edge on the specified pin.
+// WARNING: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wakeupPin, boolean forceWhileUsb, uint16_t maxWait)
+{
+  // use durationInMs = 0 for infinite duration
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("Powering off for "));
+    _debugSerial->print(durationInMs);
+    _debugSerial->println(" ms");
+  }
+
+  // Power off device using UBX-RXM-PMREQ
+  packetCfg.cls = UBX_CLASS_RXM;  // 0x02
+  packetCfg.id =  UBX_RXM_PMREQ;  // 0x41
+  packetCfg.len = 16;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = 0x00; // message version
+  // bytes 1-3 are reserved
+
+  // duration
+  // big endian to little endian, switch byte order
+  payloadCfg[4] = (durationInMs >> (8*0)) & 0xff;
+  payloadCfg[5] = (durationInMs >> (8*1)) & 0xff;
+  payloadCfg[6] = (durationInMs >> (8*2)) & 0xff;
+  payloadCfg[7] = (durationInMs >> (8*3)) & 0xff;
+
+  // flags
+  payloadCfg[8] =  0x00;
+  payloadCfg[9] =  0x00;
+  payloadCfg[10] = 0x00;
+
+  // disables USB interface when powering off, defaults to true
+  if (forceWhileUsb)
+  {
+    payloadCfg[11] = 0x04;
+  }
+  else
+  {
+    payloadCfg[11] = 0x02;
+  }
+
+  // wakeUpSources
+  payloadCfg[12] = 0x00;
+  payloadCfg[13] = 0x00;
+  payloadCfg[14] = 0x00;
+
+  // wakeupPin mapping, defaults to EXINT0, limited to one pin for now
+  // last byte of wakeUpSources
+  uint8_t terminatingByte;
+
+  switch (wakeupPin)
+  {
+    case 0: // UART RX
+      terminatingByte = 0x08; // 0000 1000
+      break;
+
+    case 1: // EXINT 0
+      terminatingByte = 0x20; // 0010 0000
+      break;
+
+    case 2: // EXINT 1
+      terminatingByte = 0x40; // 0100 0000
+      break;
+
+    case 3: // SPI CS
+      terminatingByte = 0x80; // 1000 0000
+      break;
+  }
+
+  payloadCfg[15] = terminatingByte;
+
+  // check for "not acknowledged" command
+  return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+}
+
 //Change the dynamic platform model using UBX-CFG-NAV5
 //Possible values are:
 //PORTABLE,STATIONARY,PEDESTRIAN,AUTOMOTIVE,SEA,
