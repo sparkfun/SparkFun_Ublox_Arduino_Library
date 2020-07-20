@@ -2570,7 +2570,9 @@ uint8_t SFE_UBLOX_GPS::getPowerSaveMode(uint16_t maxWait)
 }
 
 // Powers off the GPS device for a given duration to reduce power consumption.
-// WARNING: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+// NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+// returns true if command has not failed
+// returns false if command has not been acknowledged or maxWait = 0
 boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
 {
   // use durationInMs = 0 for infinite duration
@@ -2594,14 +2596,24 @@ boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
   payloadCfg[2] = (durationInMs >> (8*2)) & 0xff;
   payloadCfg[3] = (durationInMs >> (8*3)) & 0xff;
 
-  // check for "not acknowledged" command
-  return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+  if (maxWait != 0)
+  {
+    // check for "not acknowledged" command
+    return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+  }
+  else
+  {
+    sendCommand(&packetCfg, maxWait);
+    return false; // can't tell if command not acknowledged if maxWait = 0
+  }
 }
 
 // Powers off the GPS device for a given duration to reduce power consumption.
 // While powered off it can be woken up by creating a falling or rising voltage edge on the specified pin.
-// WARNING: The GPS seems to detect small voltage edges on the interrupt pin. Works best when Microcontroller is in deepsleep.
-// WARNING: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+// NOTE: The GPS seems to detect small voltage edges on the interrupt pin. Works best when Microcontroller is in deepsleep.
+// NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+// returns true if command has not failed
+// returns false if command has not been acknowledged or maxWait = 0
 boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wakeupPin, boolean forceWhileUsb, uint16_t maxWait)
 {
   // use durationInMs = 0 for infinite duration
@@ -2673,8 +2685,16 @@ boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wake
 
   payloadCfg[15] = terminatingByte;
 
-  // check for "not acknowledged" command
-  return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+  if (maxWait != 0)
+  {
+    // check for "not acknowledged" command
+    return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+  }
+  else
+  {
+    sendCommand(&packetCfg, maxWait);
+    return false; // can't tell if command not acknowledged if maxWait = 0
+  }
 }
 
 //Change the dynamic platform model using UBX-CFG-NAV5
