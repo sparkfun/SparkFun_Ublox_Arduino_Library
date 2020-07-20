@@ -2571,8 +2571,8 @@ uint8_t SFE_UBLOX_GPS::getPowerSaveMode(uint16_t maxWait)
 
 // Powers off the GPS device for a given duration to reduce power consumption.
 // NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
-// returns true if command has not failed
-// returns false if command has not been acknowledged or maxWait = 0
+// Returns true if command has not been not acknowledged.
+// Returns false if command has not been acknowledged or maxWait = 0.
 boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
 {
   // use durationInMs = 0 for infinite duration
@@ -2610,10 +2610,10 @@ boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
 
 // Powers off the GPS device for a given duration to reduce power consumption.
 // While powered off it can be woken up by creating a falling or rising voltage edge on the specified pin.
-// NOTE: The GPS seems to detect small voltage edges on the interrupt pin. Works best when Microcontroller is in deepsleep.
+// NOTE: The GPS seems to be sensitve to signals on the pins while powered off. Works best when Microcontroller is in deepsleep.
 // NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
-// returns true if command has not failed
-// returns false if command has not been acknowledged or maxWait = 0
+// Returns true if command has not been not acknowledged.
+// Returns false if command has not been acknowledged or maxWait = 0.
 boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wakeupPin, boolean forceWhileUsb, uint16_t maxWait)
 {
   // use durationInMs = 0 for infinite duration
