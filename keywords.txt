@@ -139,6 +139,8 @@ setDynamicModel	KEYWORD2
 getDynamicModel	KEYWORD2
 powerSaveMode	KEYWORD2
 getPowerSaveMode	KEYWORD2
+powerOff	KEYWORD2
+powerOffWithInterrupt	KEYWORD2
 
 configureMessage	KEYWORD2
 enableMessage	KEYWORD2

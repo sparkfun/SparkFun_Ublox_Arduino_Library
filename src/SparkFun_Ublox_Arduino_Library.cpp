@@ -2569,6 +2569,129 @@ uint8_t SFE_UBLOX_GPS::getPowerSaveMode(uint16_t maxWait)
   return (payloadCfg[1]); // Return the low power mode
 }
 
+// Powers off the GPS device for a given duration to reduce power consumption.
+// NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+// Returns true if command has not been not acknowledged.
+// Returns false if command has not been acknowledged or maxWait = 0.
+boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
+{
+  // use durationInMs = 0 for infinite duration
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("Powering off for "));
+    _debugSerial->print(durationInMs);
+    _debugSerial->println(" ms");
+  }
+
+  // Power off device using UBX-RXM-PMREQ
+  packetCfg.cls = UBX_CLASS_RXM;  // 0x02
+  packetCfg.id =  UBX_RXM_PMREQ;  // 0x41
+  packetCfg.len = 8;
+  packetCfg.startingSpot = 0;
+
+  // duration
+  // big endian to little endian, switch byte order
+  payloadCfg[0] = (durationInMs >> (8*0)) & 0xff;
+  payloadCfg[1] = (durationInMs >> (8*1)) & 0xff;
+  payloadCfg[2] = (durationInMs >> (8*2)) & 0xff;
+  payloadCfg[3] = (durationInMs >> (8*3)) & 0xff;
+
+  payloadCfg[4] = 0x02; //Flags : set the backup bit
+  payloadCfg[5] = 0x00; //Flags
+  payloadCfg[6] = 0x00; //Flags
+  payloadCfg[7] = 0x00; //Flags
+
+  if (maxWait != 0)
+  {
+    // check for "not acknowledged" command
+    return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+  }
+  else
+  {
+    sendCommand(&packetCfg, maxWait);
+    return false; // can't tell if command not acknowledged if maxWait = 0
+  }
+}
+
+// Powers off the GPS device for a given duration to reduce power consumption.
+// While powered off it can be woken up by creating a falling or rising voltage edge on the specified pin.
+// NOTE: The GPS seems to be sensitve to signals on the pins while powered off. Works best when Microcontroller is in deepsleep.
+// NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
+// Returns true if command has not been not acknowledged.
+// Returns false if command has not been acknowledged or maxWait = 0.
+boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources, boolean forceWhileUsb, uint16_t maxWait)
+{
+  // use durationInMs = 0 for infinite duration
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("Powering off for "));
+    _debugSerial->print(durationInMs);
+    _debugSerial->println(" ms");
+  }
+
+  // Power off device using UBX-RXM-PMREQ
+  packetCfg.cls = UBX_CLASS_RXM;  // 0x02
+  packetCfg.id =  UBX_RXM_PMREQ;  // 0x41
+  packetCfg.len = 16;
+  packetCfg.startingSpot = 0;
+
+  payloadCfg[0] = 0x00; // message version
+
+  // bytes 1-3 are reserved - and must be set to zero
+  payloadCfg[1] = 0x00;
+  payloadCfg[2] = 0x00;
+  payloadCfg[3] = 0x00;
+
+  // duration
+  // big endian to little endian, switch byte order
+  payloadCfg[4] = (durationInMs >> (8*0)) & 0xff;
+  payloadCfg[5] = (durationInMs >> (8*1)) & 0xff;
+  payloadCfg[6] = (durationInMs >> (8*2)) & 0xff;
+  payloadCfg[7] = (durationInMs >> (8*3)) & 0xff;
+
+  // flags
+
+  // disables USB interface when powering off, defaults to true
+  if (forceWhileUsb)
+  {
+    payloadCfg[8] = 0x06; // force | backup
+  }
+  else
+  {
+    payloadCfg[8] = 0x02; // backup only (leave the force bit clear - module will stay on if USB is connected)
+  }
+
+  payloadCfg[9] = 0x00;
+  payloadCfg[10] = 0x00;
+  payloadCfg[11] = 0x00;
+
+  // wakeUpSources
+
+  // wakeupPin mapping, defaults to VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0
+
+  // Possible values are:
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT1
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS
+
+  payloadCfg[12] = (wakeupSources >> (8*0)) & 0xff;
+  payloadCfg[13] = (wakeupSources >> (8*1)) & 0xff;
+  payloadCfg[14] = (wakeupSources >> (8*2)) & 0xff;
+  payloadCfg[15] = (wakeupSources >> (8*3)) & 0xff;
+
+  if (maxWait != 0)
+  {
+    // check for "not acknowledged" command
+    return (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_COMMAND_NACK);
+  }
+  else
+  {
+    sendCommand(&packetCfg, maxWait);
+    return false; // can't tell if command not acknowledged if maxWait = 0
+  }
+}
+
 //Change the dynamic platform model using UBX-CFG-NAV5
 //Possible values are:
 //PORTABLE,STATIONARY,PEDESTRIAN,AUTOMOTIVE,SEA,
