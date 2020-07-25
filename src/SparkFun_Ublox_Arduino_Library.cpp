@@ -2596,6 +2596,11 @@ boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
   payloadCfg[2] = (durationInMs >> (8*2)) & 0xff;
   payloadCfg[3] = (durationInMs >> (8*3)) & 0xff;
 
+  payloadCfg[4] = 0x02; //Flags : set the backup bit
+  payloadCfg[5] = 0x00; //Flags
+  payloadCfg[6] = 0x00; //Flags
+  payloadCfg[7] = 0x00; //Flags
+
   if (maxWait != 0)
   {
     // check for "not acknowledged" command
@@ -2614,7 +2619,7 @@ boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
 // NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
 // Returns true if command has not been not acknowledged.
 // Returns false if command has not been acknowledged or maxWait = 0.
-boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wakeupPin, boolean forceWhileUsb, uint16_t maxWait)
+boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint32_t wakeupSources, boolean forceWhileUsb, uint16_t maxWait)
 {
   // use durationInMs = 0 for infinite duration
   if (_printDebug == true)
@@ -2631,7 +2636,11 @@ boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wake
   packetCfg.startingSpot = 0;
 
   payloadCfg[0] = 0x00; // message version
-  // bytes 1-3 are reserved
+
+  // bytes 1-3 are reserved - and must be set to zero
+  payloadCfg[1] = 0x00;
+  payloadCfg[2] = 0x00;
+  payloadCfg[3] = 0x00;
 
   // duration
   // big endian to little endian, switch byte order
@@ -2641,49 +2650,35 @@ boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint8_t wake
   payloadCfg[7] = (durationInMs >> (8*3)) & 0xff;
 
   // flags
-  payloadCfg[8] =  0x00;
-  payloadCfg[9] =  0x00;
-  payloadCfg[10] = 0x00;
 
   // disables USB interface when powering off, defaults to true
   if (forceWhileUsb)
   {
-    payloadCfg[11] = 0x04;
+    payloadCfg[8] = 0x06; // force | backup
   }
   else
   {
-    payloadCfg[11] = 0x02;
+    payloadCfg[8] = 0x02; // backup only (leave the force bit clear - module will stay on if USB is connected)
   }
+
+  payloadCfg[9] = 0x00;
+  payloadCfg[10] = 0x00;
+  payloadCfg[11] = 0x00;
 
   // wakeUpSources
-  payloadCfg[12] = 0x00;
-  payloadCfg[13] = 0x00;
-  payloadCfg[14] = 0x00;
 
-  // wakeupPin mapping, defaults to EXINT0, limited to one pin for now
-  // last byte of wakeUpSources
-  uint8_t terminatingByte;
+  // wakeupPin mapping, defaults to VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0
 
-  switch (wakeupPin)
-  {
-    case 0: // UART RX
-      terminatingByte = 0x08; // 0000 1000
-      break;
+  // Possible values are:
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT1
+  // VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS
 
-    case 1: // EXINT 0
-      terminatingByte = 0x20; // 0010 0000
-      break;
-
-    case 2: // EXINT 1
-      terminatingByte = 0x40; // 0100 0000
-      break;
-
-    case 3: // SPI CS
-      terminatingByte = 0x80; // 1000 0000
-      break;
-  }
-
-  payloadCfg[15] = terminatingByte;
+  payloadCfg[12] = (wakeupSources >> (8*0)) & 0xff;
+  payloadCfg[13] = (wakeupSources >> (8*1)) & 0xff;
+  payloadCfg[14] = (wakeupSources >> (8*2)) & 0xff;
+  payloadCfg[15] = (wakeupSources >> (8*3)) & 0xff;
 
   if (maxWait != 0)
   {

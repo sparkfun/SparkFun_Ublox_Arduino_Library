@@ -32,12 +32,12 @@ SFE_UBLOX_GPS myGPS;
 // define a digital pin capable of driving HIGH and LOW
 #define WAKEUP_PIN 5
 
-// interrupt pin mapping
-#define GPS_RX     0
-#define GPS_INT0   1
-#define GPS_INT1   2
-#define GPS_SPI_CS 3
-
+// Possible GNSS interrupt pins for powerOffWithInterrupt are:
+// VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX  = uartrx
+// VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0 = extint0 (default)
+// VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT1 = extint1
+// VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS   = spics
+// These values can be or'd (|) together to enable interrupts on multiple pins
 
 void wakeUp() {
 
@@ -55,12 +55,15 @@ void wakeUp() {
 void setup() {
 
   pinMode(WAKEUP_PIN, OUTPUT);
+  digitalWrite(WAKEUP_PIN, LOW);
 
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
   Serial.println("SparkFun Ublox Example");
 
   Wire.begin();
+
+  //myGPS.enableDebugging(); // Enable debug messages
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
@@ -72,7 +75,7 @@ void setup() {
   Serial.println("-- Powering off module for 20s --");
 
   myGPS.powerOff(20000);
-  // myGPS.powerOffWithInterrupt(20000, GPS_INT0);
+  //myGPS.powerOffWithInterrupt(20000, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
 
   delay(10000);
 
