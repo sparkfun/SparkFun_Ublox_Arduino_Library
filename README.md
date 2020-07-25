@@ -47,6 +47,9 @@ Thanks to:
 * [grexjmo](https://github.com/grexjmo) for pushing for a better NMEA sentence configuration method.
 * [averywallis](https://github.com/averywallis) for adding good comments to the various constants.
 * [blazczak](https://github.com/blazczak) and [geeksville](https://github.com/geeksville) for adding support for the series 6 and 7 modules.
+* [bjorn@unsurv](https://github.com/unsurv) for adding powerOff and powerOffWithInterrupt.
+
+Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_u-blox_Particle_Library) fork.
 
