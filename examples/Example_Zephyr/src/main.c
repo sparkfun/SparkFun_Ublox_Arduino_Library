@@ -11,6 +11,8 @@
 
   Open the serial monitor at 115200 baud to see the output
   I2C clock speed: 100 kHz
+
+  Ported to Zephyr by Vid Rajtmajer <vid@irnas.eu>, IRNAS d.o.o.
 */
 
 #include <zephyr/types.h>
