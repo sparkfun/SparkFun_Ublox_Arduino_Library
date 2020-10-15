@@ -3119,7 +3119,7 @@ int32_t SFE_UBLOX_GPS::getHeading(uint16_t maxWait)
   return (headingOfMotion);
 }
 
-//Get the positional dillution of precision * 10^-2
+//Get the positional dillution of precision * 10^-2 (dimensionless)
 uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
 {
   if (moduleQueried.pDOP == false)

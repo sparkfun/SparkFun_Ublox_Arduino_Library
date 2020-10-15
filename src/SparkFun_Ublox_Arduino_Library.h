@@ -551,7 +551,7 @@ public:
 	uint8_t getCarrierSolutionType(uint16_t maxWait = getPVTmaxWait); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
 	int32_t getGroundSpeed(uint16_t maxWait = getPVTmaxWait);		  //Returns speed in mm/s
 	int32_t getHeading(uint16_t maxWait = getPVTmaxWait);			  //Returns heading in degrees * 10^-5
-	uint16_t getPDOP(uint16_t maxWait = getPVTmaxWait);				  //Returns positional dillution of precision m * 10^-2
+	uint16_t getPDOP(uint16_t maxWait = getPVTmaxWait);				  //Returns positional dillution of precision * 10^-2 (dimensionless)
 	uint16_t getYear(uint16_t maxWait = getPVTmaxWait);
 	uint8_t getMonth(uint16_t maxWait = getPVTmaxWait);
 	uint8_t getDay(uint16_t maxWait = getPVTmaxWait);
@@ -721,7 +721,7 @@ public:
 	uint8_t carrierSolution; //Tells us when we have an RTK float/fixed solution
 	int32_t groundSpeed;	 //mm/s
 	int32_t headingOfMotion; //degrees * 10^-5
-	uint16_t pDOP;			 //Positional dilution of precision
+	uint16_t pDOP;			 //Positional dilution of precision * 10^-2 (dimensionless)
 	uint8_t versionLow;		 //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
 
