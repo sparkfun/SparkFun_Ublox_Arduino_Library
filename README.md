@@ -51,7 +51,7 @@ Thanks to:
 
 Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
 
-Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_u-blox_Particle_Library) fork.
+Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
 Repository Contents
 -------------------
