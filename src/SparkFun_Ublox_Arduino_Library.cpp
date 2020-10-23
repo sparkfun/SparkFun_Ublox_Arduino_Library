@@ -1687,7 +1687,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getVal(uint32_t key, uint8_t layer, uint16_t m
   sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
   if (_printDebug == true)
   {
-    _debugSerial->print(F("getVal8: sendCommand returned: "));
+    _debugSerial->print(F("getVal: sendCommand returned: "));
     _debugSerial->println(statusString(retVal));
   }
 
@@ -1725,25 +1725,33 @@ uint32_t SFE_UBLOX_GPS::getVal32(uint32_t key, uint8_t layer, uint16_t maxWait)
   return (extractLong(8));
 }
 
+//Form 32-bit key from group/id/size
+uint32_t SFE_UBLOX_GPS::createKey(uint16_t group, uint16_t id, uint8_t size)
+{
+  uint32_t key = 0;
+  key |= (uint32_t)id;
+  key |= (uint32_t)group << 16;
+  key |= (uint32_t)size << 28;
+  return (key);
+}
+
 //Given a group, ID and size, return the value of this config spot
 //The 32-bit key is put together from group/ID/size. See other getVal to send key directly.
 //Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
 {
-  //Create key
-  uint32_t key = 0;
-  key |= (uint32_t)id;
-  key |= (uint32_t)group << 16;
-  key |= (uint32_t)size << 28;
-
-  if (_printDebug == true)
-  {
-    _debugSerial->print(F("key: 0x"));
-    _debugSerial->print(key, HEX);
-    _debugSerial->println();
-  }
-
+  uint32_t key = createKey(group, id, size);
   return getVal8(key, layer, maxWait);
+}
+uint16_t SFE_UBLOX_GPS::getVal16(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
+{
+  uint32_t key = createKey(group, id, size);
+  return getVal16(key, layer, maxWait);
+}
+uint32_t SFE_UBLOX_GPS::getVal32(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
+{
+  uint32_t key = createKey(group, id, size);
+  return getVal32(key, layer, maxWait);
 }
 
 //Given a key, set a 16-bit value
