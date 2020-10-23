@@ -353,20 +353,31 @@ const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
 const uint8_t VAL_LAYER_RAM = (1 << 0);
 const uint8_t VAL_LAYER_BBR = (1 << 1);
 const uint8_t VAL_LAYER_FLASH = (1 << 2);
+const uint8_t VAL_LAYER_ALL = VAL_LAYER_RAM | VAL_LAYER_BBR | VAL_LAYER_FLASH; //Not valid with getVal()
 
 //Below are various Groups, IDs, and sizes for various settings
 //These can be used to call getVal/setVal/delVal
+const uint8_t VAL_ID_PROT_UBX = 0x01;
+const uint8_t VAL_ID_PROT_NMEA = 0x02;
+const uint8_t VAL_ID_PROT_RTCM3 = 0x04;
+
 const uint8_t VAL_GROUP_I2COUTPROT = 0x72;
-const uint8_t VAL_GROUP_I2COUTPROT_SIZE = VAL_SIZE_1; //All fields in I2C group are currently 1 bit
-
-const uint8_t VAL_ID_I2COUTPROT_UBX = 0x01;
-const uint8_t VAL_ID_I2COUTPROT_NMEA = 0x02;
-const uint8_t VAL_ID_I2COUTPROT_RTCM3 = 0x03;
-
+const uint8_t VAL_GROUP_UART1INPROT = 0x73;
+const uint8_t VAL_GROUP_UART1OUTPROT = 0x74;
 const uint8_t VAL_GROUP_I2C = 0x51;
-const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_8; //All fields in I2C group are currently 1 byte
+
+const uint8_t VAL_GROUP_UART_SIZE = VAL_SIZE_1; //All fields in UART group are currently 1 bit
+const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_8;	//All fields in I2C group are currently 1 byte
 
 const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
+
+const uint32_t UBLOX_CFG_UART1INPROT_UBX = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1INPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_UBX << (8 * 0)); //0x10730001
+const uint32_t UBLOX_CFG_UART1INPROT_NMEA = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1INPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_NMEA << (8 * 0));
+const uint32_t UBLOX_CFG_UART1INPROT_RTCM3X = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1INPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_RTCM3 << (8 * 0));
+
+const uint32_t UBLOX_CFG_UART1OUTPROT_UBX = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1OUTPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_UBX << (8 * 0));
+const uint32_t UBLOX_CFG_UART1OUTPROT_NMEA = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1OUTPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_NMEA << (8 * 0));
+const uint32_t UBLOX_CFG_UART1OUTPROT_RTCM3X = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1OUTPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_RTCM3 << (8 * 0));
 
 // Configuration Sub-Section mask definitions for saveConfigSelective (UBX-CFG-CFG)
 const uint32_t VAL_CFG_SUBSEC_IOPORT = 0x00000001;	 // ioPort - communications port settings (causes IO system reset!)
@@ -461,7 +472,7 @@ public:
 	//Control the size of the internal I2C transaction amount
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);
-	
+
 	//Set the max number of bytes set in a given I2C transaction
 	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
 
@@ -579,12 +590,12 @@ public:
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 	//It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.
 	//If they are using Serial then the higher baud rate will also help. So let's leave maxWait set to 250ms.
-	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
-	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);							   //Returns the value at a given group/id/size location
-	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);			   //Sets the 16-bit value at a given group/id/size location
-	uint8_t setVal8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);			   //Sets the 8-bit value at a given group/id/size location
-	uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);		   //Sets the 16-bit value at a given group/id/size location
-	uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);		   //Sets the 32-bit value at a given group/id/size location
+	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
+	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);							   //Returns the value at a given group/id/size location
+	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);			   //Sets the 16-bit value at a given group/id/size location
+	uint8_t setVal8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);			   //Sets the 8-bit value at a given group/id/size location
+	uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);		   //Sets the 16-bit value at a given group/id/size location
+	uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);		   //Sets the 32-bit value at a given group/id/size location
 	uint8_t newCfgValset8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_BBR);							   //Define a new UBX-CFG-VALSET with the given KeyID and 8-bit value
 	uint8_t newCfgValset16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR);							   //Define a new UBX-CFG-VALSET with the given KeyID and 16-bit value
 	uint8_t newCfgValset32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_BBR);							   //Define a new UBX-CFG-VALSET with the given KeyID and 32-bit value
