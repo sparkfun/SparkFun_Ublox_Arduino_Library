@@ -2,6 +2,7 @@
 	This is a library written for the Ublox ZED-F9P and NEO-M8P-2
 	SparkFun sells these at its website: www.sparkfun.com
 	Do you like this library? Help support SparkFun. Buy a board!
+	https://www.sparkfun.com/products/16481
 	https://www.sparkfun.com/products/15136
 	https://www.sparkfun.com/products/15005
 	https://www.sparkfun.com/products/15733
@@ -1639,32 +1640,11 @@ boolean SFE_UBLOX_GPS::factoryDefault(uint16_t maxWait)
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
-//Given a group, ID and size, return the value of this config spot
-//The 32-bit key is put together from group/ID/size. See other getVal to send key directly.
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
-{
-  //Create key
-  uint32_t key = 0;
-  key |= (uint32_t)id;
-  key |= (uint32_t)group << 16;
-  key |= (uint32_t)size << 28;
-
-  if (_printDebug == true)
-  {
-    _debugSerial->print(F("key: 0x"));
-    _debugSerial->print(key, HEX);
-    _debugSerial->println();
-  }
-
-  return getVal8(key, layer, maxWait);
-}
-
-//Given a key, return its value
+//Given a key, load the payload with data that can then be extracted to 8, 16, or 32 bits
 //This function takes a full 32-bit key
 //Default layer is RAM
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
-uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+sfe_ublox_status_e SFE_UBLOX_GPS::getVal(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_VALGET;
@@ -1710,16 +1690,60 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
     _debugSerial->print(F("getVal8: sendCommand returned: "));
     _debugSerial->println(statusString(retVal));
   }
-  if (retVal != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-    return (0);                                 //If command send fails then bail
 
   //Verify the response is the correct length as compared to what the user called (did the module respond with 8-bits but the user called getVal32?)
   //Response is 8 bytes plus cfg data
   //if(packet->len > 8+1)
 
-  //Pull the requested value from the response
-  //Response starts at 4+1*N with the 32-bit key so the actual data we're looking for is at 8+1*N
+  //The response is now sitting in payload, ready for extraction
+  return (retVal);
+}
+
+//Given a key, return its value
+//This function takes a full 32-bit key
+//Default layer is RAM
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
+{
+  if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (0);
+
   return (extractByte(8));
+}
+uint16_t SFE_UBLOX_GPS::getVal16(uint32_t key, uint8_t layer, uint16_t maxWait)
+{
+  if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (0);
+
+  return (extractInt(8));
+}
+uint32_t SFE_UBLOX_GPS::getVal32(uint32_t key, uint8_t layer, uint16_t maxWait)
+{
+  if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (0);
+
+  return (extractLong(8));
+}
+
+//Given a group, ID and size, return the value of this config spot
+//The 32-bit key is put together from group/ID/size. See other getVal to send key directly.
+//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
+{
+  //Create key
+  uint32_t key = 0;
+  key |= (uint32_t)id;
+  key |= (uint32_t)group << 16;
+  key |= (uint32_t)size << 28;
+
+  if (_printDebug == true)
+  {
+    _debugSerial->print(F("key: 0x"));
+    _debugSerial->print(key, HEX);
+    _debugSerial->println();
+  }
+
+  return getVal8(key, layer, maxWait);
 }
 
 //Given a key, set a 16-bit value
