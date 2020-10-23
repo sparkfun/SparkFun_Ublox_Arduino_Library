@@ -3533,3 +3533,60 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
 
   return (true);
 }
+
+//Set the ECEF coordinates of a receiver
+//This imediately puts the receiver in TIME mode (fixed) and will begin outputting RTCM sentences if enabled
+//This is helpful once an antenna's position has been established. See this tutorial: https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data
+bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefX, int8_t ecefXHP, int32_t ecefY, int8_t ecefYHP, int32_t ecefZ, int8_t ecefZHP, bool latLong, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_TMODE3;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current TimeMode3 settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (false);
+
+  packetCfg.len = 40;
+
+  //Clear packet payload
+  for (uint8_t x = 0; x < packetCfg.len; x++)
+    payloadCfg[x] = 0;
+
+  //customCfg should be loaded with poll response. Now modify only the bits we care about
+  payloadCfg[2] = 2; //Set mode to fixed. Use ECEF (not LAT/LON/ALT).
+
+  if (latLong == true)
+    payloadCfg[3] = (uint8_t)(1 << 0); //Set mode to fixed. Use LAT/LON/ALT.
+
+  //Set ECEF X
+  payloadCfg[4] = (ecefX >> 8 * 0) & 0xFF; //LSB
+  payloadCfg[5] = (ecefX >> 8 * 1) & 0xFF;
+  payloadCfg[6] = (ecefX >> 8 * 2) & 0xFF;
+  payloadCfg[7] = (ecefX >> 8 * 3) & 0xFF; //MSB
+
+  //Set ECEF Y
+  payloadCfg[8] = (ecefY >> 8 * 0) & 0xFF; //LSB
+  payloadCfg[9] = (ecefY >> 8 * 1) & 0xFF;
+  payloadCfg[10] = (ecefY >> 8 * 2) & 0xFF;
+  payloadCfg[11] = (ecefY >> 8 * 3) & 0xFF; //MSB
+
+  //Set ECEF Z
+  payloadCfg[12] = (ecefZ >> 8 * 0) & 0xFF; //LSB
+  payloadCfg[13] = (ecefZ >> 8 * 1) & 0xFF;
+  payloadCfg[14] = (ecefZ >> 8 * 2) & 0xFF;
+  payloadCfg[15] = (ecefZ >> 8 * 3) & 0xFF; //MSB
+
+  //Set ECEF high precision bits
+  payloadCfg[16] = ecefXHP;
+  payloadCfg[17] = ecefYHP;
+  payloadCfg[18] = ecefZHP;
+
+  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefX, int32_t ecefY, int32_t ecefZ, bool latlong, uint16_t maxWait)
+{
+  return (setStaticPosition(ecefX, 0, ecefY, 0, ecefZ, 0, latlong, maxWait));
+}

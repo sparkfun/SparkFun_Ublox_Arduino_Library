@@ -461,7 +461,7 @@ public:
 	//Control the size of the internal I2C transaction amount
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);
-	
+
 	//Set the max number of bytes set in a given I2C transaction
 	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
 
@@ -640,6 +640,10 @@ public:
 	boolean getEsfRawDataInfo(uint16_t maxWait = 1100);
 	sfe_ublox_status_e getSensState(uint8_t sensor, uint16_t maxWait = 1100);
 	boolean getVehAtt(uint16_t maxWait = 1100);
+
+	//Given coordinates, put receiver into static position. Set latlong to true to pass in lat/long values instead of ecef.
+	bool setStaticPosition(int32_t ecefX, int8_t ecefXHP, int32_t ecefY, int8_t ecefYHP, int32_t ecefZ, int8_t ecefZHP, bool latLong = false, uint16_t maxWait = 250);
+	bool setStaticPosition(int32_t ecefX, int32_t ecefY, int32_t ecefZ, bool latlong = true, uint16_t maxWait = 250);
 
 	//Survey-in specific controls
 	struct svinStructure
