@@ -49,45 +49,18 @@
 
 #include <Wire.h>
 
-//Platform specific configurations
-
-//Define the size of the I2C buffer based on the platform the user has
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
-
-//I2C_BUFFER_LENGTH is defined in Wire.H
-#define I2C_BUFFER_LENGTH BUFFER_LENGTH
-
-#elif defined(__SAMD21G18A__)
-
-//SAMD21 uses RingBuffer.h
-#define I2C_BUFFER_LENGTH SERIAL_BUFFER_SIZE
-
-//#elif __MK20DX256__
-//Teensy
-
-#endif
-
-#ifndef I2C_BUFFER_LENGTH
-
-//The catch-all default is 32
-#define I2C_BUFFER_LENGTH 32
-//#define I2C_BUFFER_LENGTH 16 //For testing on Artemis
-
-#endif
-
 // Define Serial for SparkFun SAMD based boards.
 // Boards like the RedBoard Turbo use SerialUSB (not Serial).
 // But other boards like the SAMD51 Thing Plus use Serial (not SerialUSB).
 // The next nine lines let the code compile cleanly on as many SAMD boards as possible.
-#if defined(ARDUINO_ARCH_SAMD) // Is this a SAMD board?
-	#if defined(USB_VID) // Is the USB Vendor ID defined?
-		#if (USB_VID == 0x1B4F) // Is this a SparkFun board?
-			#if !defined(ARDUINO_SAMD51_THING_PLUS) // If it is not a SAMD51 Thing Plus
-				#define Serial SerialUSB // Define Serial as SerialUSB
-			#endif
-		#endif
-	#endif
+#if defined(ARDUINO_ARCH_SAMD)			// Is this a SAMD board?
+#if defined(USB_VID)					// Is the USB Vendor ID defined?
+#if (USB_VID == 0x1B4F)					// Is this a SparkFun board?
+#if !defined(ARDUINO_SAMD51_THING_PLUS) // If it is not a SAMD51 Thing Plus
+#define Serial SerialUSB				// Define Serial as SerialUSB
+#endif
+#endif
+#endif
 #endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -408,10 +381,10 @@ const uint32_t VAL_CFG_SUBSEC_LOGCONF = 0x00000800;	 // logConf - logging config
 const uint32_t VAL_CFG_SUBSEC_FTSCONF = 0x00001000;	 // ftsConf - FTS configuration (FTS products only)
 
 // Bitfield wakeupSources for UBX_RXM_PMREQ
-const uint32_t VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX = 0x00000008; // uartrx
+const uint32_t VAL_RXM_PMREQ_WAKEUPSOURCE_UARTRX = 0x00000008;	// uartrx
 const uint32_t VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0 = 0x00000020; // extint0
 const uint32_t VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT1 = 0x00000040; // extint1
-const uint32_t VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS = 0x00000080; // spics
+const uint32_t VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS = 0x00000080;	// spics
 
 enum dynModel // Possible values for the dynamic platform model, which provide more accuract position output for the situation. Description extracted from ZED-F9P Integration Manual
 {
@@ -484,6 +457,13 @@ public:
 	boolean begin(TwoWire &wirePort = Wire, uint8_t deviceAddress = 0x42); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
 	boolean begin(Stream &serialPort); //Returns true if module is detected
+
+	//Control the size of the internal I2C transaction amount
+	void setI2CTransactionSize(uint8_t bufferSize);
+	uint8_t getI2CTransactionSize(void);
+	
+	//Set the max number of bytes set in a given I2C transaction
+	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
 
 	//Returns true if device answers on _gpsI2Caddress address or via Serial
 	//maxWait is only used for Serial
@@ -632,11 +612,11 @@ public:
 
 	boolean getRELPOSNED(uint16_t maxWait = 1100); //Get Relative Positioning Information of the NED frame
 
-	void enableDebugging(Stream &debugPort = Serial, boolean printLimitedDebug = false);  //Given a port to print to, enable debug messages. Default to all, not limited.
-	void disableDebugging(void);					   //Turn off debug statements
-	void debugPrint(char *message);					   //Safely print debug statements
-	void debugPrintln(char *message);				   //Safely print debug statements
-	const char *statusString(sfe_ublox_status_e stat); //Pretty print the return value
+	void enableDebugging(Stream &debugPort = Serial, boolean printLimitedDebug = false); //Given a port to print to, enable debug messages. Default to all, not limited.
+	void disableDebugging(void);														 //Turn off debug statements
+	void debugPrint(char *message);														 //Safely print debug statements
+	void debugPrintln(char *message);													 //Safely print debug statements
+	const char *statusString(sfe_ublox_status_e stat);									 //Pretty print the return value
 
 	//Support for geofences
 	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 1100); // Add a new geofence
@@ -843,7 +823,7 @@ private:
 	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8/F9 series
 	//This can be changed using the ublox configuration software
 
-	boolean _printDebug = false; //Flag to print the serial commands we are sending to the Serial port for debug
+	boolean _printDebug = false;		//Flag to print the serial commands we are sending to the Serial port for debug
 	boolean _printLimitedDebug = false; //Flag to print limited debug messages. Useful for I2C debugging or high navigation rates
 
 	//The packet buffers

@@ -155,6 +155,11 @@ getEsfRawDataInfo	KEYWORD2
 
 getSensState	KEYWORD2
 getVehAtt	KEYWORD2
+
+setI2CTransactionSize	KEYWORD2
+getI2CTransactionSize	KEYWORD2
+
+
 #######################################
 # Constants (LITERAL1)
 #######################################

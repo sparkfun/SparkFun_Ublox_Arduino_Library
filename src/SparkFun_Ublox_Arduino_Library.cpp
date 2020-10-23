@@ -51,6 +51,28 @@ SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
     pinMode((uint8_t)checksumFailurePin, OUTPUT);
     digitalWrite((uint8_t)checksumFailurePin, HIGH);
   }
+
+  //Define the size of the I2C buffer based on the platform the user has
+  //In general we found that most platforms use 32 bytes as the I2C buffer size. We could
+  //implement platform gaurds here but as you can see, none currently benefit from >32
+  //so we'll leave it up to the user to set it using setI2CTransactionSize if they will benefit from it
+  // //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  // #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
+
+  // i2cTransactionSize = 32;
+
+  // #elif defined(__SAMD21G18A__)
+
+  // i2cTransactionSize = 32;
+
+  //#elif __MK20DX256__
+  //Teensy
+
+  // #elif defined(ARDUINO_ARCH_ESP32)
+
+  // i2cTransactionSize = 32; //The ESP32 has an I2C buffer length of 128. We reduce it to 32 bytes to increase stability with the module
+
+  // #endif
 }
 
 //Initialize the Serial port
@@ -79,6 +101,19 @@ boolean SFE_UBLOX_GPS::begin(Stream &serialPort)
   _serialPort = &serialPort; //Grab which port the user wants us to use
 
   return (isConnected());
+}
+
+//Sets the global size for I2C transactions
+//Most platforms use 32 bytes (the default) but this allows users to increase the transaction
+//size if the platform supports it
+//Note: If the transaction size is set larger than the platforms buffer size, bad things will happen.
+void SFE_UBLOX_GPS::setI2CTransactionSize(uint8_t transactionSize)
+{
+  i2cTransactionSize = transactionSize;
+}
+uint8_t SFE_UBLOX_GPS::getI2CTransactionSize(void)
+{
+  return (i2cTransactionSize);
 }
 
 //Enable or disable the printing of sent/response HEX values.
@@ -384,8 +419,8 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
 
       //Limit to 32 bytes or whatever the buffer limit is for given platform
       uint16_t bytesToRead = bytesAvailable;
-      if (bytesToRead > I2C_BUFFER_LENGTH)
-        bytesToRead = I2C_BUFFER_LENGTH;
+      if (bytesToRead > i2cTransactionSize)
+        bytesToRead = i2cTransactionSize;
 
     TRY_AGAIN:
 
@@ -1093,8 +1128,8 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
   while (bytesToSend > 1)
   {
     uint8_t len = bytesToSend;
-    if (len > I2C_BUFFER_LENGTH)
-      len = I2C_BUFFER_LENGTH;
+    if (len > i2cTransactionSize)
+      len = i2cTransactionSize;
 
     _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
     //_i2cPort->write(outgoingUBX->payload, len); //Write a portion of the payload to the bus
@@ -2573,7 +2608,7 @@ uint8_t SFE_UBLOX_GPS::getPowerSaveMode(uint16_t maxWait)
 // NOTE: Querying the device before the duration is complete, for example by "getLatitude()" will wake it up!
 // Returns true if command has not been not acknowledged.
 // Returns false if command has not been acknowledged or maxWait = 0.
-boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
+boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs, uint16_t maxWait)
 {
   // use durationInMs = 0 for infinite duration
   if (_printDebug == true)
@@ -2584,17 +2619,17 @@ boolean SFE_UBLOX_GPS::powerOff(uint32_t durationInMs,  uint16_t maxWait)
   }
 
   // Power off device using UBX-RXM-PMREQ
-  packetCfg.cls = UBX_CLASS_RXM;  // 0x02
-  packetCfg.id =  UBX_RXM_PMREQ;  // 0x41
+  packetCfg.cls = UBX_CLASS_RXM; // 0x02
+  packetCfg.id = UBX_RXM_PMREQ;  // 0x41
   packetCfg.len = 8;
   packetCfg.startingSpot = 0;
 
   // duration
   // big endian to little endian, switch byte order
-  payloadCfg[0] = (durationInMs >> (8*0)) & 0xff;
-  payloadCfg[1] = (durationInMs >> (8*1)) & 0xff;
-  payloadCfg[2] = (durationInMs >> (8*2)) & 0xff;
-  payloadCfg[3] = (durationInMs >> (8*3)) & 0xff;
+  payloadCfg[0] = (durationInMs >> (8 * 0)) & 0xff;
+  payloadCfg[1] = (durationInMs >> (8 * 1)) & 0xff;
+  payloadCfg[2] = (durationInMs >> (8 * 2)) & 0xff;
+  payloadCfg[3] = (durationInMs >> (8 * 3)) & 0xff;
 
   payloadCfg[4] = 0x02; //Flags : set the backup bit
   payloadCfg[5] = 0x00; //Flags
@@ -2630,8 +2665,8 @@ boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint32_t wak
   }
 
   // Power off device using UBX-RXM-PMREQ
-  packetCfg.cls = UBX_CLASS_RXM;  // 0x02
-  packetCfg.id =  UBX_RXM_PMREQ;  // 0x41
+  packetCfg.cls = UBX_CLASS_RXM; // 0x02
+  packetCfg.id = UBX_RXM_PMREQ;  // 0x41
   packetCfg.len = 16;
   packetCfg.startingSpot = 0;
 
@@ -2644,10 +2679,10 @@ boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint32_t wak
 
   // duration
   // big endian to little endian, switch byte order
-  payloadCfg[4] = (durationInMs >> (8*0)) & 0xff;
-  payloadCfg[5] = (durationInMs >> (8*1)) & 0xff;
-  payloadCfg[6] = (durationInMs >> (8*2)) & 0xff;
-  payloadCfg[7] = (durationInMs >> (8*3)) & 0xff;
+  payloadCfg[4] = (durationInMs >> (8 * 0)) & 0xff;
+  payloadCfg[5] = (durationInMs >> (8 * 1)) & 0xff;
+  payloadCfg[6] = (durationInMs >> (8 * 2)) & 0xff;
+  payloadCfg[7] = (durationInMs >> (8 * 3)) & 0xff;
 
   // flags
 
@@ -2675,10 +2710,10 @@ boolean SFE_UBLOX_GPS::powerOffWithInterrupt(uint32_t durationInMs, uint32_t wak
   // VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT1
   // VAL_RXM_PMREQ_WAKEUPSOURCE_SPICS
 
-  payloadCfg[12] = (wakeupSources >> (8*0)) & 0xff;
-  payloadCfg[13] = (wakeupSources >> (8*1)) & 0xff;
-  payloadCfg[14] = (wakeupSources >> (8*2)) & 0xff;
-  payloadCfg[15] = (wakeupSources >> (8*3)) & 0xff;
+  payloadCfg[12] = (wakeupSources >> (8 * 0)) & 0xff;
+  payloadCfg[13] = (wakeupSources >> (8 * 1)) & 0xff;
+  payloadCfg[14] = (wakeupSources >> (8 * 2)) & 0xff;
+  payloadCfg[15] = (wakeupSources >> (8 * 3)) & 0xff;
 
   if (maxWait != 0)
   {
