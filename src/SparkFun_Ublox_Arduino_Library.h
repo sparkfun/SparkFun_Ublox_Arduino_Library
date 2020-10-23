@@ -49,6 +49,8 @@
 
 #include <Wire.h>
 
+#include "u-blox_config_keys.h"
+
 // Define Serial for SparkFun SAMD based boards.
 // Boards like the RedBoard Turbo use SerialUSB (not Serial).
 // But other boards like the SAMD51 Thing Plus use Serial (not SerialUSB).
@@ -341,43 +343,6 @@ const uint8_t COM_PORT_SPI = 4;
 const uint8_t COM_TYPE_UBX = (1 << 0);
 const uint8_t COM_TYPE_NMEA = (1 << 1);
 const uint8_t COM_TYPE_RTCM3 = (1 << 5);
-
-//The following consts are used to generate KEY values for the advanced protocol functions of VELGET/SET/DEL
-const uint8_t VAL_SIZE_1 = 0x01;  //One bit
-const uint8_t VAL_SIZE_8 = 0x02;  //One byte
-const uint8_t VAL_SIZE_16 = 0x03; //Two bytes
-const uint8_t VAL_SIZE_32 = 0x04; //Four bytes
-const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
-
-//These are the Bitfield layers definitions for the UBX-CFG-VALSET message (not to be confused with Bitfield deviceMask in UBX-CFG-CFG)
-const uint8_t VAL_LAYER_RAM = (1 << 0);
-const uint8_t VAL_LAYER_BBR = (1 << 1);
-const uint8_t VAL_LAYER_FLASH = (1 << 2);
-const uint8_t VAL_LAYER_ALL = VAL_LAYER_RAM | VAL_LAYER_BBR | VAL_LAYER_FLASH; //Not valid with getVal()
-
-//Below are various Groups, IDs, and sizes for various settings
-//These can be used to call getVal/setVal/delVal
-const uint8_t VAL_ID_PROT_UBX = 0x01;
-const uint8_t VAL_ID_PROT_NMEA = 0x02;
-const uint8_t VAL_ID_PROT_RTCM3 = 0x04;
-
-const uint8_t VAL_GROUP_I2COUTPROT = 0x72;
-const uint8_t VAL_GROUP_UART1INPROT = 0x73;
-const uint8_t VAL_GROUP_UART1OUTPROT = 0x74;
-const uint8_t VAL_GROUP_I2C = 0x51;
-
-const uint8_t VAL_GROUP_UART_SIZE = VAL_SIZE_1; //All fields in UART group are currently 1 bit
-const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_8;	//All fields in I2C group are currently 1 byte
-
-const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
-
-const uint32_t UBLOX_CFG_UART1INPROT_UBX = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1INPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_UBX << (8 * 0)); //0x10730001
-const uint32_t UBLOX_CFG_UART1INPROT_NMEA = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1INPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_NMEA << (8 * 0));
-const uint32_t UBLOX_CFG_UART1INPROT_RTCM3X = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1INPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_RTCM3 << (8 * 0));
-
-const uint32_t UBLOX_CFG_UART1OUTPROT_UBX = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1OUTPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_UBX << (8 * 0));
-const uint32_t UBLOX_CFG_UART1OUTPROT_NMEA = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1OUTPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_NMEA << (8 * 0));
-const uint32_t UBLOX_CFG_UART1OUTPROT_RTCM3X = ((VAL_GROUP_UART_SIZE << 4) << (8 * 3)) | (VAL_GROUP_UART1OUTPROT << (8 * 2)) | (0x00 << (8 * 1)) | (VAL_ID_PROT_RTCM3 << (8 * 0));
 
 // Configuration Sub-Section mask definitions for saveConfigSelective (UBX-CFG-CFG)
 const uint32_t VAL_CFG_SUBSEC_IOPORT = 0x00000001;	 // ioPort - communications port settings (causes IO system reset!)
