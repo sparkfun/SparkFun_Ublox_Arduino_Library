@@ -6,7 +6,7 @@
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to query a Ublox module for its UART1 settings and
+  This example shows how to query a u-blox module for its UART1 settings and
   then change them if the settings aren't what we want.
 
   Note: getVal/setVal/delVal are only support in u-blox protocol versions 27 and higher.
@@ -31,13 +31,13 @@ void setup()
   Serial.begin(115200);
   while (!Serial)
     ; //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
