@@ -15,7 +15,6 @@
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
   NEO-M8P RTK: https://www.sparkfun.com/products/15005
-  SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a BlackBoard
@@ -54,7 +53,7 @@ void setup()
   //myGPS.setStaticPosition(-128020831, -471680385, 408666581);
 
   //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
-  myGPS.setStaticPosition(-128020830, -80, -471680384, -70, 408666581, 10, true, 250); //With high precision 0.1mm parts
+  myGPS.setStaticPosition(-128020830, -80, -471680384, -70, 408666581, 10); //With high precision 0.1mm parts
 
   //We can also set via lat/long
   //40.09029751,-105.18507900,1560.238
