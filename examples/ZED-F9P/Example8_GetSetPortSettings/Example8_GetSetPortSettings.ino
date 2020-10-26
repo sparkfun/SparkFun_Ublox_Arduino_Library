@@ -14,8 +14,6 @@
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
-  NEO-M8P RTK: https://www.sparkfun.com/products/15005
-  SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a RedBoard
