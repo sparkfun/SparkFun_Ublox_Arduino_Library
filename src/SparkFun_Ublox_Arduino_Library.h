@@ -1,5 +1,5 @@
 /*
-	This is a library written for the Ublox ZED-F9P and NEO-M8P-2
+	This is a library written for the u-blox ZED-F9P and NEO-M8P-2
 	SparkFun sells these at its website: www.sparkfun.com
 	Do you like this library? Help support SparkFun. Buy a board!
 	https://www.sparkfun.com/products/16481
@@ -12,7 +12,7 @@
 	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
 
 	This library handles configuring and handling the responses
-	from a Ublox GPS module. Works with most modules from Ublox including
+	from a u-blox GPS module. Works with most modules from u-blox including
 	the Zed-F9P, NEO-M8P-2, NEO-M9N, ZOE-M8Q, SAM-M8Q, and many others.
 
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
@@ -157,9 +157,9 @@ const uint8_t UBX_CFG_SBAS = 0x16;		//SBAS configuration
 const uint8_t UBX_CFG_TMODE3 = 0x71;	//Time Mode Settings 3. Used to enable Survey In Mode
 const uint8_t UBX_CFG_TP5 = 0x31;		//Time Pulse Parameters
 const uint8_t UBX_CFG_USB = 0x1B;		//USB Configuration
-const uint8_t UBX_CFG_VALDEL = 0x8C;	//Used for config of higher version Ublox modules (ie protocol v27 and above). Deletes values corresponding to provided keys/ provided keys with a transaction
-const uint8_t UBX_CFG_VALGET = 0x8B;	//Used for config of higher version Ublox modules (ie protocol v27 and above). Configuration Items
-const uint8_t UBX_CFG_VALSET = 0x8A;	//Used for config of higher version Ublox modules (ie protocol v27 and above). Sets values corresponding to provided key-value pairs/ provided key-value pairs within a transaction.
+const uint8_t UBX_CFG_VALDEL = 0x8C;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Deletes values corresponding to provided keys/ provided keys with a transaction
+const uint8_t UBX_CFG_VALGET = 0x8B;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Configuration Items
+const uint8_t UBX_CFG_VALSET = 0x8A;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Sets values corresponding to provided key-value pairs/ provided key-value pairs within a transaction.
 
 //The following are used to enable NMEA messages. Descriptions come from the NMEA messages overview in the ZED-F9P Interface Description
 const uint8_t UBX_NMEA_MSB = 0xF0;	//All NMEA enable commands have 0xF0 as MSB
@@ -471,8 +471,8 @@ public:
 	void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration and perform hardReset)
 	void hardReset();	 //Perform a reset leading to a cold start (zero info start-up)
 
-	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250);										 //Changes the I2C address of the Ublox module
-	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = defaultMaxWait); //Changes the serial baud rate of the Ublox module, uartPort should be COM_PORT_UART1/2
+	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250);										 //Changes the I2C address of the u-blox module
+	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = defaultMaxWait); //Changes the serial baud rate of the u-blox module, uartPort should be COM_PORT_UART1/2
 	void setNMEAOutputPort(Stream &nmeaOutputPort);																 //Sets the internal variable for the port to direct NMEA characters to
 
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = defaultMaxWait);	 //Set the number of nav solutions sent per second
