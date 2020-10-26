@@ -39,6 +39,9 @@
 	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#ifndef __u_blox_config_keys_h__
+#define __u_blox_config_keys_h__
+
 //The following consts are used to generate KEY values for the advanced protocol functions of VELGET/SET/DEL
 const uint8_t VAL_SIZE_1 = 0x01;  //One bit
 const uint8_t VAL_SIZE_8 = 0x02;  //One byte
@@ -541,3 +544,4 @@ const uint32_t UBLOX_CFG_USBOUTPROT_RTCM3X = ((VAL_GROUP_UART_SIZE << 4) << (8 *
 #define CFG_MSGOUT_UBX_TIM_VRFY_UART2 0x20910094	   // Output rate of the UBX-TIM-VRFY message on port UART2
 #define CFG_MSGOUT_UBX_TIM_VRFY_USB 0x20910095		   // Output rate of the UBX-TIM-VRFY message on port USB
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#endif
