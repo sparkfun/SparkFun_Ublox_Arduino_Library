@@ -641,6 +641,12 @@ public:
 	sfe_ublox_status_e getSensState(uint8_t sensor, uint16_t maxWait = 1100);
 	boolean getVehAtt(uint16_t maxWait = 1100);
 
+	// Given coordinates, put receiver into static position. Set latlong to true to pass in lat/long values instead of ecef.
+	// For ECEF the units are: cm, 0.1mm, cm, 0.1mm, cm, 0.1mm
+	// For Lat/Lon/Alt the units are: degrees^-7, degrees^-9, degrees^-7, degrees^-9, cm, 0.1mm
+	bool setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong = false, uint16_t maxWait = 250);
+	bool setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latLong = false, uint16_t maxWait = 250);
+
 	//Survey-in specific controls
 	struct svinStructure
 	{

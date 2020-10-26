@@ -3533,3 +3533,62 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
 
   return (true);
 }
+
+//Set the ECEF or Lat/Long coordinates of a receiver
+//This imediately puts the receiver in TIME mode (fixed) and will begin outputting RTCM sentences if enabled
+//This is helpful once an antenna's position has been established. See this tutorial: https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data
+// For ECEF the units are: cm, 0.1mm, cm, 0.1mm, cm, 0.1mm
+// For Lat/Lon/Alt the units are: degrees^-7, degrees^-9, degrees^-7, degrees^-9, cm, 0.1mm
+bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_TMODE3;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current TimeMode3 settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (false);
+
+  packetCfg.len = 40;
+
+  //Clear packet payload
+  for (uint8_t x = 0; x < packetCfg.len; x++)
+    payloadCfg[x] = 0;
+
+  //customCfg should be loaded with poll response. Now modify only the bits we care about
+  payloadCfg[2] = 2; //Set mode to fixed. Use ECEF (not LAT/LON/ALT).
+
+  if (latLong == true)
+    payloadCfg[3] = (uint8_t)(1 << 0); //Set mode to fixed. Use LAT/LON/ALT.
+
+  //Set ECEF X or Lat
+  payloadCfg[4] = (ecefXOrLat >> 8 * 0) & 0xFF; //LSB
+  payloadCfg[5] = (ecefXOrLat >> 8 * 1) & 0xFF;
+  payloadCfg[6] = (ecefXOrLat >> 8 * 2) & 0xFF;
+  payloadCfg[7] = (ecefXOrLat >> 8 * 3) & 0xFF; //MSB
+
+  //Set ECEF Y or Long
+  payloadCfg[8] = (ecefYOrLon >> 8 * 0) & 0xFF; //LSB
+  payloadCfg[9] = (ecefYOrLon >> 8 * 1) & 0xFF;
+  payloadCfg[10] = (ecefYOrLon >> 8 * 2) & 0xFF;
+  payloadCfg[11] = (ecefYOrLon >> 8 * 3) & 0xFF; //MSB
+
+  //Set ECEF Z or Altitude
+  payloadCfg[12] = (ecefZOrAlt >> 8 * 0) & 0xFF; //LSB
+  payloadCfg[13] = (ecefZOrAlt >> 8 * 1) & 0xFF;
+  payloadCfg[14] = (ecefZOrAlt >> 8 * 2) & 0xFF;
+  payloadCfg[15] = (ecefZOrAlt >> 8 * 3) & 0xFF; //MSB
+
+  //Set high precision parts
+  payloadCfg[16] = ecefXOrLatHP;
+  payloadCfg[17] = ecefYOrLonHP;
+  payloadCfg[18] = ecefZOrAltHP;
+
+  return ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
+bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latlong, uint16_t maxWait)
+{
+  return (setStaticPosition(ecefXOrLat, 0, ecefYOrLon, 0, ecefZOrAlt, 0, latlong, maxWait));
+}

@@ -159,6 +159,7 @@ getVehAtt	KEYWORD2
 setI2CTransactionSize	KEYWORD2
 getI2CTransactionSize	KEYWORD2
 
+setStaticPosition   KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
