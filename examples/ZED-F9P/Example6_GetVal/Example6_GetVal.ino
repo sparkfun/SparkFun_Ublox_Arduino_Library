@@ -49,8 +49,6 @@ void setup()
   myGPS.enableDebugging(); //Enable debug messages over Serial (default)
   //myGPS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
 
-#define UBLOX_CFG_I2C_ADDRESS 0x20510001
-
   uint8_t currentI2Caddress = myGPS.getVal8(UBLOX_CFG_I2C_ADDRESS);
   Serial.print("Current I2C address (should be 0x42): 0x");
   Serial.println(currentI2Caddress >> 1, HEX); //Ublox module returns a shifted 8-bit address. Make it 7-bit unshifted.
