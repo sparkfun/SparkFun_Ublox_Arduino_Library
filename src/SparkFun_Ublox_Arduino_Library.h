@@ -1,7 +1,8 @@
 /*
-	This is a library written for the Ublox ZED-F9P and NEO-M8P-2
+	This is a library written for the u-blox ZED-F9P and NEO-M8P-2
 	SparkFun sells these at its website: www.sparkfun.com
 	Do you like this library? Help support SparkFun. Buy a board!
+	https://www.sparkfun.com/products/16481
 	https://www.sparkfun.com/products/15136
 	https://www.sparkfun.com/products/15005
 	https://www.sparkfun.com/products/15733
@@ -11,7 +12,7 @@
 	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
 
 	This library handles configuring and handling the responses
-	from a Ublox GPS module. Works with most modules from Ublox including
+	from a u-blox GPS module. Works with most modules from u-blox including
 	the Zed-F9P, NEO-M8P-2, NEO-M9N, ZOE-M8Q, SAM-M8Q, and many others.
 
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
@@ -48,6 +49,8 @@
 #endif
 
 #include <Wire.h>
+
+#include "u-blox_config_keys.h"
 
 // Define Serial for SparkFun SAMD based boards.
 // Boards like the RedBoard Turbo use SerialUSB (not Serial).
@@ -154,9 +157,9 @@ const uint8_t UBX_CFG_SBAS = 0x16;		//SBAS configuration
 const uint8_t UBX_CFG_TMODE3 = 0x71;	//Time Mode Settings 3. Used to enable Survey In Mode
 const uint8_t UBX_CFG_TP5 = 0x31;		//Time Pulse Parameters
 const uint8_t UBX_CFG_USB = 0x1B;		//USB Configuration
-const uint8_t UBX_CFG_VALDEL = 0x8C;	//Used for config of higher version Ublox modules (ie protocol v27 and above). Deletes values corresponding to provided keys/ provided keys with a transaction
-const uint8_t UBX_CFG_VALGET = 0x8B;	//Used for config of higher version Ublox modules (ie protocol v27 and above). Configuration Items
-const uint8_t UBX_CFG_VALSET = 0x8A;	//Used for config of higher version Ublox modules (ie protocol v27 and above). Sets values corresponding to provided key-value pairs/ provided key-value pairs within a transaction.
+const uint8_t UBX_CFG_VALDEL = 0x8C;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Deletes values corresponding to provided keys/ provided keys with a transaction
+const uint8_t UBX_CFG_VALGET = 0x8B;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Configuration Items
+const uint8_t UBX_CFG_VALSET = 0x8A;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Sets values corresponding to provided key-value pairs/ provided key-value pairs within a transaction.
 
 //The following are used to enable NMEA messages. Descriptions come from the NMEA messages overview in the ZED-F9P Interface Description
 const uint8_t UBX_NMEA_MSB = 0xF0;	//All NMEA enable commands have 0xF0 as MSB
@@ -342,32 +345,6 @@ const uint8_t COM_TYPE_UBX = (1 << 0);
 const uint8_t COM_TYPE_NMEA = (1 << 1);
 const uint8_t COM_TYPE_RTCM3 = (1 << 5);
 
-//The following consts are used to generate KEY values for the advanced protocol functions of VELGET/SET/DEL
-const uint8_t VAL_SIZE_1 = 0x01;  //One bit
-const uint8_t VAL_SIZE_8 = 0x02;  //One byte
-const uint8_t VAL_SIZE_16 = 0x03; //Two bytes
-const uint8_t VAL_SIZE_32 = 0x04; //Four bytes
-const uint8_t VAL_SIZE_64 = 0x05; //Eight bytes
-
-//These are the Bitfield layers definitions for the UBX-CFG-VALSET message (not to be confused with Bitfield deviceMask in UBX-CFG-CFG)
-const uint8_t VAL_LAYER_RAM = (1 << 0);
-const uint8_t VAL_LAYER_BBR = (1 << 1);
-const uint8_t VAL_LAYER_FLASH = (1 << 2);
-
-//Below are various Groups, IDs, and sizes for various settings
-//These can be used to call getVal/setVal/delVal
-const uint8_t VAL_GROUP_I2COUTPROT = 0x72;
-const uint8_t VAL_GROUP_I2COUTPROT_SIZE = VAL_SIZE_1; //All fields in I2C group are currently 1 bit
-
-const uint8_t VAL_ID_I2COUTPROT_UBX = 0x01;
-const uint8_t VAL_ID_I2COUTPROT_NMEA = 0x02;
-const uint8_t VAL_ID_I2COUTPROT_RTCM3 = 0x03;
-
-const uint8_t VAL_GROUP_I2C = 0x51;
-const uint8_t VAL_GROUP_I2C_SIZE = VAL_SIZE_8; //All fields in I2C group are currently 1 byte
-
-const uint8_t VAL_ID_I2C_ADDRESS = 0x01;
-
 // Configuration Sub-Section mask definitions for saveConfigSelective (UBX-CFG-CFG)
 const uint32_t VAL_CFG_SUBSEC_IOPORT = 0x00000001;	 // ioPort - communications port settings (causes IO system reset!)
 const uint32_t VAL_CFG_SUBSEC_MSGCONF = 0x00000002;	 // msgConf - message configuration
@@ -461,7 +438,7 @@ public:
 	//Control the size of the internal I2C transaction amount
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);
-	
+
 	//Set the max number of bytes set in a given I2C transaction
 	uint8_t i2cTransactionSize = 32; //Default to ATmega328 limit
 
@@ -494,8 +471,8 @@ public:
 	void factoryReset(); //Send factory reset sequence (i.e. load "default" configuration and perform hardReset)
 	void hardReset();	 //Perform a reset leading to a cold start (zero info start-up)
 
-	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250);										 //Changes the I2C address of the Ublox module
-	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = defaultMaxWait); //Changes the serial baud rate of the Ublox module, uartPort should be COM_PORT_UART1/2
+	boolean setI2CAddress(uint8_t deviceAddress, uint16_t maxTime = 250);										 //Changes the I2C address of the u-blox module
+	void setSerialRate(uint32_t baudrate, uint8_t uartPort = COM_PORT_UART1, uint16_t maxTime = defaultMaxWait); //Changes the serial baud rate of the u-blox module, uartPort should be COM_PORT_UART1/2
 	void setNMEAOutputPort(Stream &nmeaOutputPort);																 //Sets the internal variable for the port to direct NMEA characters to
 
 	boolean setNavigationFrequency(uint8_t navFreq, uint16_t maxWait = defaultMaxWait);	 //Set the number of nav solutions sent per second
@@ -517,10 +494,14 @@ public:
 
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true);							//In case no config access to the GPS is possible and PVT is send cyclically already
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = defaultMaxWait);							//Enable/disable automatic PVT reports at the navigation frequency
-	boolean getPVT(uint16_t maxWait = getPVTmaxWait);												//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+	boolean getPVT(uint16_t maxWait = getPVTmaxWait);												//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-	boolean getHPPOSLLH(uint16_t maxWait = getHPPOSLLHmaxWait);										//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Retruns true if new PVT is available.
+	boolean assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdate = true);							//In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
+	boolean setAutoHPPOSLLH(boolean enabled, uint16_t maxWait = defaultMaxWait);							//Enable/disable automatic HPPOSLLH reports at the navigation frequency
+	boolean setAutoHPPOSLLH(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean getHPPOSLLH(uint16_t maxWait = getHPPOSLLHmaxWait);										//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new HPPOSLLH is available.
 	void flushPVT();																				//Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
+	void flushHPPOSLLH();																				//Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
 
 	int32_t getLatitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
@@ -579,21 +560,28 @@ public:
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 	//It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.
 	//If they are using Serial then the higher baud rate will also help. So let's leave maxWait set to 250ms.
-	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
-	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);							   //Returns the value at a given group/id/size location
-	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);			   //Sets the 16-bit value at a given group/id/size location
-	uint8_t setVal8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);			   //Sets the 8-bit value at a given group/id/size location
-	uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);		   //Sets the 16-bit value at a given group/id/size location
-	uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_BBR, uint16_t maxWait = 250);		   //Sets the 32-bit value at a given group/id/size location
-	uint8_t newCfgValset8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_BBR);							   //Define a new UBX-CFG-VALSET with the given KeyID and 8-bit value
-	uint8_t newCfgValset16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR);							   //Define a new UBX-CFG-VALSET with the given KeyID and 16-bit value
-	uint8_t newCfgValset32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_BBR);							   //Define a new UBX-CFG-VALSET with the given KeyID and 32-bit value
-	uint8_t addCfgValset8(uint32_t keyID, uint8_t value);															   //Add a new KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket
-	uint8_t addCfgValset16(uint32_t keyID, uint16_t value);															   //Add a new KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket
-	uint8_t addCfgValset32(uint32_t keyID, uint32_t value);															   //Add a new KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket
-	uint8_t sendCfgValset8(uint32_t keyID, uint8_t value, uint16_t maxWait = 250);									   //Add the final KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
-	uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = 250);								   //Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
-	uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = 250);								   //Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+	uint32_t createKey(uint16_t group, uint16_t id, uint8_t size); //Form 32-bit key from group/id/size
+
+	sfe_ublox_status_e getVal(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);					 //Load payload with response
+	uint8_t getVal8(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);								 //Returns the value at a given key location
+	uint16_t getVal16(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);							 //Returns the value at a given key location
+	uint32_t getVal32(uint32_t keyID, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);							 //Returns the value at a given key location
+	uint8_t getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250);	 //Returns the value at a given group/id/size location
+	uint16_t getVal16(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
+	uint32_t getVal32(uint16_t group, uint16_t id, uint8_t size, uint8_t layer = VAL_LAYER_RAM, uint16_t maxWait = 250); //Returns the value at a given group/id/size location
+	uint8_t setVal(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);				 //Sets the 16-bit value at a given group/id/size location
+	uint8_t setVal8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);				 //Sets the 8-bit value at a given group/id/size location
+	uint8_t setVal16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);			 //Sets the 16-bit value at a given group/id/size location
+	uint8_t setVal32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_ALL, uint16_t maxWait = 250);			 //Sets the 32-bit value at a given group/id/size location
+	uint8_t newCfgValset8(uint32_t keyID, uint8_t value, uint8_t layer = VAL_LAYER_BBR);								 //Define a new UBX-CFG-VALSET with the given KeyID and 8-bit value
+	uint8_t newCfgValset16(uint32_t keyID, uint16_t value, uint8_t layer = VAL_LAYER_BBR);								 //Define a new UBX-CFG-VALSET with the given KeyID and 16-bit value
+	uint8_t newCfgValset32(uint32_t keyID, uint32_t value, uint8_t layer = VAL_LAYER_BBR);								 //Define a new UBX-CFG-VALSET with the given KeyID and 32-bit value
+	uint8_t addCfgValset8(uint32_t keyID, uint8_t value);																 //Add a new KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket
+	uint8_t addCfgValset16(uint32_t keyID, uint16_t value);																 //Add a new KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket
+	uint8_t addCfgValset32(uint32_t keyID, uint32_t value);																 //Add a new KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket
+	uint8_t sendCfgValset8(uint32_t keyID, uint8_t value, uint16_t maxWait = 250);										 //Add the final KeyID and 8-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+	uint8_t sendCfgValset16(uint32_t keyID, uint16_t value, uint16_t maxWait = 250);									 //Add the final KeyID and 16-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
+	uint8_t sendCfgValset32(uint32_t keyID, uint32_t value, uint16_t maxWait = 250);									 //Add the final KeyID and 32-bit value to an existing UBX-CFG-VALSET ubxPacket and send it
 
 	//Functions used for RTK and base station setup
 	//It is probably safe to assume that users of the RTK will be using I2C / Qwiic. So let's leave maxWait set to 250ms.
@@ -640,6 +628,12 @@ public:
 	boolean getEsfRawDataInfo(uint16_t maxWait = 1100);
 	sfe_ublox_status_e getSensState(uint8_t sensor, uint16_t maxWait = 1100);
 	boolean getVehAtt(uint16_t maxWait = 1100);
+
+	// Given coordinates, put receiver into static position. Set latlong to true to pass in lat/long values instead of ecef.
+	// For ECEF the units are: cm, 0.1mm, cm, 0.1mm, cm, 0.1mm
+	// For Lat/Lon/Alt the units are: degrees^-7, degrees^-9, degrees^-7, degrees^-9, cm, 0.1mm
+	bool setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong = false, uint16_t maxWait = 250);
+	bool setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latLong = false, uint16_t maxWait = 250);
 
 	//Survey-in specific controls
 	struct svinStructure
@@ -853,6 +847,8 @@ private:
 	unsigned long lastCheck = 0;
 	boolean autoPVT = false;			  //Whether autoPVT is enabled or not
 	boolean autoPVTImplicitUpdate = true; // Whether autoPVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+	boolean autoHPPOSLLH = false;			  //Whether autoHPPOSLLH is enabled or not
+	boolean autoHPPOSLLHImplicitUpdate = true; // Whether autoHPPOSLLH is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
 	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes

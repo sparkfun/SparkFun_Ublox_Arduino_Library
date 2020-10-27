@@ -1,12 +1,12 @@
 /*
-  Send UBX binary commands to enable RTCM sentences on Ublox ZED-F9P module
+  Get a device's I2C address using advanced getVal method
   By: Nathan Seidle
   SparkFun Electronics
   Date: January 9th, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  Ublox changed how to configure their modules in 2019. As of version 23 of the UBX protocol the
+  u-blox changed how to configure their modules in 2019. As of version 23 of the UBX protocol the
   UBX-CFG commands are deprecated; they still work, they just recommend using VALSET, VALGET, and VALDEL
   commands instead. This example shows how to use this new command structure.
 
@@ -32,27 +32,29 @@ long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox m
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial); //Wait for user to open terminal
-  Serial.println("Ublox getVal example");
+  while (!Serial)
+    ; //Wait for user to open terminal
+  Serial.println("u-blox getVal example");
 
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    while (1)
+      ;
   }
 
   myGPS.enableDebugging(); //Enable debug messages over Serial (default)
   //myGPS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
 
-  uint8_t currentI2Caddress = myGPS.getVal8(0x20510001);
+  uint8_t currentI2Caddress = myGPS.getVal8(UBLOX_CFG_I2C_ADDRESS);
   Serial.print("Current I2C address (should be 0x42): 0x");
   Serial.println(currentI2Caddress >> 1, HEX); //Ublox module returns a shifted 8-bit address. Make it 7-bit unshifted.
 
-  while(1);
-
+  while (1)
+    ;
 }
 
 void loop()

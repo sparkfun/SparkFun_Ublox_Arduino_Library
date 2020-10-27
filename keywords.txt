@@ -64,7 +64,10 @@ setUART2Output	KEYWORD2
 setUSBOutput	KEYWORD2
 setSPIOutput	KEYWORD2
 
+getVal	KEYWORD2
 getVal8	KEYWORD2
+getVal16	KEYWORD2
+getVal32	KEYWORD2
 setVal	KEYWORD2
 setVal8	KEYWORD2
 setVal16	KEYWORD2
@@ -118,6 +121,10 @@ getDateValid	KEYWORD2
 getTimeValid	KEYWORD2
 
 getHPPOSLLH	KEYWORD2
+assumeAutoHPPOSLLH	KEYWORD2
+setAutoHPPOSLLH	KEYWORD2
+flushHPPOSLLH	KEYWORD2
+
 getTimeOfWeek	KEYWORD2
 getHighResLatitude	KEYWORD2
 getHighResLatitudeHp	KEYWORD2
@@ -159,6 +166,7 @@ getVehAtt	KEYWORD2
 setI2CTransactionSize	KEYWORD2
 getI2CTransactionSize	KEYWORD2
 
+setStaticPosition   KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
