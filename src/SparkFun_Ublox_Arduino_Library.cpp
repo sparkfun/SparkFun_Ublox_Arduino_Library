@@ -550,6 +550,25 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           incomingUBX->id = packetBuf.id;
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
         }
+        //This is not an ACK and we do not have a complete class and ID match
+        //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
+        else if ((packetBuf.cls == requestedClass) &&
+          (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
+          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+        {
+          //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
+          activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
+          incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
+          incomingUBX->id = packetBuf.id;
+          incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("process: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+            _debugSerial->print(requestedID, HEX);
+            _debugSerial->print(F(" Message ID: 0x"));
+            _debugSerial->println(packetBuf.id, HEX);
+          }
+        }
         else
         {
           //This is not an ACK and we do not have a class and ID match
@@ -803,6 +822,23 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         }
       }
 
+      //This is not an ACK and we do not have a complete class and ID match
+      //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
+      else if ((incomingUBX->cls == requestedClass) &&
+        (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
+        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+      {
+        // This isn't the message we are looking for...
+        // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
+        if (_printDebug == true)
+        {
+          _debugSerial->print(F("processUBX: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+          _debugSerial->print(requestedID, HEX);
+          _debugSerial->print(F(" Message ID: 0x"));
+          _debugSerial->println(incomingUBX->id, HEX);
+        }
+      }
+
       if (_printDebug == true)
       {
         _debugSerial->print(F("Incoming: Size: "));
@@ -1006,6 +1042,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       highResModuleQueried.verticalAccuracy = true;
       moduleQueried.gpsiTOW = true; // this can arrive via HPPOS too.
 
+/*
       if (_printDebug == true)
       {
         _debugSerial->print(F("Sec: "));
@@ -1041,6 +1078,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         _debugSerial->print(F("VERT M: "));
         _debugSerial->println(((float)(int32_t)extractLong(32)) / 10000.0f);
       }
+*/
     }
     break;
   }
@@ -1375,7 +1413,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       // If (e.g.) a PVT packet _has been_ received: outgoingUBX->valid will be VALID (or just possibly NOT_VALID)
       // So we cannot use outgoingUBX->valid as part of this check.
       // Note: the addition of packetBuf should make this check redundant!
-      else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID) && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID) && !((outgoingUBX->cls != requestedClass) || (outgoingUBX->id != requestedID)))
+      else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID) && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID) && ((outgoingUBX->cls != requestedClass) || (outgoingUBX->id != requestedID)))
       {
         if (_printDebug == true)
         {
@@ -1527,7 +1565,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
       // If (e.g.) a PVT packet _has been_ received: outgoingUBX->valid will be VALID (or just possibly NOT_VALID)
       // So we cannot use outgoingUBX->valid as part of this check.
       // Note: the addition of packetBuf should make this check redundant!
-      else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID) && !((outgoingUBX->cls != requestedClass) || (outgoingUBX->id != requestedID)))
+      else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID) && ((outgoingUBX->cls != requestedClass) || (outgoingUBX->id != requestedID)))
       {
         if (_printDebug == true)
         {
@@ -1542,15 +1580,15 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
       // and outgoingUBX->valid is VALID then this must be (e.g.) a PVT packet
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED) && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID))
       {
-        if (_printDebug == true)
-        {
-          _debugSerial->print(F("waitForNoACKResponse: valid but UNWANTED data after "));
-          _debugSerial->print(millis() - startTime);
-          _debugSerial->print(F(" msec. Class: "));
-          _debugSerial->print(outgoingUBX->cls);
-          _debugSerial->print(F(" ID: "));
-          _debugSerial->print(outgoingUBX->id);
-        }
+        // if (_printDebug == true)
+        // {
+        //   _debugSerial->print(F("waitForNoACKResponse: valid but UNWANTED data after "));
+        //   _debugSerial->print(millis() - startTime);
+        //   _debugSerial->print(F(" msec. Class: "));
+        //   _debugSerial->print(outgoingUBX->cls);
+        //   _debugSerial->print(F(" ID: "));
+        //   _debugSerial->print(outgoingUBX->id);
+        // }
       }
 
       // If the outgoingUBX->classAndIDmatch is NOT_VALID then we return CRC failure
@@ -2323,6 +2361,48 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   return ok;
 }
 
+//In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoHPPOSLLH != enabled || autoHPPOSLLHImplicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    autoHPPOSLLH = enabled;
+    autoHPPOSLLHImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSLLH
+//works.
+boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, uint16_t maxWait)
+{
+  return setAutoHPPOSLLH(enable, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSLLH
+//works.
+boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_HPPOSLLH;
+  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+  boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    autoHPPOSLLH = enable;
+    autoHPPOSLLHImplicitUpdate = implicitUpdate;
+  }
+  highResModuleQueried.all = false;
+  return ok;
+}
+
 //Configure a given message type for a given port (UART1, I2C, SPI, etc)
 boolean SFE_UBLOX_GPS::configureMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t sendRate, uint16_t maxWait)
 {
@@ -2965,6 +3045,15 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
       return (true);
 
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_HPPOSLLH))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by HPPOSLLH (but that's OK)"));
+      }
+      return (true);
+    }
+
     if (_printDebug == true)
     {
       _debugSerial->print(F("getPVT retVal: "));
@@ -2987,6 +3076,8 @@ int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLatitude == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLatitude = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLatitude);
 }
 
@@ -2995,6 +3086,8 @@ int8_t SFE_UBLOX_GPS::getHighResLatitudeHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLatitudeHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLatitudeHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLatitudeHp);
 }
 
@@ -3003,6 +3096,8 @@ int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLongitude == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLongitude);
 }
 
@@ -3011,6 +3106,8 @@ int8_t SFE_UBLOX_GPS::getHighResLongitudeHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLongitudeHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLongitudeHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLongitudeHp);
 }
 
@@ -3019,6 +3116,8 @@ int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.elipsoid == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.elipsoid = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (elipsoid);
 }
 
@@ -3027,6 +3126,8 @@ int8_t SFE_UBLOX_GPS::getElipsoidHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.elipsoidHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.elipsoidHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (elipsoidHp);
 }
 
@@ -3035,6 +3136,8 @@ int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.meanSeaLevel == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.meanSeaLevel = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (meanSeaLevel);
 }
 
@@ -3043,6 +3146,8 @@ int8_t SFE_UBLOX_GPS::getMeanSeaLevelHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.meanSeaLevelHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.meanSeaLevelHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (meanSeaLevelHp);
 }
 
@@ -3052,6 +3157,8 @@ int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.geoidSeparation == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.geoidSeparation = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (geoidSeparation);
 }
 
@@ -3060,6 +3167,8 @@ uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.horizontalAccuracy == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.horizontalAccuracy = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (horizontalAccuracy);
 }
 
@@ -3068,17 +3177,66 @@ uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.verticalAccuracy == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.verticalAccuracy = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (verticalAccuracy);
 }
 
 boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
 {
-  //The GPS is not automatically reporting navigation position so we have to poll explicitly
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_HPPOSLLH;
-  packetCfg.len = 0;
+  if (autoHPPOSLLH && autoHPPOSLLHImplicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHPPOSLLH: Autoreporting"));
+    }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_HPPOSLLH);
+    return highResModuleQueried.all;
+  }
+  else if (autoHPPOSLLH && !autoHPPOSLLHImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHPPOSLLH: Exit immediately"));
+    }
+    return (false);
+  }
+  else
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHPPOSLLH: Polling"));
+    }
 
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are only expecting data (no ACK)
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_HPPOSLLH;
+    packetCfg.len = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_PVT))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by PVT (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("getHPPOSLLH retVal: "));
+      _debugSerial->println(statusString(retVal));
+    }
+    return (false);
+  }
 }
 
 //Get the current 3D high precision positional accuracy - a fun thing to watch
@@ -3317,6 +3475,25 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.groundSpeed = false;
   moduleQueried.headingOfMotion = false;
   moduleQueried.pDOP = false;
+}
+
+//Mark all the HPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GPS::flushHPPOSLLH()
+{
+  //Mark all datums as stale (read before)
+  highResModuleQueried.all = false;
+  highResModuleQueried.highResLatitude = false;
+  highResModuleQueried.highResLatitudeHp = false;
+  highResModuleQueried.highResLongitude = false;
+  highResModuleQueried.highResLongitudeHp = false;
+  highResModuleQueried.elipsoid = false;
+  highResModuleQueried.elipsoidHp = false;
+  highResModuleQueried.meanSeaLevel = false;
+  highResModuleQueried.meanSeaLevelHp = false;
+  highResModuleQueried.geoidSeparation = false;
+  highResModuleQueried.horizontalAccuracy = false;
+  highResModuleQueried.verticalAccuracy = false;
+  //moduleQueried.gpsiTOW = false; // this can arrive via HPPOS too.
 }
 
 //Relative Positioning Information in NED frame
