@@ -3013,6 +3013,15 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
       return (true);
 
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_HPPOSLLH))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by HPPOSLLH (but that's OK)"));
+      }
+      return (true);
+    }
+
     if (_printDebug == true)
     {
       _debugSerial->print(F("getPVT retVal: "));
@@ -3179,6 +3188,15 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
       return (true);
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_PVT))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by PVT (but that's OK)"));
+      }
+      return (true);
+    }
 
     if (_printDebug == true)
     {
