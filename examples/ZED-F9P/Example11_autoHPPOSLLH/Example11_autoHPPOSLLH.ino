@@ -67,83 +67,52 @@ void setup()
   //myGPS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
   //myGPS.setAutoHPPOSLLH(false); // Library will poll each reading
 
-  // This combination causes the PVT data to be overwritten by HPPOSLLH.
-  // But that's OK. Both sets of readings are still extracted OK.
   //myGPS.setAutoPVT(false); // Library will poll each reading
   //myGPS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
   
   myGPS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
   myGPS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
-  
 }
 
 void loop()
 {
-  Serial.println();
-
-  // PVT first
+  // Calling getHPPOSLLH returns true if there actually is a fresh navigation solution available.
+  // Calling getPVT returns true if there actually is a fresh navigation solution available.
+  if ((myGPS.getHPPOSLLH()) || (myGPS.getPVT()))
+  {
+    Serial.println();
+      
+    long highResLatitude = myGPS.getHighResLatitude();
+    Serial.print(F("Hi Res Lat: "));
+    Serial.print(highResLatitude);
   
-  long latitude = myGPS.getLatitude();
-  Serial.print(F("Lat: "));
-  Serial.print(latitude);
-
-  long longitude = myGPS.getLongitude();
-  Serial.print(F(" Long: "));
-  Serial.print(longitude);
-
-  long highResLatitude = myGPS.getHighResLatitude();
-  Serial.print(F(" Hi Res Lat: "));
-  Serial.print(highResLatitude);
-
-  int highResLatitudeHp = myGPS.getHighResLatitudeHp();
-  Serial.print(F(" "));
-  Serial.print(highResLatitudeHp);
-
-  long highResLongitude = myGPS.getHighResLongitude();
-  Serial.print(F(" Hi Res Long: "));
-  Serial.print(highResLongitude);
-
-  int highResLongitudeHp = myGPS.getHighResLongitudeHp();
-  Serial.print(F(" "));
-  Serial.print(highResLongitudeHp);
-
-  unsigned long horizAccuracy = myGPS.getHorizontalAccuracy();
-  Serial.print(F(" Horiz accuracy: "));
-  Serial.println(horizAccuracy);
-
-  delay(750);
-
-  Serial.println();
-    
-  // HPPOSLLH first
+    int highResLatitudeHp = myGPS.getHighResLatitudeHp();
+    Serial.print(F(" "));
+    Serial.print(highResLatitudeHp);
   
-  highResLatitude = myGPS.getHighResLatitude();
-  Serial.print(F("Hi Res Lat: "));
-  Serial.print(highResLatitude);
-
-  highResLatitudeHp = myGPS.getHighResLatitudeHp();
-  Serial.print(F(" "));
-  Serial.print(highResLatitudeHp);
-
-  highResLongitude = myGPS.getHighResLongitude();
-  Serial.print(F(" Hi Res Long: "));
-  Serial.print(highResLongitude);
-
-  highResLongitudeHp = myGPS.getHighResLongitudeHp();
-  Serial.print(F(" "));
-  Serial.print(highResLongitudeHp);
-
-  horizAccuracy = myGPS.getHorizontalAccuracy();
-  Serial.print(F(" Horiz accuracy: "));
-  Serial.print(horizAccuracy);
-
-  latitude = myGPS.getLatitude();
-  Serial.print(F(" Lat: "));
-  Serial.print(latitude);
-
-  longitude = myGPS.getLongitude();
-  Serial.print(F(" Long: "));
-  Serial.println(longitude);
-
-  delay(750);
+    long highResLongitude = myGPS.getHighResLongitude();
+    Serial.print(F(" Hi Res Long: "));
+    Serial.print(highResLongitude);
+  
+    int highResLongitudeHp = myGPS.getHighResLongitudeHp();
+    Serial.print(F(" "));
+    Serial.print(highResLongitudeHp);
+  
+    unsigned long horizAccuracy = myGPS.getHorizontalAccuracy();
+    Serial.print(F(" Horiz accuracy: "));
+    Serial.print(horizAccuracy);
+  
+    long latitude = myGPS.getLatitude();
+    Serial.print(F(" Lat: "));
+    Serial.print(latitude);
+  
+    long longitude = myGPS.getLongitude();
+    Serial.print(F(" Long: "));
+    Serial.println(longitude);
+  }
+  else
+  {
+    Serial.print(".");
+    delay(50);
+  }
 }
