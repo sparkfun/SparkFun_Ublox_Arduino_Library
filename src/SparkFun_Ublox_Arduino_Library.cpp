@@ -549,6 +549,25 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           incomingUBX->id = packetBuf.id;
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
         }
+        //This is not an ACK and we do not have a complete class and ID match
+        //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
+        else if ((packetBuf.cls == requestedClass) &&
+          (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
+          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+        {
+          //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
+          activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
+          incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
+          incomingUBX->id = packetBuf.id;
+          incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("process: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+            _debugSerial->print(requestedID, HEX);
+            _debugSerial->print(F(" Message ID: 0x"));
+            _debugSerial->println(packetBuf.id, HEX);
+          }
+        }
         else
         {
           //This is not an ACK and we do not have a class and ID match
@@ -802,6 +821,23 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         }
       }
 
+      //This is not an ACK and we do not have a complete class and ID match
+      //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
+      else if ((incomingUBX->cls == requestedClass) &&
+        (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
+        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+      {
+        // This isn't the message we are looking for...
+        // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
+        if (_printDebug == true)
+        {
+          _debugSerial->print(F("processUBX: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+          _debugSerial->print(requestedID, HEX);
+          _debugSerial->print(F(" Message ID: 0x"));
+          _debugSerial->println(incomingUBX->id, HEX);
+        }
+      }
+
       if (_printDebug == true)
       {
         _debugSerial->print(F("Incoming: Size: "));
@@ -1005,6 +1041,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       highResModuleQueried.verticalAccuracy = true;
       moduleQueried.gpsiTOW = true; // this can arrive via HPPOS too.
 
+/*
       if (_printDebug == true)
       {
         _debugSerial->print(F("Sec: "));
@@ -1040,6 +1077,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         _debugSerial->print(F("VERT M: "));
         _debugSerial->println(((float)(int32_t)extractLong(32)) / 10000.0f);
       }
+*/
     }
     break;
   }
@@ -1541,15 +1579,15 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
       // and outgoingUBX->valid is VALID then this must be (e.g.) a PVT packet
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED) && (outgoingUBX->valid == SFE_UBLOX_PACKET_VALIDITY_VALID))
       {
-        if (_printDebug == true)
-        {
-          _debugSerial->print(F("waitForNoACKResponse: valid but UNWANTED data after "));
-          _debugSerial->print(millis() - startTime);
-          _debugSerial->print(F(" msec. Class: "));
-          _debugSerial->print(outgoingUBX->cls);
-          _debugSerial->print(F(" ID: "));
-          _debugSerial->print(outgoingUBX->id);
-        }
+        // if (_printDebug == true)
+        // {
+        //   _debugSerial->print(F("waitForNoACKResponse: valid but UNWANTED data after "));
+        //   _debugSerial->print(millis() - startTime);
+        //   _debugSerial->print(F(" msec. Class: "));
+        //   _debugSerial->print(outgoingUBX->cls);
+        //   _debugSerial->print(F(" ID: "));
+        //   _debugSerial->print(outgoingUBX->id);
+        // }
       }
 
       // If the outgoingUBX->classAndIDmatch is NOT_VALID then we return CRC failure
