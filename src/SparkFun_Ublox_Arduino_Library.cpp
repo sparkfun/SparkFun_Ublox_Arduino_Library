@@ -2291,6 +2291,48 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   return ok;
 }
 
+//In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoHPPOSLLH != enabled || autoHPPOSLLHImplicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    autoHPPOSLLH = enabled;
+    autoHPPOSLLHImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSLLH
+//works.
+boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, uint16_t maxWait)
+{
+  return setAutoHPPOSLLH(enable, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSLLH
+//works.
+boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_HPPOSLLH;
+  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+  boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    autoHPPOSLLH = enable;
+    autoHPPOSLLHImplicitUpdate = implicitUpdate;
+  }
+  highResModuleQueried.all = false;
+  return ok;
+}
+
 //Configure a given message type for a given port (UART1, I2C, SPI, etc)
 boolean SFE_UBLOX_GPS::configureMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t sendRate, uint16_t maxWait)
 {
@@ -2955,6 +2997,8 @@ int32_t SFE_UBLOX_GPS::getHighResLatitude(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLatitude == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLatitude = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLatitude);
 }
 
@@ -2963,6 +3007,8 @@ int8_t SFE_UBLOX_GPS::getHighResLatitudeHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLatitudeHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLatitudeHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLatitudeHp);
 }
 
@@ -2971,6 +3017,8 @@ int32_t SFE_UBLOX_GPS::getHighResLongitude(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLongitude == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLongitude = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLongitude);
 }
 
@@ -2979,6 +3027,8 @@ int8_t SFE_UBLOX_GPS::getHighResLongitudeHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.highResLongitudeHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.highResLongitudeHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (highResLongitudeHp);
 }
 
@@ -2987,6 +3037,8 @@ int32_t SFE_UBLOX_GPS::getElipsoid(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.elipsoid == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.elipsoid = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (elipsoid);
 }
 
@@ -2995,6 +3047,8 @@ int8_t SFE_UBLOX_GPS::getElipsoidHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.elipsoidHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.elipsoidHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (elipsoidHp);
 }
 
@@ -3003,6 +3057,8 @@ int32_t SFE_UBLOX_GPS::getMeanSeaLevel(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.meanSeaLevel == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.meanSeaLevel = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (meanSeaLevel);
 }
 
@@ -3011,6 +3067,8 @@ int8_t SFE_UBLOX_GPS::getMeanSeaLevelHp(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.meanSeaLevelHp == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.meanSeaLevelHp = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (meanSeaLevelHp);
 }
 
@@ -3020,6 +3078,8 @@ int32_t SFE_UBLOX_GPS::getGeoidSeparation(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.geoidSeparation == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.geoidSeparation = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (geoidSeparation);
 }
 
@@ -3028,6 +3088,8 @@ uint32_t SFE_UBLOX_GPS::getHorizontalAccuracy(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.horizontalAccuracy == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.horizontalAccuracy = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (horizontalAccuracy);
 }
 
@@ -3036,17 +3098,57 @@ uint32_t SFE_UBLOX_GPS::getVerticalAccuracy(uint16_t maxWait /* = 250*/)
   if (highResModuleQueried.verticalAccuracy == false)
     getHPPOSLLH(maxWait);
   highResModuleQueried.verticalAccuracy = false; //Since we are about to give this to user, mark this data as stale
+  highResModuleQueried.all = false;
+
   return (verticalAccuracy);
 }
 
 boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
 {
-  //The GPS is not automatically reporting navigation position so we have to poll explicitly
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_HPPOSLLH;
-  packetCfg.len = 0;
+  if (autoHPPOSLLH && autoHPPOSLLHImplicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHPPOSLLH: Autoreporting"));
+    }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_HPPOSLLH);
+    return highResModuleQueried.all;
+  }
+  else if (autoHPPOSLLH && !autoHPPOSLLHImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHPPOSLLH: Exit immediately"));
+    }
+    return (false);
+  }
+  else
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHPPOSLLH: Polling"));
+    }
 
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are only expecting data (no ACK)
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_HPPOSLLH;
+    packetCfg.len = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("getHPPOSLLH retVal: "));
+      _debugSerial->println(statusString(retVal));
+    }
+    return (false);
+  }
 }
 
 //Get the current 3D high precision positional accuracy - a fun thing to watch
@@ -3285,6 +3387,25 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.groundSpeed = false;
   moduleQueried.headingOfMotion = false;
   moduleQueried.pDOP = false;
+}
+
+//Mark all the HPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GPS::flushHPPOSLLH()
+{
+  //Mark all datums as stale (read before)
+  highResModuleQueried.all = false;
+  highResModuleQueried.highResLatitude = false;
+  highResModuleQueried.highResLatitudeHp = false;
+  highResModuleQueried.highResLongitude = false;
+  highResModuleQueried.highResLongitudeHp = false;
+  highResModuleQueried.elipsoid = false;
+  highResModuleQueried.elipsoidHp = false;
+  highResModuleQueried.meanSeaLevel = false;
+  highResModuleQueried.meanSeaLevelHp = false;
+  highResModuleQueried.geoidSeparation = false;
+  highResModuleQueried.horizontalAccuracy = false;
+  highResModuleQueried.verticalAccuracy = false;
+  //moduleQueried.gpsiTOW = false; // this can arrive via HPPOS too.
 }
 
 //Relative Positioning Information in NED frame
