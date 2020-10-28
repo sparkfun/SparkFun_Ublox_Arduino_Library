@@ -158,7 +158,103 @@ const uint32_t UBLOX_CFG_USBOUTPROT_UBX = 0x10780001;
 const uint32_t UBLOX_CFG_USBOUTPROT_NMEA = 0x10780002;
 const uint32_t UBLOX_CFG_USBOUTPROT_RTCM3X = 0x10780004;
 
+//CFG-BDS: BeiDou system configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_BDS_USE_PRN_1_TO_5 = 0x10340014; // Use BeiDou geostationary satellites (PRN 1-5)
+
+//CFG-GEOFENCE: Geofencing configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_GEOFENCE_CONFLVL = 0x20240011;	// Required confidence level for state evaluation
+const uint32_t CFG_GEOFENCE_USE_PIO = 0x10240012;	// Use PIO combined fence state output
+const uint32_t CFG_GEOFENCE_PINPOL = 0x20240013;	// PIO pin polarity
+const uint32_t CFG_GEOFENCE_PIN = 0x20240014;	// PIO pin number
+const uint32_t CFG_GEOFENCE_USE_FENCE1 = 0x10240020;	// Use frst geofence
+const uint32_t CFG_GEOFENCE_FENCE1_LAT = 0x40240021;	// Latitude of the first geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE1_LON = 0x40240022;	// Longitude of the first geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE1_RAD = 0x40240023;	// Radius of the first geofence circle
+const uint32_t CFG_GEOFENCE_USE_FENCE2 = 0x10240030;	// Use second geofence
+const uint32_t CFG_GEOFENCE_FENCE2_LAT = 0x40240031;	// Latitude of the second geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE2_LON = 0x40240032;	// Longitude of the second geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE2_RAD = 0x40240033;	// Radius of the second geofence circle
+const uint32_t CFG_GEOFENCE_USE_FENCE3 = 0x10240040;	// Use third geofence
+const uint32_t CFG_GEOFENCE_FENCE3_LAT = 0x40240041;	// Latitude of the third geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE3_LON = 0x40240042;	// Longitude of the third geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE3_RAD = 0x40240043;	// Radius of the third geofence circle
+const uint32_t CFG_GEOFENCE_USE_FENCE4 = 0x10240050;	// Use fourth geofence
+const uint32_t CFG_GEOFENCE_FENCE4_LAT = 0x40240051;	// Latitude of the fourth geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE4_LON = 0x40240052;	// Longitude of the fourth geofence circle center
+const uint32_t CFG_GEOFENCE_FENCE4_RAD = 0x40240053;	// Radius of the fourth geofence circle
+
+//CFG-HW: Hardware configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_HW_ANT_CFG_VOLTCTRL = 0x10a3002e;	// Active antenna voltage control flag
+const uint32_t CFG_HW_ANT_CFG_SHORTDET = 0x10a3002f;	// Short antenna detection flag
+const uint32_t CFG_HW_ANT_CFG_SHORTDET_POL = 0x10a30030;	// Short antenna detection polarity
+const uint32_t CFG_HW_ANT_CFG_OPENDET = 0x10a30031;	// Open antenna detection flag
+const uint32_t CFG_HW_ANT_CFG_OPENDET_POL = 0x10a30032;	// Open antenna detection polarity
+const uint32_t CFG_HW_ANT_CFG_PWRDOWN = 0x10a30033;	// Power down antenna flag
+const uint32_t CFG_HW_ANT_CFG_PWRDOWN_POL = 0x10a30034;	// Power down antenna logic polarity
+const uint32_t CFG_HW_ANT_CFG_RECOVER = 0x10a30035;	// Automatic recovery from short state flag
+const uint32_t CFG_HW_ANT_SUP_SWITCH_PIN = 0x20a30036;	// ANT1 PIO number
+const uint32_t CFG_HW_ANT_SUP_SHORT_PIN = 0x20a30037;	// ANT0 PIO number
+const uint32_t CFG_HW_ANT_SUP_OPEN_PIN = 0x20a30038;	// ANT2 PIO number
+const uint32_t CFG_HW_ANT_SUP_ENGINE = 0x20a30054;	// Antenna supervisor engine selection
+const uint32_t CFG_HW_ANT_SUP_SHORT_THR = 0x20a30055;	// Antenna supervisor MADC engine short detection threshold
+const uint32_t CFG_HW_ANT_SUP_OPEN_THR = 0x20a30056;	// Antenna supervisor MADC engine open detection threshold
+
+//CFG-I2C: Configuration of the I2C interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_I2C_ADDRESS = 0x20510001;	// I2C slave address of the receiver (7 bits)
+const uint32_t CFG_I2C_EXTENDEDTIMEOUT = 0x10510002;	// Flag to disable timeouting the interface after 1.5 s
+const uint32_t CFG_I2C_ENABLED = 0x10510003;	// Flag to indicate if the I2C interface should be enabled
+
+//CFG-I2CINPROT: Input protocol configuration of the I2C interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_I2CINPROT_UBX = 0x10710001;	// Flag to indicate if UBX should be an input protocol on I2C
+const uint32_t CFG_I2CINPROT_NMEA = 0x10710002;	// Flag to indicate if NMEA should be an input protocol on I2C
+const uint32_t CFG_I2CINPROT_RTCM3X = 0x10710004;	// Flag to indicate if RTCM3X should be an input protocol on I2C
+
+//CFG-I2COUTPROT: Output protocol configuration of the I2C interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_I2COUTPROT_UBX = 0x10720001;	// Flag to indicate if UBX should be an output protocol on I2C
+const uint32_t CFG_I2COUTPROT_NMEA = 0x10720002;	// Flag to indicate if NMEA should be an output protocol on I2C
+const uint32_t CFG_I2COUTPROT_RTCM3X = 0x10720004;	// Flag to indicate if RTCM3X should be an output protocol on I2C
+
+//CFG-INFMSG: Information message configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_INFMSG_UBX_I2C = 0x20920001;	// Information message enable flags for the UBX protocol on the I2C interface
+const uint32_t CFG_INFMSG_UBX_UART1 = 0x20920002;	// Information message enable flags for the UBX protocol on the UART1 interface
+const uint32_t CFG_INFMSG_UBX_UART2 = 0x20920003;	// Information message enable flags for the UBX protocol on the UART2 interface
+const uint32_t CFG_INFMSG_UBX_USB = 0x20920004;	// Information message enable flags for the UBX protocol on the USB interface
+const uint32_t CFG_INFMSG_UBX_SPI = 0x20920005;	// Information message enable flags for the UBX protocol on the SPI interface
+const uint32_t CFG_INFMSG_NMEA_I2C = 0x20920006;	// Information message enable flags for the NMEA protocol on the I2C interface
+const uint32_t CFG_INFMSG_NMEA_UART1 = 0x20920007;	// Information message enable flags for the NMEA protocol on the UART1 interface
+const uint32_t CFG_INFMSG_NMEA_UART2 = 0x20920008;	// Information message enable flags for the NMEA protocol on the UART2 interface
+const uint32_t CFG_INFMSG_NMEA_USB = 0x20920009;	// Information message enable flags for the NMEA protocol on the USB interface
+const uint32_t CFG_INFMSG_NMEA_SPI = 0x2092000a;	// Information message enable flags for the NMEA protocol on the SPI interface
+
+//CFG-ITFM: Jamming and interference monitor configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_ITFM_BBTHRESHOLD = 0x20410001;	// Broadband jamming detection threshold
+const uint32_t CFG_ITFM_CWTHRESHOLD = 0x20410002;	// CW jamming detection threshold
+const uint32_t CFG_ITFM_ENABLE = 0x1041000d;	// Enable interference detection
+const uint32_t CFG_ITFM_ANTSETTING = 0x20410010;	// Antenna setting
+const uint32_t CFG_ITFM_ENABLE_AUX = 0x10410013;	// Scan auxiliary bands
+
+//CFG-LOGFILTER: Data logger configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_LOGFILTER_RECORD_ENA = 0x10de0002;	// Recording enabled
+const uint32_t CFG_LOGFILTER_ONCE_PER_WAKE_UP_ENA = 0x10de0003;	// Once per wake up
+const uint32_t CFG_LOGFILTER_APPLY_ALL_FILTERS = 0x10de0004;	// Apply all filter settings
+const uint32_t CFG_LOGFILTER_MIN_INTERVAL = 0x30de0005;	// Minimum time interval between loggedpositions
+const uint32_t CFG_LOGFILTER_TIME_THRS = 0x30de0006;	// Time threshold
+const uint32_t CFG_LOGFILTER_SPEED_THRS = 0x30de0007;	// Speed threshold
+const uint32_t CFG_LOGFILTER_POSITION_THRS = 0x40de0008;	// Position threshold
+
+//CFG-MOT: Motion detector configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_MOT_GNSSSPEED_THRS = 0x20250038;	// GNSS speed threshold below which platform is considered as stationary (a.k.a. static hold threshold)
+const uint32_t CFG_MOT_GNSSDIST_THRS = 0x3025003b;	// Distance above which GNSS-based stationary motion is exit (a.k.a. static hold distance threshold)
 
 // CFG-MSGOUT: Message output configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -543,5 +639,275 @@ const uint32_t CFG_MSGOUT_UBX_TIM_VRFY_SPI = 0x20910096;			// Output rate of the
 const uint32_t CFG_MSGOUT_UBX_TIM_VRFY_UART1 = 0x20910093;			// Output rate of the UBX-TIM-VRFY message on port UART1
 const uint32_t CFG_MSGOUT_UBX_TIM_VRFY_UART2 = 0x20910094;		// Output rate of the UBX-TIM-VRFY message on port UART2
 const uint32_t CFG_MSGOUT_UBX_TIM_VRFY_USB = 0x20910095;		// Output rate of the UBX-TIM-VRFY message on port USB
+
+//CFG-NAVHPG: High precision navigation configuration
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_NAVHPG_DGNSSMODE = 0x20140011;	// Diﬀerential corrections mode
+
+//CFG-NAVSPG: Standard precision navigation configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_NAVSPG_FIXMODE = 0x20110011;	// Position fix mode
+const uint32_t CFG_NAVSPG_INIFIX3D = 0x10110013;	// Initial fix must be a 3D fix
+const uint32_t CFG_NAVSPG_WKNROLLOVER = 0x30110017;	// GPS week rollover number
+const uint32_t CFG_NAVSPG_UTCSTANDARD = 0x2011001c;	// UTC standard to be used
+const uint32_t CFG_NAVSPG_DYNMODEL = 0x20110021;	// Dynamic platform model
+const uint32_t CFG_NAVSPG_ACKAIDING = 0x10110025;	// Acknowledge assistance input messages
+const uint32_t CFG_NAVSPG_USE_USRDAT = 0x10110061;	// Use user geodetic datum parameters
+const uint32_t CFG_NAVSPG_USRDAT_MAJA = 0x50110062;	// Geodetic datum semi-major axis
+const uint32_t CFG_NAVSPG_USRDAT_FLAT = 0x50110063;	// Geodetic datum 1.0 flattening
+const uint32_t CFG_NAVSPG_USRDAT_DX = 0x40110064;	// Geodetic datum X axis shift at the origin
+const uint32_t CFG_NAVSPG_USRDAT_DY = 0x40110065;	// Geodetic datum Y axis shift at the origin
+const uint32_t CFG_NAVSPG_USRDAT_DZ = 0x40110066;	// Geodetic datum Z axis shift at the origin
+const uint32_t CFG_NAVSPG_USRDAT_ROTX = 0x40110067;	// arcsec Geodetic datum rotation about the X axis
+const uint32_t CFG_NAVSPG_USRDAT_ROTY = 0x40110068;	// arcsec Geodetic datum rotation about the Y axis
+const uint32_t CFG_NAVSPG_USRDAT_ROTZ = 0x40110069;	// arcsec Geodetic datum rotation about the Z axis
+const uint32_t CFG_NAVSPG_USRDAT_SCALE = 0x4011006a;	// ppm Geodetic datum scale factor
+const uint32_t CFG_NAVSPG_INFIL_MINSVS = 0x201100a1;	// Minimum number of satellites for navigation
+const uint32_t CFG_NAVSPG_INFIL_MAXSVS = 0x201100a2;	// Maximum number of satellites for navigation
+const uint32_t CFG_NAVSPG_INFIL_MINCNO = 0x201100a3;	// Minimum satellite signal level for navigation
+const uint32_t CFG_NAVSPG_INFIL_MINELEV = 0x201100a4;	// Minimum elevation for a GNSS satellite to be used in navigation
+const uint32_t CFG_NAVSPG_INFIL_NCNOTHRS = 0x201100aa;	// Number of satellites required to have C/N0 above const uint32_t CFG_NAVSPG-INFIL_CNOTHRS for a fix to be attempted
+const uint32_t CFG_NAVSPG_INFIL_CNOTHRS = 0x201100ab;	// C/N0 threshold for deciding whether to attempt a fix
+const uint32_t CFG_NAVSPG_OUTFIL_PDOP = 0x301100b1;	// Output filter position DOP mask (threshold)
+const uint32_t CFG_NAVSPG_OUTFIL_TDOP = 0x301100b2;	// Output filter time DOP mask (threshold)
+const uint32_t CFG_NAVSPG_OUTFIL_PACC = 0x301100b3;	// Output filter position accuracy mask (threshold)
+const uint32_t CFG_NAVSPG_OUTFIL_TACC = 0x301100b4;	// Output filter time accuracy mask (threshold)
+const uint32_t CFG_NAVSPG_OUTFIL_FACC = 0x301100b5;	// Output filter frequency accuracy mask (threshold)
+const uint32_t CFG_NAVSPG_CONSTR_ALT = 0x401100c1;	// Fixed altitude (mean sea level) for 2D fix mode
+const uint32_t CFG_NAVSPG_CONSTR_ALTVAR = 0x401100c2;	// Fixed altitude variance for 2D mode
+const uint32_t CFG_NAVSPG_CONSTR_DGNSSTO = 0x201100c4;	// DGNSS timeout
+
+//CFG-NMEA: NMEA protocol configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_NMEA_PROTVER = 0x20930001;	// NMEA protocol version
+const uint32_t CFG_NMEA_MAXSVS = 0x20930002;	// Maximum number of SVs to report per Talker ID
+const uint32_t CFG_NMEA_COMPAT = 0x10930003;	// Enable compatibility mode
+const uint32_t CFG_NMEA_CONSIDER = 0x10930004;	// Enable considering mode
+const uint32_t CFG_NMEA_LIMIT82 = 0x10930005;	// Enable strict limit to 82 characters maximum NMEA message length
+const uint32_t CFG_NMEA_HIGHPREC = 0x10930006;	// Enable high precision mode
+const uint32_t CFG_NMEA_SVNUMBERING = 0x20930007;	// Display configuration for SVs that do not have value defined in NMEA
+const uint32_t CFG_NMEA_FILT_GPS = 0x10930011;	// Disable reporting of GPS satellites
+const uint32_t CFG_NMEA_FILT_SBAS = 0x10930012;	// Disable reporting of SBAS satellites
+const uint32_t CFG_NMEA_FILT_GAL = 0x10930013;	// Disable reporting of Galileo satellites
+const uint32_t CFG_NMEA_FILT_QZSS = 0x10930015;	// Disable reporting of QZSS satellites
+const uint32_t CFG_NMEA_FILT_GLO = 0x10930016;	// Disable reporting of GLONASS satellites
+const uint32_t CFG_NMEA_FILT_BDS = 0x10930017;	// Disable reporting of BeiDou satellites
+const uint32_t CFG_NMEA_OUT_INVFIX = 0x10930021;	// Enable position output for failed or invalid fixes
+const uint32_t CFG_NMEA_OUT_MSKFIX = 0x10930022;	// Enable position output for invalid fixes
+const uint32_t CFG_NMEA_OUT_INVTIME = 0x10930023;	// Enable time output for invalid times
+const uint32_t CFG_NMEA_OUT_INVDATE = 0x10930024;	// Enable date output for invalid dates
+const uint32_t CFG_NMEA_OUT_ONLYGPS = 0x10930025;	// Restrict output to GPS satellites only
+const uint32_t CFG_NMEA_OUT_FROZENCOG = 0x10930026;	// Enable course over ground output even if it is frozen
+const uint32_t CFG_NMEA_MAINTALKERID = 0x20930031;	// Main Talker ID
+const uint32_t CFG_NMEA_GSVTALKERID = 0x20930032;	// Talker ID for GSV NMEA messages
+const uint32_t CFG_NMEA_BDSTALKERID = 0x30930033;	// BeiDou Talker ID
+
+//CFG-ODO: Odometer and low-speed course over ground filter
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_ODO_USE_ODO = 0x10220001;	// Use odometer
+const uint32_t CFG_ODO_USE_COG = 0x10220002;	// Use low-speed course over ground filter
+const uint32_t CFG_ODO_OUTLPVEL = 0x10220003;	// Output low-pass filtered velocity
+const uint32_t CFG_ODO_OUTLPCOG = 0x10220004;	// Output low-pass filtered course over ground (heading)
+const uint32_t CFG_ODO_PROFILE = 0x20220005;	// Odometer profile configuration
+const uint32_t CFG_ODO_COGMAXSPEED = 0x20220021;	// Upper speed limit for low-speed course over ground filter
+const uint32_t CFG_ODO_COGMAXPOSACC = 0x20220022;	// Maximum acceptable position accuracy for computing low-speed filtered course over ground
+const uint32_t CFG_ODO_VELLPGAIN = 0x20220031;	// Velocity low-pass filter level
+const uint32_t CFG_ODO_COGLPGAIN = 0x20220032;	// Course over ground low-pass filter level (at speed < 8 m/s)
+
+//CFG-QZSS: QZSS system configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_QZSS_USE_SLAS_DGNSS = 0x10370005;	// Apply QZSS SLAS DGNSS corrections
+const uint32_t CFG_QZSS_USE_SLAS_TESTMODE = 0x10370006;	// Use QZSS SLAS data when it is in test mode (SLAS msg 0)
+const uint32_t CFG_QZSS_USE_SLAS_RAIM_UNCORR = 0x10370007;	// Raim out measurements that are not corrected by QZSS SLAS, if at least 5 measurements are corrected
+
+//CFG-RATE: Navigation and measurement rate configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_RATE_MEAS = 0x30210001;	// Nominal time between GNSS measurements
+const uint32_t CFG_RATE_NAV = 0x30210002;	// Ratio of number of measurements to number of navigation solutions
+const uint32_t CFG_RATE_TIMEREF = 0x20210003;	// Time system to which measurements are aligned
+
+//CFG-RINV: Remote inventory
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_RINV_DUMP = 0x10c70001;	// Dump data at startup
+const uint32_t CFG_RINV_BINARY = 0x10c70002;	// Data is binary
+const uint32_t CFG_RINV_DATA_SIZE = 0x20c70003;	// Size of data
+const uint32_t CFG_RINV_CHUNK0 = 0x50c70004;	// Data bytes 1-8 (LSB)
+const uint32_t CFG_RINV_CHUNK1 = 0x50c70005;	// Data bytes 9-16
+const uint32_t CFG_RINV_CHUNK2 = 0x50c70006;	// Data bytes 17-240x44434241.
+const uint32_t CFG_RINV_CHUNK3 = 0x50c70007;	// Data bytes 25-30 (MSB)
+
+//CFG-RTCM: RTCM protocol configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_RTCM_DF003_OUT = 0x30090001;	// RTCM DF003 (Reference station ID) output value
+const uint32_t CFG_RTCM_DF003_IN = 0x30090008;	// RTCM DF003 (Reference station ID) input value
+const uint32_t CFG_RTCM_DF003_IN_FILTER = 0x20090009;	// RTCM input filter configuration based on RTCM DF003 (Reference station ID) value
+
+//CFG-SBAS: SBAS configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_SBAS_USE_TESTMODE = 0x10360002;	// Use SBAS data when it is in test mode (SBAS msg 0)
+const uint32_t CFG_SBAS_USE_RANGING = 0x10360003;	// Use SBAS GEOs as a ranging source (for navigation)
+const uint32_t CFG_SBAS_USE_DIFFCORR = 0x10360004;	// Use SBAS diﬀerential corrections
+const uint32_t CFG_SBAS_USE_INTEGRITY = 0x10360005;	// Use SBAS integrity information
+const uint32_t CFG_SBAS_PRNSCANMASK = 0x50360006;	// SBAS PRN search configuration
+
+//CFG-SIGNAL: Satellite systems (GNSS) signal configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_SIGNAL_GPS_ENA = 0x1031001f;	// GPS enable
+const uint32_t CFG_SIGNAL_GPS_L1CA_ENA = 0x10310001;	// GPS L1C/A
+const uint32_t CFG_SIGNAL_GPS_L2C_ENA = 0x10310003;	// GPS L2C (only on u-blox F9 platform products)
+const uint32_t CFG_SIGNAL_SBAS_ENA = 0x10310020;	// SBAS enable
+const uint32_t CFG_SIGNAL_SBAS_L1CA_ENA = 0x10310005;	// SBAS L1C/A
+const uint32_t CFG_SIGNAL_GAL_ENA = 0x10310021;	// Galileo enable
+const uint32_t CFG_SIGNAL_GAL_E1_ENA = 0x10310007;	// Galileo E1
+const uint32_t CFG_SIGNAL_GAL_E5B_ENA = 0x1031000a;	// Galileo E5b (only on u-blox F9 platform products)
+const uint32_t CFG_SIGNAL_BDS_ENA = 0x10310022;	// BeiDou Enable
+const uint32_t CFG_SIGNAL_BDS_B1_ENA = 0x1031000d;	// BeiDou B1I
+const uint32_t CFG_SIGNAL_BDS_B2_ENA = 0x1031000e;	// BeiDou B2I (only on u-blox F9 platform products)
+const uint32_t CFG_SIGNAL_QZSS_ENA = 0x10310024;	// QZSS enable
+const uint32_t CFG_SIGNAL_QZSS_L1CA_ENA = 0x10310012;	// QZSS L1C/A
+const uint32_t CFG_SIGNAL_QZSS_L1S_ENA = 0x10310014;	// QZSS L1S
+const uint32_t CFG_SIGNAL_QZSS_L2C_ENA = 0x10310015;	// QZSS L2C (only on u-blox F9 platform products)
+const uint32_t CFG_SIGNAL_GLO_ENA = 0x10310025;	// GLONASS enable
+const uint32_t CFG_SIGNAL_GLO_L1_ENA = 0x10310018;	// GLONASS L1
+const uint32_t CFG_SIGNAL_GLO_L2_ENA = 0x1031001a;	// GLONASS L2 (only on u-blox F9 platform products)
+
+//CFG-SPI: Configuration of the SPI interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_SPI_MAXFF = 0x20640001;	// Number of bytes containing 0xFF to receive before switching oﬀ reception. Range: 0 (mechanism oﬀ) - 63
+const uint32_t CFG_SPI_CPOLARITY = 0x10640002;	// Clock polarity select: 0: Active Hight Clock, SCLK idles low, 1: Active Low Clock, SCLK idles high
+const uint32_t CFG_SPI_CPHASE = 0x10640003;	// Clock phase select: 0: Data captured on first edge of SCLK, 1: Data captured on second edge of SCLK
+const uint32_t CFG_SPI_EXTENDEDTIMEOUT = 0x10640005;	// Flag to disable timeouting the interface after 1.5s
+const uint32_t CFG_SPI_ENABLED = 0x10640006;	// Flag to indicate if the SPI interface should be enabled
+
+//CFG-SPIINPROT: Input protocol configuration of the SPI interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_SPIINPROT_UBX = 0x10790001;	// Flag to indicate if UBX should be an input protocol on SPI
+const uint32_t CFG_SPIINPROT_NMEA = 0x10790002;	// Flag to indicate if NMEA should be an input protocol on SPI
+const uint32_t CFG_SPIINPROT_RTCM3X = 0x10790004;	// Flag to indicate if RTCM3X should be an input protocol on SPI
+
+//CFG-SPIOUTPROT: Output protocol configuration of the SPI interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_SPIOUTPROT_UBX = 0x107a0001;	// Flag to indicate if UBX should be an output protocol on SPI
+const uint32_t CFG_SPIOUTPROT_NMEA = 0x107a0002;	// Flag to indicate if NMEA should be an output protocol on SPI
+const uint32_t CFG_SPIOUTPROT_RTCM3X = 0x107a0004;	// Flag to indicate if RTCM3X should be an output protocol on SPI
+
+//CFG-TMODE: Time mode configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_TMODE_MODE = 0x20030001;	// Receiver mode
+const uint32_t CFG_TMODE_POS_TYPE = 0x20030002;	// Determines whether the ARP position is given in ECEF or LAT/LON/HEIGHT?
+const uint32_t CFG_TMODE_ECEF_X = 0x40030003;	// ECEF X coordinate of the ARP position.
+const uint32_t CFG_TMODE_ECEF_Y = 0x40030004;	// ECEF Y coordinate of the ARP position.
+const uint32_t CFG_TMODE_ECEF_Z = 0x40030005;	// ECEF Z coordinate of the ARP position.
+const uint32_t CFG_TMODE_ECEF_X_HP = 0x20030006;	// High-precision ECEF X coordinate of the ARP position.
+const uint32_t CFG_TMODE_ECEF_Y_HP = 0x20030007;	// High-precision ECEF Y coordinate of the ARP position.
+const uint32_t CFG_TMODE_ECEF_Z_HP = 0x20030008;	// High-precision ECEF Z coordinate of the ARP position.
+const uint32_t CFG_TMODE_LAT = 0x40030009;	// Latitude of the ARP position.
+const uint32_t CFG_TMODE_LON = 0x4003000a;	// Longitude of the ARP position.
+const uint32_t CFG_TMODE_HEIGHT = 0x4003000b;	// Height of the ARP position.
+const uint32_t CFG_TMODE_LAT_HP = 0x2003000c;	// High-precision latitude of the ARP position
+const uint32_t CFG_TMODE_LON_HP = 0x2003000d;	// High-precision longitude of the ARP position.
+const uint32_t CFG_TMODE_HEIGHT_HP = 0x2003000e;	// High-precision height of the ARP position.
+const uint32_t CFG_TMODE_FIXED_POS_ACC = 0x4003000f;	// Fixed position 3D accuracy
+const uint32_t CFG_TMODE_SVIN_MIN_DUR = 0x40030010;	// Survey-in minimum duration
+const uint32_t CFG_TMODE_SVIN_ACC_LIMIT = 0x40030011;	// Survey-in position accuracy limit
+
+//CFG-TP: Timepulse configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_TP_PULSE_DEF = 0x20050023;	// Determines whether the time pulse is interpreted as frequency or period
+const uint32_t CFG_TP_PULSE_LENGTH_DEF = 0x20050030;	// Determines whether the time pulse length is interpreted as length[us] or pulse ratio[%]
+const uint32_t CFG_TP_FREQ_TP1 = 0x40050024;	// Time pulse frequency (TP1)
+const uint32_t CFG_TP_FREQ_LOCK_TP1 = 0x40050025;	// Time pulse frequency when locked to GNSS time (TP1)
+const uint32_t CFG_TP_LEN_TP1 = 0x40050004;	// Time pulse length (TP1)
+const uint32_t CFG_TP_LEN_LOCK_TP1 = 0x40050005;	// Time pulse length when locked to GNSS time (TP1)
+const uint32_t CFG_TP_DUTY_TP1 = 0x5005002a;	// Time pulse duty cycle (TP1)
+const uint32_t CFG_TP_DUTY_LOCK_TP1 = 0x5005002b;	// Time pulse duty cycle when locked to GNSS time (TP1)
+const uint32_t CFG_TP_USER_DELAY_TP1 = 0x40050006;	// User-configurable time pulse delay (TP1)
+const uint32_t CFG_TP_TP1_ENA = 0x10050007;	// Enable the first timepulse
+const uint32_t CFG_TP_SYNC_GNSS_TP1 = 0x10050008;	// Sync time pulse to GNSS time or local clock (TP1)
+const uint32_t CFG_TP_USE_LOCKED_TP1 = 0x10050009;	// Use locked parameters when possible (TP1)
+const uint32_t CFG_TP_ALIGN_TO_TOW_TP1 = 0x1005000a;	// Align time pulse to top of second (TP1)
+const uint32_t CFG_TP_POL_TP1 = 0x1005000b;	// Set time pulse polarity (TP1)
+const uint32_t CFG_TP_TIMEGRID_TP1 = 0x2005000c;	// Time grid to use (TP1)
+
+//CFG-TXREADY: TX ready configuration
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_TXREADY_ENABLED = 0x10a20001;	// Flag to indicate if TX ready pin mechanism should be enabled
+const uint32_t CFG_TXREADY_POLARITY = 0x10a20002;	// The polarity of the TX ready pin: false:high- active, true:low-active
+const uint32_t CFG_TXREADY_PIN = 0x20a20003;	// Pin number to use for the TX ready functionality
+const uint32_t CFG_TXREADY_THRESHOLD = 0x30a20004;	// Amount of data that should be ready on the interface before triggering the TX ready pin
+const uint32_t CFG_TXREADY_INTERFACE = 0x20a20005;	// Interface where the TX ready feature should be linked to
+
+//CFG-UART1: Configuration of the UART1 interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_UART1_BAUDRATE = 0x40520001;	// The baud rate that should be configured on the UART1
+const uint32_t CFG_UART1_STOPBITS = 0x20520002;	// Number of stopbits that should be used on UART1
+const uint32_t CFG_UART1_DATABITS = 0x20520003;	// Number of databits that should be used on UART1
+const uint32_t CFG_UART1_PARITY = 0x20520004;	// Parity mode that should be used on UART1
+const uint32_t CFG_UART1_ENABLED = 0x10520005;	// Flag to indicate if the UART1 should be enabled
+
+//CFG-UART1INPROT: Input protocol configuration of the UART1 interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_UART1INPROT_UBX = 0x10730001;	// Flag to indicate if UBX should be an input protocol on UART1
+const uint32_t CFG_UART1INPROT_NMEA = 0x10730002;	// Flag to indicate if NMEA should be an input protocol on UART1
+const uint32_t CFG_UART1INPROT_RTCM3X = 0x10730004;	// Flag to indicate if RTCM3X should be an input protocol on UART1
+
+//CFG-UART1OUTPROT: Output protocol configuration of the UART1 interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_UART1OUTPROT_UBX = 0x10740001;	// Flag to indicate if UBX should be an output protocol on UART1
+const uint32_t CFG_UART1OUTPROT_NMEA = 0x10740002;	// Flag to indicate if NMEA should be an output protocol on UART1
+const uint32_t CFG_UART1OUTPROT_RTCM3X = 0x10740004;	// Flag to indicate if RTCM3X should be an output protocol on UART1
+
+//CFG-UART2: Configuration of the UART2 interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_UART2_BAUDRATE = 0x40530001;	// The baud rate that should be configured on the UART2
+const uint32_t CFG_UART2_STOPBITS = 0x20530002;	// Number of stopbits that should be used on UART2
+const uint32_t CFG_UART2_DATABITS = 0x20530003;	// Number of databits that should be used on UART2
+const uint32_t CFG_UART2_PARITY = 0x20530004;	// Parity mode that should be used on UART2
+const uint32_t CFG_UART2_ENABLED = 0x10530005;	// Flag to indicate if the UART2 should be enabled
+const uint32_t CFG_UART2_REMAP = 0x10530006;	// UART2 Remapping
+
+//CFG-UART2INPROT: Input protocol configuration of the UART2 interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_UART2INPROT_UBX = 0x10750001;	// Flag to indicate if UBX should be an input protocol on UART2
+const uint32_t CFG_UART2INPROT_NMEA = 0x10750002;	// Flag to indicate if NMEA should be an input protocol on UART2
+const uint32_t CFG_UART2INPROT_RTCM3X = 0x10750004;	// Flag to indicate if RTCM3X should be an input protocol on UART2
+
+//CFG-UART2OUTPROT: Output protocol configuration of the UART2 interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_UART2OUTPROT_UBX = 0x10760001;	// Flag to indicate if UBX should be an output protocol on UART2
+const uint32_t CFG_UART2OUTPROT_NMEA = 0x10760002;	// Flag to indicate if NMEA should be an output protocol on UART2
+const uint32_t CFG_UART2OUTPROT_RTCM3X = 0x10760004;	// Flag to indicate if RTCM3X should be an output protocol on UART2
+
+//CFG-USB: Configuration of the USB interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_USB_ENABLED = 0x10650001;	// Flag to indicate if the USB interface should be enabled
+const uint32_t CFG_USB_SELFPOW = 0x10650002;	// Self-powered device
+const uint32_t CFG_USB_VENDOR_ID = 0x3065000a;	// Vendor ID
+const uint32_t CFG_USB_PRODUCT_ID = 0x3065000b;	// Vendor ID
+const uint32_t CFG_USB_POWER = 0x3065000c;	// Power consumption
+const uint32_t CFG_USB_VENDOR_STR0 = 0x5065000d;	// Vendor string characters 0-7
+const uint32_t CFG_USB_VENDOR_STR1 = 0x5065000e;	// Vendor string characters 8-15
+const uint32_t CFG_USB_VENDOR_STR2 = 0x5065000f;	// Vendor string characters 16-23
+const uint32_t CFG_USB_VENDOR_STR3 = 0x50650010;	// Vendor string characters 24-31
+const uint32_t CFG_USB_PRODUCT_STR0 = 0x50650011;	// Product string characters 0-7
+const uint32_t CFG_USB_PRODUCT_STR1 = 0x50650012;	// Product string characters 8-15
+const uint32_t CFG_USB_PRODUCT_STR2 = 0x50650013;	// Product string characters 16-23
+const uint32_t CFG_USB_PRODUCT_STR3 = 0x50650014;	// Product string characters 24-31
+const uint32_t CFG_USB_SERIAL_NO_STR0 = 0x50650015;	// Serial number string characters 0-7
+const uint32_t CFG_USB_SERIAL_NO_STR1 = 0x50650016;	// Serial number string characters 8-15
+const uint32_t CFG_USB_SERIAL_NO_STR2 = 0x50650017;	// Serial number string characters 16-23
+const uint32_t CFG_USB_SERIAL_NO_STR3 = 0x50650018;	// Serial number string characters 24-31
+
+//CFG-USBINPROT: Input protocol configuration of the USB interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_USBINPROT_UBX = 0x10770001;	// Flag to indicate if UBX should be an input protocol on USB
+const uint32_t CFG_USBINPROT_NMEA = 0x10770002;	// Flag to indicate if NMEA should be an input protocol on USB
+const uint32_t CFG_USBINPROT_RTCM3X = 0x10770004;	// Flag to indicate if RTCM3X should be an input protocol on USB
+
+//CFG-USBOUTPROT: Output protocol configuration of the USB interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const uint32_t CFG_USBOUTPROT_UBX = 0x10780001;	// Flag to indicate if UBX should be an output protocol on USB
+const uint32_t CFG_USBOUTPROT_NMEA = 0x10780002;	// Flag to indicate if NMEA should be an output protocol on USB
+const uint32_t CFG_USBOUTPROT_RTCM3X = 0x10780004;	// Flag to indicate if RTCM3X should be an output protocol on USB
+
 #endif
