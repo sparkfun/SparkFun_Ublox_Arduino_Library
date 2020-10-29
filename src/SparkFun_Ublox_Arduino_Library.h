@@ -504,6 +504,8 @@ public:
 	void flushPVT();																				//Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
 	void flushHPPOSLLH();																				//Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
 
+	bool getGnssFixOk(uint16_t maxWait = getPVTmaxWait);          //Get whether we have a valid fix (i.e within DOP & accuracy masks)
+	bool getDiffSoln(uint16_t maxWait = getPVTmaxWait);           //Get whether differential corrections were applied
 	int32_t getLatitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getAltitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current altitude in mm above ellipsoid
@@ -687,6 +689,9 @@ public:
 	bool gpsDateValid;
 	bool gpsTimeValid;
 
+
+	bool gnssFixOk;      //valid fix (i.e within DOP & accuracy masks)
+	bool diffSoln;       //Differential corrections were applied
 	int32_t latitude;		 //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude;		 //Degrees * 10^-7 (more accurate than floats)
 	int32_t altitude;		 //Number of mm above ellipsoid
@@ -873,6 +878,8 @@ private:
 		uint32_t gpsNanosecond : 1;
 
 		uint32_t all : 1;
+		uint32_t gnssFixOk : 1;
+		uint32_t diffSoln : 1;
 		uint32_t longitude : 1;
 		uint32_t latitude : 1;
 		uint32_t altitude : 1;

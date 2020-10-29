@@ -980,6 +980,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gpsNanosecond = extractLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
+      gnssFixOk = extractByte(21 - startingSpot) & 0x1; //Get the 1st bit
+      diffSoln = extractByte(21 - startingSpot) >> 1 & 0x1; //Get the 2nd bit
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
       SIV = extractByte(23 - startingSpot);
       longitude = extractLong(24 - startingSpot);
@@ -1003,6 +1005,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.gpsNanosecond = true;
 
       moduleQueried.all = true;
+      moduleQueried.gnssFixOk = true;
+      moduleQueried.diffSoln = true;
       moduleQueried.longitude = true;
       moduleQueried.latitude = true;
       moduleQueried.altitude = true;
@@ -3333,6 +3337,28 @@ uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
   return (fixType);
 }
 
+//Get whether we have a valid fix (i.e within DOP & accuracy masks)
+bool SFE_UBLOX_GPS::getGnssFixOk(uint16_t maxWait)
+{
+  if (moduleQueried.gnssFixOk == false)
+    getPVT(maxWait);
+  moduleQueried.gnssFixOk = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (gnssFixOk);
+}
+
+//Get whether differential corrections were applied
+bool SFE_UBLOX_GPS::getDiffSoln(uint16_t maxWait)
+{
+  if (moduleQueried.diffSoln == false)
+    getPVT(maxWait);
+  moduleQueried.diffSoln = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (diffSoln);
+}
+
 //Get the carrier phase range solution status
 //Useful when querying module to see if it has high-precision RTK fix
 //0=No solution, 1=Float solution, 2=Fixed solution
@@ -3465,6 +3491,8 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.gpsNanosecond = false;
 
   moduleQueried.all = false;
+  moduleQueried.gnssFixOk = false;
+  moduleQueried.diffSoln = false;
   moduleQueried.longitude = false;
   moduleQueried.latitude = false;
   moduleQueried.altitude = false;
