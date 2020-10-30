@@ -64,9 +64,10 @@ Repository Contents
 
 * **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE.
 * **/src** - Source files for the library (.cpp, .h).
-* **keywords.txt** - Keywords from this library that will be highlighted in the Arduino IDE.
-* **library.properties** - General library properties for the Arduino package manager.
-* **CONTRIBUTING.md** - Guidelines on how to contribute to this library.
+* **[keywords.txt](./keywords.txt)** - Keywords from this library that will be highlighted in the Arduino IDE.
+* **[library.properties](./library.properties)** - General library properties for the Arduino package manager.
+* **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guidelines on how to contribute to this library.
+* **[Theory.md](./Theory.md)** - provides detail on how data is processed by the library.
 
 Documentation
 --------------
