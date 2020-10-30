@@ -68,7 +68,7 @@ void setup()
 
   //Begin with newCfgValset8/16/32
   setValueSuccess &= myGPS.newCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1); //Set output rate of msg 1005 over the I2C port to once per measurement (value is 8-bit (U1))
-  //setValueSuccess &= myGPS.newCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1, 7); //Set this and the following settings into Flash/RAM/BBR instead of BBR
+  //setValueSuccess &= myGPS.newCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1, VAL_LAYER_RAM); //Set this and the following settings in RAM only instead of Flash/RAM/BBR
   //Add extra keyIDs and values using addCfgValset8/16/32
   setValueSuccess &= myGPS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1077_I2C, 1); //Set output rate of msg 1077 over the I2C port to once per measurement (value is 8-bit (U1))
   setValueSuccess &= myGPS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1087_I2C, 1); //Set output rate of msg 1087 over the I2C port to once per measurement (value is 8-bit (U1))
