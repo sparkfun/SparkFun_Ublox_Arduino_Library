@@ -48,6 +48,7 @@ Thanks to:
 * [averywallis](https://github.com/averywallis) for adding good comments to the various constants.
 * [blazczak](https://github.com/blazczak) and [geeksville](https://github.com/geeksville) for adding support for the series 6 and 7 modules.
 * [bjorn@unsurv](https://github.com/unsurv) for adding powerOff and powerOffWithInterrupt.
+* [dotMorten](https://github.com/dotMorten) for the MSGOUT keys, autoHPPOSLLH, autoDOP and upgrades to autoPVT.
 
 Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
 
