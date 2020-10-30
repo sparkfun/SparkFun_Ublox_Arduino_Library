@@ -53,6 +53,11 @@ Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module]
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
+Contributing
+--------------
+
+If you would like to contribute to this library: please do, we truly appreciate it, but please follow [these guidelines](./CONTRIBUTING.md). Thanks!
+
 Repository Contents
 -------------------
 
@@ -60,6 +65,7 @@ Repository Contents
 * **/src** - Source files for the library (.cpp, .h).
 * **keywords.txt** - Keywords from this library that will be highlighted in the Arduino IDE.
 * **library.properties** - General library properties for the Arduino package manager.
+* **CONTRIBUTING.md** - Guidelines on how to contribute to this library.
 
 Documentation
 --------------
