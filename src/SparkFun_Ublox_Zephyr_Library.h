@@ -19,7 +19,7 @@
 	Development environment specifics:
 	NCS v1.0.3 release
 
-	This port was made by Vid Rajtmajer <vid@irnas.eu>, IRNAS d.o.o.
+	This port was made by Vid Rajtmajer <vid@irnas.eu>, IRNAS www.irnas.eu
 
 	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
 	The MIT License (MIT)
