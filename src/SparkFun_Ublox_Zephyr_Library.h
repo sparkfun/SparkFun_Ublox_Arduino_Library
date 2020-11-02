@@ -17,7 +17,9 @@
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
 
 	Development environment specifics:
-	Arduino IDE 1.8.5
+	NCS v1.0.3 release
+
+	This port was made by Vid Rajtmajer <vid@irnas.eu>, IRNAS d.o.o.
 
 	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
 	The MIT License (MIT)
@@ -437,16 +439,16 @@ public:
 // If you know you are only going to be using I2C / Qwiic communication, you can
 // safely reduce defaultMaxWait to 250.
 #ifndef defaultMaxWait // Let's allow the user to define their own value if they want to
-#define defaultMaxWait 1100	// TODO
+#define defaultMaxWait 250	// only I2C is used, so this has been reduced from 1100
 #endif
 
 	// Set gpio device, used by checksumFailurePin
 	bool init_gpio_pins(struct device &gpio_dev);
 
-	//By default use the default I2C address, and use Wire port
+	//By default use the default I2C address
 	bool begin(struct device &i2c_dev, uint8_t deviceAddress = 0x42); //Returns true if module is detected
 	//serialPort needs to be perviously initialized to correct baud rate
-	//bool begin(Stream &serialPort); //Returns true if module is detected	// TODO
+	//bool begin(Stream &serialPort); //Returns true if module is detected - function not ported
 
 	//Returns true if device answers on _gpsI2Caddress address or via Serial
 	//maxWait is only used for Serial
@@ -896,4 +898,4 @@ private:
 	uint16_t rtcmLen = 0;
 };
 
-#endif
+#endif	//SPARKFUN_UBLOX_ZEPHYR_LIBRARY_H

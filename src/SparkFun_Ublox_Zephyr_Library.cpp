@@ -17,7 +17,9 @@
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
 
 	Development environment specifics:
-	Arduino IDE 1.8.5
+    NCS v1.0.3 release - this port
+
+    This port was made by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
 
 	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
 	The MIT License (MIT)
@@ -39,7 +41,6 @@
 */
 
 #include "SparkFun_Ublox_Zephyr_Library.h"
-
 #include <drivers/gpio.h>
 
 SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
@@ -49,18 +50,24 @@ SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
     moduleQueried.versionNumber = false;
 }
 
-bool SFE_UBLOX_GPS::init_gpio_pins(struct device &gpio_dev) {
+// Get i2c device to the class and configure checksumFailurePin
+bool SFE_UBLOX_GPS::init_gpio_pins(struct device &gpio_dev)
+{
     _gpio_dev = &gpio_dev;
-
     if (checksumFailurePin >= 0)
     {
-        gpio_pin_configure(_gpio_dev, (uint8_t)checksumFailurePin, GPIO_OUTPUT);
-        gpio_pin_set(_gpio_dev, (uint8_t)checksumFailurePin, HIGH);
+        int err;
+        err = gpio_pin_configure(_gpio_dev, (uint8_t)checksumFailurePin, GPIO_OUTPUT);
+        err = gpio_pin_set(_gpio_dev, (uint8_t)checksumFailurePin, HIGH);
+        if (err) 
+        {
+            return false;
+        }
     }
     return true;
 }
 
-//Initialize the Serial port
+//Initialize the I2C port
 bool SFE_UBLOX_GPS::begin(struct device &i2c_dev, uint8_t deviceAddress)
 {
     commType = COMM_TYPE_I2C;
@@ -79,8 +86,8 @@ bool SFE_UBLOX_GPS::begin(struct device &i2c_dev, uint8_t deviceAddress)
     return (isConnected());
 }
 
-//Initialize the Serial port
-/*    // TODO
+//Initialize the Serial port - function not ported
+/*
 bool SFE_UBLOX_GPS::begin(Stream &serialPort)
 {
   commType = COMM_TYPE_SERIAL;
@@ -213,37 +220,28 @@ void SFE_UBLOX_GPS::hardReset()
     sendCommand(&packetCfg, 0); // don't expect ACK
 }
 
-int SFE_UBLOX_GPS::transferWriteI2C(u8_t *buffer, u32_t num_bytes, bool stop) {
+// Write data to I2C, Arguments: buffer - data to write, num_bytes - buffer length,
+// stop - if true send STOP, if false send RESTART after message
+int SFE_UBLOX_GPS::transferWriteI2C(u8_t *buffer, u32_t num_bytes, bool stop)
+{
     struct i2c_msg msgs[1];
-    /* Send the address to write to */
-	//msgs[0].buf = 0x42;
-	//msgs[0].len = 1;
-	//msgs[0].flags = I2C_MSG_WRITE;
-
-    //printk("transferWriteI2C: %x, num_bytes: %d\n", buffer[0], num_bytes);
-
-	/* Data to be written, and STOP or RESTART after this. */
+	// Data to be written and STOP or RESTART after this.
 	msgs[0].buf = buffer;
 	msgs[0].len = num_bytes;
     if (stop) {
         msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
-        //printk("transferWriteI2C - I2C_MSG_STOP\n");
     }
     else {
         msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_RESTART;
-        //printk("transferWriteI2C - I2C_MSG_RESTART\n");
     }
 	return i2c_transfer(_i2cPort, &msgs[0], 1, _gpsI2Caddress);
 }
 
-int SFE_UBLOX_GPS::transferReadI2C(u8_t *buffer, u32_t num_bytes) {
+// Read data from I2C, Arguments: buffer - store read data, num_bytes - buffer length
+int SFE_UBLOX_GPS::transferReadI2C(u8_t *buffer, u32_t num_bytes)
+{
     struct i2c_msg msgs[1];
-    /* Send the address to write to */
-	//msgs[0].buf = (u8_t)_gpsI2Caddress;
-	//msgs[0].len = 2U;
-	//msgs[0].flags = I2C_MSG_READ;
-
-	/* Data to be read, and STOP or RESTART after this. */
+    // Data to be read and STOP after this
 	msgs[0].buf = buffer;
 	msgs[0].len = num_bytes;
     msgs[0].flags = I2C_MSG_READ | I2C_MSG_STOP;
@@ -341,29 +339,20 @@ bool SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass
 {
     if (k_uptime_get_32() - lastCheck >= i2cPollingWait)
     {
-        int err;
-        //Get the number of bytes available from the module
         uint16_t bytesAvailable = 0;
-        /*
-        _i2cPort->beginTransmission(_gpsI2Caddress);    // TODO
-        _i2cPort->write(0xFD);                     //0xFD (MSB) and 0xFE (LSB) are the registers that contain number of bytes available
-        if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
-            return (false);                        //Sensor did not ACK
-        */
+        int err;
 
+        //Get the number of bytes available from the module
+        //0xFD (MSB) and 0xFE (LSB) are the registers that contain number of bytes available
         u8_t data_buffer[1];
         data_buffer[0] = 0xFD;
-        //err = i2c_write(_i2cPort, data_buffer, 1, _gpsI2Caddress);
         err = transferWriteI2C(data_buffer, 1, true);
         if (err) {
             return (false);
         }
 
-        //_i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)2);   // TODO
-        //if (_i2cPort->available())
         bool data_read_ok = true;
         u8_t read_buffer[2];
-        //err = i2c_read(_i2cPort, read_buffer, 2, _gpsI2Caddress);
         err = transferReadI2C(data_buffer, 2);
         if (err) {
             data_read_ok = false;
@@ -371,12 +360,8 @@ bool SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass
 
         if (data_read_ok)
         {
-            //uint8_t msb = _i2cPort->read();   // TODO
-            //uint8_t lsb = _i2cPort->read();
             uint8_t msb = read_buffer[0];
             uint8_t lsb = read_buffer[1];
-            //printk("checkUbloxI2C, data_read_ok, MSB: 0x%x LSB: 0x%x\n", msb, lsb);
-
             if (lsb == 0xFF)
             {
                 //I believe this is a Ublox bug. Device should never present an 0xFF.
@@ -443,15 +428,9 @@ bool SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass
 
         while (bytesAvailable)
         {
-            /*
-            _i2cPort->beginTransmission(_gpsI2Caddress);    // TODO
-            _i2cPort->write(0xFF);                     //0xFF is the register to read data from
-            if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
-                return (false);                        //Sensor did not ACK
-            */
             u8_t data_buffer[1];
-            data_buffer[0] = 0xFF;
-            err = transferWriteI2C(data_buffer, 1, false);
+            data_buffer[0] = 0xFF;                          //0xFF is the register to read data from
+            err = transferWriteI2C(data_buffer, 1, false);  //Send a restart command. Do not release bus.
             if (err) {
                 return (false);
             }
@@ -462,8 +441,6 @@ bool SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass
                 bytesToRead = I2C_BUFFER_LENGTH;
 
             TRY_AGAIN:
-            //_i2cPort->requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead); // TODO
-            //if (_i2cPort->available())
             bool data_read_ok = true;
             u8_t read_buffer[(uint8_t)bytesToRead];
             err = transferReadI2C(read_buffer, (uint8_t)bytesToRead);
@@ -475,9 +452,7 @@ bool SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass
             {
                 for (uint16_t x = 0; x < bytesToRead; x++)
                 {
-                    //uint8_t incoming = _i2cPort->read(); //Grab the actual character  // TODO
-                    //i2c_read(_i2cPort, read_buffer, 1, _gpsI2Caddress);   //Grab the actual character
-                    uint8_t incoming = read_buffer[x];
+                    uint8_t incoming = read_buffer[x];  //Grab the actual character
 
                     //Check to see if the first read is 0x7F. If it is, the module is not ready
                     //to respond. Stop, wait, and try again
@@ -1028,7 +1003,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
             highResModuleQueried.verticalAccuracy = true;
             moduleQueried.gpsiTOW = true; // this can arrive via HPPOS too.
 
-            if (_printDebug == true)    // TODO check float prints
+            if (_printDebug == true)
             {
                 printk("Sec: %f", ((float)extractLong(4)) / 1000.0f);
                 printk("\n");
@@ -1115,32 +1090,14 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
 {
     int err;
     //Point at 0xFF data register
-    /*  // TODO
-    _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
-    _i2cPort->write(0xFF);
-    if (_i2cPort->endTransmission() != 0)           //Don't release bus
-        return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
-    */
     u8_t small_buffer[1];
     small_buffer[0] = 0xFF;
-    //err = i2c_write(_i2cPort, small_buffer, 1, _gpsI2Caddress);
-    err = transferWriteI2C(small_buffer, 1);
+    err = transferWriteI2C(small_buffer, 1);    //There is no register to write to, we just begin writing data bytes
     if (err) {
         return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
     }
 
     //Write header bytes
-    /*  // TODO
-    _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
-    _i2cPort->write(UBX_SYNCH_1);                         //μ - oh ublox, you're funny. I will call you micro-blox from now on.
-    _i2cPort->write(UBX_SYNCH_2);                         //b
-    _i2cPort->write(outgoingUBX->cls);
-    _i2cPort->write(outgoingUBX->id);
-    _i2cPort->write(outgoingUBX->len & 0xFF);       //LSB
-    _i2cPort->write(outgoingUBX->len >> 8);         //MSB
-    if (_i2cPort->endTransmission(false) != 0)      //Do not release bus
-        return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
-    */
     u8_t header_buffer[6];                               //There is no register to write to, we just begin writing data bytes
     header_buffer[0] = UBX_SYNCH_1;                         //μ - oh ublox, you're funny. I will call you micro-blox from now on.
     header_buffer[1] = UBX_SYNCH_2;                         //b
@@ -1148,7 +1105,6 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
     header_buffer[3] = outgoingUBX->id;
     header_buffer[4] = outgoingUBX->len & 0xFF;       //LSB
     header_buffer[5] = outgoingUBX->len >> 8;         //MSB
-    //err = i2c_write(_i2cPort, header_buffer, 6, _gpsI2Caddress);
 
     err = transferWriteI2C(header_buffer, 6, false);
     k_msleep(1);    // added this millisecond sleep to not progress too fast
@@ -1168,22 +1124,12 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
         uint8_t len = bytesToSend;
         if (len > I2C_BUFFER_LENGTH)
             len = I2C_BUFFER_LENGTH;
-        /*  // TODO
-        _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-        //_i2cPort->write(outgoingUBX->payload, len); //Write a portion of the payload to the bus
 
-        for (uint16_t x = 0; x < len; x++)
-            _i2cPort->write(outgoingUBX->payload[startSpot + x]); //Write a portion of the payload to the bus
-
-        if (_i2cPort->endTransmission(false) != 0)      //Don't release bus
-            return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
-        */
         u8_t data_buffer[len];
         for (uint16_t x = 0; x < len; x++) {
             data_buffer[x] = outgoingUBX->payload[startSpot + x];
         }
-        //err = i2c_write(_i2cPort, data_buffer, len, _gpsI2Caddress);
-        err = transferWriteI2C(data_buffer, len, false);
+        err = transferWriteI2C(data_buffer, len, false);       //Write a portion of the payload to the bus
         if (err) {
             return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
         }
@@ -1194,11 +1140,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
     }
 
     //Write checksum
-    //_i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); // TODO
     if (bytesToSend == 1) {
-        //_i2cPort->write(outgoingUBX->payload, 1);
-
-        //i2c_write(_i2cPort, outgoingUBX->payload, 1, _gpsI2Caddress);
         u8_t checksum_buffer[3];
         uint8_t payload = *outgoingUBX->payload;
         checksum_buffer[0] = payload;
@@ -1212,10 +1154,6 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
         checksum_buffer[1] = outgoingUBX->checksumB;
         err = transferWriteI2C(checksum_buffer, 2, true);
     }
-    //_i2cPort->write(outgoingUBX->checksumA);  // TODO
-    //_i2cPort->write(outgoingUBX->checksumB);
-
-    //err = i2c_write(_i2cPort, checksum_buffer, 3, _gpsI2Caddress);
     if (err) {
         return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
     }
@@ -1253,20 +1191,12 @@ bool SFE_UBLOX_GPS::isConnected(uint16_t maxWait)
 {
     if (commType == COMM_TYPE_I2C)
     {
-        /*  // TODO
-        _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress);
-        if (_i2cPort->endTransmission() != 0)
-            return false; //Sensor did not ack
-        */
-
         u8_t buff[1];
         buff[0] = 0x00;
-        //int err = i2c_write(_i2cPort, buff, 1, _gpsI2Caddress);
         int err = transferWriteI2C(buff, 1);
         if (err) {
             return false;   //Sensor did not ack
         }
-
     }
 
     // Query navigation rate to see whether we get a meaningful response
@@ -1276,7 +1206,7 @@ bool SFE_UBLOX_GPS::isConnected(uint16_t maxWait)
     packetCfg.startingSpot = 0;
 
     //return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are polling the RATE so we expect data and an ACK
-    return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT);        // data send is returned not data received - TODO library bug?
+    return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT);        // data send is returned, not data received - TODO library bug?
 }
 
 //Given a message, calc and store the two byte "8-Bit Fletcher" checksum over the entirety of the message

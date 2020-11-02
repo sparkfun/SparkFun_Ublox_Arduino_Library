@@ -1,3 +1,10 @@
+/*
+    This is an interface that connects the CPP Ublox library with the main C code.
+    Added to make it possible to run Ublox lib on Zephyr (NCS)
+
+    This port was made by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
+*/
+#include <time.h>
 #include <zephyr.h>
 
 #ifndef _UBLOX_LIB_INTERFACE_H_
@@ -7,15 +14,16 @@
 extern "C" {
 #endif
 
-    uint8_t set_gpio_dev(struct device *gpio_dev);
+    uint8_t set_gpio_dev(struct device *gpio_dev, uint8_t enable_debug); // init GPIO
+    uint8_t gps_begin(struct device *i2c_dev);                           // initialize I2C and check if GPS device respons
+    void pipe_nmea_sentences(void);                                      // print NMEA sentences
 
-    uint8_t gps_begin(struct device *i2c_dev);
-    void check_ublox(void);
-    void get_position(void);
-    void get_datetime(void);
+    void check_ublox(void);  // Check for available bytes from the device
+    int get_position(void); // Get position information
+    void get_datetime(void); // Get date and time information
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // _UBLOX_LIB_INTERFACE_H_
+#endif  //UBLOX_LIB_INTERFACE_H_
