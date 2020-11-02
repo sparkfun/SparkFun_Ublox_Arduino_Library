@@ -42,7 +42,7 @@ uint8_t init_gpio(void) {
 		printk("Error: Could not get %s device\n", gpioName);
 		return -EIO;
 	}
-    int err = set_gpio_dev(gpio_dev);
+    int err = set_gpio_dev(gpio_dev, true);     // set GPIO_0 device and enable debugging
     if (err) {
         return -EIO;
     }
