@@ -13,6 +13,9 @@
   I2C clock speed: 100 kHz
 
   Ported to Zephyr by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
+
+  To build: west build -b <BOARD_NAME> -p
+  To flash: west flash --erase
 */
 #include <device.h>
 #include <drivers/i2c.h>
