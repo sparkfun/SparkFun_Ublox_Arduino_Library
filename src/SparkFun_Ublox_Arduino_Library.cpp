@@ -990,6 +990,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       latitude = extractLong(28 - startingSpot);
       altitude = extractLong(32 - startingSpot);
       altitudeMSL = extractLong(36 - startingSpot);
+      horizontalAccEst = extractLong(40 - startingSpot);
+      verticalAccEst = extractLong(44 - startingSpot);
+      nedNorthVel = extractLong(48 - startingSpot);
+      nedEastVel = extractLong(52 - startingSpot);
+      nedDownVel = extractLong(56 - startingSpot);
+
       groundSpeed = extractLong(60 - startingSpot);
       headingOfMotion = extractLong(64 - startingSpot);
       pDOP = extractInt(76 - startingSpot);
@@ -1013,6 +1019,13 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.latitude = true;
       moduleQueried.altitude = true;
       moduleQueried.altitudeMSL = true;
+
+      moduleQueried.horizontalAccEst = true;
+      moduleQueried.verticalAccEst = true;
+      moduleQueried.nedNorthVel = true;
+      moduleQueried.nedEastVel = true;
+      moduleQueried.nedDownVel = true;
+
       moduleQueried.SIV = true;
       moduleQueried.fixType = true;
       moduleQueried.carrierSolution = true;
@@ -3525,6 +3538,56 @@ int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
   moduleQueried.all = false;
 
   return (altitudeMSL);
+}
+
+int32_t SFE_UBLOX_GPS::getHorizontalAccEst(uint16_t maxWait)
+{
+  if (moduleQueried.horizontalAccEst == false)
+    getPVT(maxWait);
+  moduleQueried.horizontalAccEst = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (horizontalAccEst);
+}
+
+int32_t SFE_UBLOX_GPS::getVerticalAccEst(uint16_t maxWait)
+{
+  if (moduleQueried.verticalAccEst == false)
+    getPVT(maxWait);
+  moduleQueried.verticalAccEst = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (verticalAccEst);
+}
+
+int32_t SFE_UBLOX_GPS::getNedNorthVel(uint16_t maxWait)
+{
+  if (moduleQueried.nedNorthVel == false)
+    getPVT(maxWait);
+  moduleQueried.nedNorthVel = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (nedNorthVel);
+}
+
+int32_t SFE_UBLOX_GPS::getNedEastVel(uint16_t maxWait)
+{
+  if (moduleQueried.nedEastVel == false)
+    getPVT(maxWait);
+  moduleQueried.nedEastVel = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (nedEastVel);
+}
+
+int32_t SFE_UBLOX_GPS::getNedDownVel(uint16_t maxWait)
+{
+  if (moduleQueried.nedDownVel == false)
+    getPVT(maxWait);
+  moduleQueried.nedDownVel = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (nedDownVel);
 }
 
 //Get the number of satellites used in fix
