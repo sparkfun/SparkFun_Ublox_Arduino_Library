@@ -56,16 +56,15 @@
 // Boards like the RedBoard Turbo use SerialUSB (not Serial).
 // But other boards like the SAMD51 Thing Plus use Serial (not SerialUSB).
 // The next nine lines let the code compile cleanly on as many SAMD boards as possible.
-#if defined(ARDUINO_ARCH_SAMD)												// Is this a SAMD board?
-#if defined(USB_VID)														// Is the USB Vendor ID defined?
-#if (USB_VID == 0x1B4F)														// Is this a SparkFun board?
+#if defined(ARDUINO_ARCH_SAMD)			// Is this a SAMD board?
+#if defined(USB_VID)					// Is the USB Vendor ID defined?
+#if (USB_VID == 0x1B4F)					// Is this a SparkFun board?
 #if !defined(ARDUINO_SAMD51_THING_PLUS) & !defined(ARDUINO_SAMD51_MICROMOD) // If it is not a SAMD51 Thing Plus or SAMD51 MicroMod
-#define Serial SerialUSB													// Define Serial as SerialUSB
+#define Serial SerialUSB				// Define Serial as SerialUSB
 #endif
 #endif
 #endif
 #endif
-
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Define a digital pin to aid checksum failure capture and analysis
@@ -492,6 +491,7 @@ public:
 // The same is true for getHPPOSLLH.
 #define getPVTmaxWait 1100		// Default maxWait for getPVT and all functions which call it
 #define getHPPOSLLHmaxWait 1100 // Default maxWait for getHPPOSLLH and all functions which call it
+#define getDOPmaxWait 1100 // Default maxWait for getDOP and all functions which all it
 
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true);							//In case no config access to the GPS is possible and PVT is send cyclically already
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = defaultMaxWait);							//Enable/disable automatic PVT reports at the navigation frequency
@@ -501,8 +501,13 @@ public:
 	boolean setAutoHPPOSLLH(boolean enabled, uint16_t maxWait = defaultMaxWait);							//Enable/disable automatic HPPOSLLH reports at the navigation frequency
 	boolean setAutoHPPOSLLH(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean getHPPOSLLH(uint16_t maxWait = getHPPOSLLHmaxWait);										//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new HPPOSLLH is available.
+  boolean assumeAutoDOP(boolean enabled, boolean implicitUpdate = true);              //In case no config access to the GPS is possible and DOP is send cyclically already
+  boolean setAutoDOP(boolean enabled, uint16_t maxWait = defaultMaxWait);              //Enable/disable automatic DOP reports at the navigation frequency
+  boolean setAutoDOP(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic DOP reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  boolean getDOP(uint16_t maxWait = getDOPmaxWait);                   //Query module for latest dilution of precision values and load global vars:. If autoDOP is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new DOP is available. 
 	void flushPVT();																				//Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
 	void flushHPPOSLLH();																				//Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
+  void flushDOP();                                       //Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
 
 	int32_t getLatitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
@@ -537,6 +542,14 @@ public:
 	int32_t getGeoidSeparation(uint16_t maxWait = getHPPOSLLHmaxWait);
 	uint32_t getHorizontalAccuracy(uint16_t maxWait = getHPPOSLLHmaxWait);
 	uint32_t getVerticalAccuracy(uint16_t maxWait = getHPPOSLLHmaxWait);
+
+  uint16_t getGeometricDOP(uint16_t maxWait = getDOPmaxWait);
+  uint16_t getPositionDOP(uint16_t maxWait = getDOPmaxWait);
+  uint16_t getTimeDOP(uint16_t maxWait = getDOPmaxWait);
+  uint16_t getVerticalDOP(uint16_t maxWait = getDOPmaxWait);
+  uint16_t getHorizontalDOP(uint16_t maxWait = getDOPmaxWait);
+  uint16_t getNorthingDOP(uint16_t maxWait = getDOPmaxWait);
+  uint16_t getEastingDOP(uint16_t maxWait = getDOPmaxWait);
 
 	//Port configurations
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
@@ -715,6 +728,14 @@ public:
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
+uint16_t geometricDOP; // Geometric dilution of precision * 10^-2
+uint16_t positionDOP; // Posoition dilution of precision * 10^-2
+uint16_t timeDOP; // Time dilution of precision * 10^-2
+uint16_t verticalDOP; // Vertical dilution of precision * 10^-2
+uint16_t horizontalDOP; // Horizontal dilution of precision * 10^-2
+uint16_t northingDOP; // Northing dilution of precision * 10^-2
+uint16_t eastingDOP; // Easting dilution of precision * 10^-2
+
 #define DEF_NUM_SENS 7
 	struct deadReckData
 	{
@@ -850,6 +871,9 @@ private:
 	boolean autoPVTImplicitUpdate = true; // Whether autoPVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
 	boolean autoHPPOSLLH = false;			  //Whether autoHPPOSLLH is enabled or not
 	boolean autoHPPOSLLHImplicitUpdate = true; // Whether autoHPPOSLLH is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+  boolean autoDOP = false;       //Whether autoDOP is enabled or not
+  boolean autoDOPImplicitUpdate = true; // Whether autoDOP is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+ 
 	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
@@ -902,6 +926,18 @@ private:
 		uint16_t highResLatitudeHp : 1;
 		uint16_t highResLongitudeHp : 1;
 	} highResModuleQueried;
+
+  struct
+  {
+    uint16_t all : 1;
+    uint16_t geometricDOP : 1;
+    uint16_t positionDOP : 1;
+    uint16_t timeDOP : 1;
+    uint16_t verticalDOP : 1;
+    uint16_t horizontalDOP : 1;
+    uint16_t northingDOP : 1;
+    uint16_t eastingDOP : 1;
+  } dopModuleQueried;
 
 	uint16_t rtcmLen = 0;
 };

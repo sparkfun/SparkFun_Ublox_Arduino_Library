@@ -553,8 +553,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
         //This is not an ACK and we do not have a complete class and ID match
         //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
         else if ((packetBuf.cls == requestedClass) &&
-          (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
-          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+          (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
+          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) || 
+           ((packetBuf.id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
         {
           //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
           activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
@@ -563,7 +564,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
           if (_printDebug == true)
           {
-            _debugSerial->print(F("process: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+            _debugSerial->print(F("process: auto PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
             _debugSerial->print(requestedID, HEX);
             _debugSerial->print(F(" Message ID: 0x"));
             _debugSerial->println(packetBuf.id, HEX);
@@ -825,14 +826,15 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       //This is not an ACK and we do not have a complete class and ID match
       //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
       else if ((incomingUBX->cls == requestedClass) &&
-        (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
-        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+        (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
+        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) || 
+        ((incomingUBX->id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
       {
         // This isn't the message we are looking for...
         // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
         if (_printDebug == true)
         {
-          _debugSerial->print(F("processUBX: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+          _debugSerial->print(F("processUBX: auto PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
           _debugSerial->print(requestedID, HEX);
           _debugSerial->print(F(" Message ID: 0x"));
           _debugSerial->println(incomingUBX->id, HEX);
@@ -1079,6 +1081,24 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         _debugSerial->println(((float)(int32_t)extractLong(32)) / 10000.0f);
       }
 */
+    }
+    else if (msg->id == UBX_NAV_DOP && msg->len == 18)
+    {
+      geometricDOP = extractInt(4);
+      positionDOP = extractInt(6);
+      timeDOP = extractInt(8);
+      verticalDOP = extractInt(10);
+      horizontalDOP = extractInt(12);
+      northingDOP = extractInt(14);
+      eastingDOP = extractInt(16);
+      dopModuleQueried.all = true;
+      dopModuleQueried.geometricDOP = true;
+      dopModuleQueried.positionDOP = true;
+      dopModuleQueried.timeDOP = true;
+      dopModuleQueried.verticalDOP = true;
+      dopModuleQueried.horizontalDOP = true;
+      dopModuleQueried.northingDOP = true;
+      dopModuleQueried.eastingDOP = true;
     }
     break;
   }
@@ -2403,6 +2423,49 @@ boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, u
   return ok;
 }
 
+
+//In case no config access to the GPS is possible and DOP is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoDOP(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoDOP != enabled || autoDOPImplicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    autoDOP = enabled;
+    autoDOPImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getDOP
+//works.
+boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, uint16_t maxWait)
+{
+  return setAutoDOP(enable, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getDOP
+//works.
+boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_DOP;
+  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+  boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    autoDOP = enable;
+    autoDOPImplicitUpdate = implicitUpdate;
+  }
+  dopModuleQueried.all = false;
+  return ok;
+}
+
 //Configure a given message type for a given port (UART1, I2C, SPI, etc)
 boolean SFE_UBLOX_GPS::configureMessage(uint8_t msgClass, uint8_t msgID, uint8_t portID, uint8_t sendRate, uint16_t maxWait)
 {
@@ -3054,6 +3117,15 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
       return (true);
     }
 
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_DOP))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by DOP (but that's OK)"));
+      }
+      return (true);
+    }
+
     if (_printDebug == true)
     {
       _debugSerial->print(F("getPVT retVal: "));
@@ -3229,6 +3301,14 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
       }
       return (true);
     }
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_DOP))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by DOP (but that's OK)"));
+      }
+      return (true);
+    }
 
     if (_printDebug == true)
     {
@@ -3239,6 +3319,141 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
   }
 }
 
+uint16_t SFE_UBLOX_GPS::getGeometricDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.geometricDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.geometricDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (geometricDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getPositionDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.positionDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.positionDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (positionDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getTimeDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.timeDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.timeDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (timeDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getVerticalDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.verticalDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.verticalDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (verticalDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getHorizontalDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.horizontalDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.horizontalDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (horizontalDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getNorthingDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.northingDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.northingDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (northingDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getEastingDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.eastingDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.eastingDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (eastingDOP);
+}
+
+boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
+{
+  if (autoDOP && autoDOPImplicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getDOP: Autoreporting"));
+    }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_DOP);
+    return dopModuleQueried.all;
+  }
+  else if (autoDOP && !autoDOPImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getDOP: Exit immediately"));
+    }
+    return (false);
+  }
+  else
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getDOP: Polling"));
+    }
+
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_DOP;
+    packetCfg.len = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+    
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_PVT))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by PVT (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_HPPOSLLH))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by HPPOSLLH (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("getDOP retVal: "));
+      _debugSerial->println(statusString(retVal));
+    }
+    return (false);
+  }
+}
 //Get the current 3D high precision positional accuracy - a fun thing to watch
 //Returns a long representing the 3D accuracy in millimeters
 uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
@@ -3494,6 +3709,20 @@ void SFE_UBLOX_GPS::flushHPPOSLLH()
   highResModuleQueried.horizontalAccuracy = false;
   highResModuleQueried.verticalAccuracy = false;
   //moduleQueried.gpsiTOW = false; // this can arrive via HPPOS too.
+}
+
+//Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GPS::flushDOP()
+{
+  //Mark all DOPs as stale (read before)
+  dopModuleQueried.all = false;
+  dopModuleQueried.geometricDOP = false;
+  dopModuleQueried.positionDOP = false;
+  dopModuleQueried.timeDOP = false;
+  dopModuleQueried.verticalDOP = false;
+  dopModuleQueried.horizontalDOP = false;
+  dopModuleQueried.northingDOP = false;
+  dopModuleQueried.eastingDOP = false;
 }
 
 //Relative Positioning Information in NED frame
