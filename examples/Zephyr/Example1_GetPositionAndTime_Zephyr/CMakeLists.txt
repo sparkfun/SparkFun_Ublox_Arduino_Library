@@ -7,8 +7,8 @@ project(sparkfun_ublox_zephyr_library)
 
 zephyr_compile_options(-fdiagnostics-color=always)
 
-zephyr_include_directories(../../src/)
-target_sources(app PRIVATE ../../src/SparkFun_Ublox_Zephyr_Library.cpp)
-target_sources(app PRIVATE ../../src/ublox_lib_interface.cpp)
+zephyr_include_directories(.)
+target_sources(app PRIVATE src/SparkFun_Ublox_Zephyr_Library.cpp)
+target_sources(app PRIVATE src/SparkFun_Ublox_Zephyr_Interface.cpp)
 
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c)

@@ -1,21 +1,23 @@
 /*
-  Read NMEA sentences over I2C using Ublox module SAM-M8Q, NEO-M8P, ZED-F9P, etc
-  By: Nathan Seidle
-  SparkFun Electronics
-  Date: August 22nd, 2018
-  License: MIT. See license file for more information but you can
-  basically do whatever you want with this code.
+    Reading lat, long and UTC time via UBX binary commands
+    By: Nathan Seidle
+    SparkFun Electronics
+    Date: August 22nd, 2018
+    License: MIT. See license file for more information but you can
+    basically do whatever you want with this code.
 
-  This example reads the NMEA setences from the Ublox module over I2c and outputs
-  them to the serial port
+    This example reads the NMEA setences from the Ublox module over I2c and outputs
+    them to the serial port
 
-  Open the serial monitor at 115200 baud to see the output
-  I2C clock speed: 100 kHz
+    Open the serial monitor at 115200 baud to see the output
+    I2C clock speed: 100 kHz
 
-  Ported to Zephyr by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
+    Ported to Zephyr by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
 
-  To build: west build -b <BOARD_NAME> -p
-  To flash: west flash --erase
+    Development environment specifics: NCS v1.0.3 release
+
+    To build: west build -b <BOARD_NAME> -p    Can also read NMEA sentences over I2C with check_ublox function
+    To flash: west flash --erase
 */
 #include <device.h>
 #include <drivers/i2c.h>
@@ -23,7 +25,7 @@
 #include <zephyr.h>
 #include <zephyr/types.h>
 
-#include "ublox_lib_interface.h"
+#include "SparkFun_Ublox_Zephyr_Interface.h"
 
 
 #define I2C_DEV "I2C_0"
@@ -74,7 +76,7 @@ uint8_t init_gps(void) {
 
 
 void main(void) {
-	printk("Ublox Zephyr example\n");
+	printk("Zephyr Ublox example\n");
 
 	int err;
     err = init_gpio();
@@ -92,9 +94,9 @@ void main(void) {
     }
 
 	while(1) {
-		//check_ublox(); // See if new data is available. Process bytes as they come in.
+        //check_ublox(); // See if new data is available. Process bytes as they come in.
         get_position();
         get_datetime();
-		k_msleep(250); // Don't pound too hard on the I2C bus
+        k_msleep(250); // Don't pound too hard on the I2C bus
 	}
 }

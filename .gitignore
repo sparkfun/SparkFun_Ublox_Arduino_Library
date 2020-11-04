@@ -55,4 +55,4 @@ Temporary Items
 *.swp
 
 # Zephyr build files
-examples/Example_Zephyr/build/*
+examples/Zephyr/*/build/*

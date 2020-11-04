@@ -4,7 +4,7 @@
 
     This port was made by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
 */
-#include "ublox_lib_interface.h"
+#include "SparkFun_Ublox_Zephyr_Interface.h"
 
 #include <errno.h>
 #include <stdio.h>
