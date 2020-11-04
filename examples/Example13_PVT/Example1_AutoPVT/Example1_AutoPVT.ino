@@ -78,7 +78,32 @@ void loop()
     int PDOP = myGPS.getPDOP();
     Serial.print(F(" PDOP: "));
     Serial.print(PDOP);
-    Serial.print(F(" (10^-2)"));    
+    Serial.print(F(" (10^-2)"));
+
+    int nedNorthVel = myGPS.getNedNorthVel();
+    Serial.print(F(" VelN: "));
+    Serial.print(nedNorthVel);
+    Serial.print(F(" (mm/s)"));
+
+    int nedEastVel = myGPS.getNedEastVel();
+    Serial.print(F(" VelE: "));
+    Serial.print(nedEastVel);
+    Serial.print(F(" (mm/s)"));
+
+    int nedDownVel = myGPS.getNedDownVel();
+    Serial.print(F(" VelD: "));
+    Serial.print(nedDownVel);
+    Serial.print(F(" (mm/s)"));
+
+    int verticalAccEst = myGPS.getVerticalAccEst();
+    Serial.print(F(" VAccEst: "));
+    Serial.print(verticalAccEst);
+    Serial.print(F(" (mm)"));
+
+    int horizontalAccEst = myGPS.getHorizontalAccEst();
+    Serial.print(F(" HAccEst: "));
+    Serial.print(horizontalAccEst);
+    Serial.print(F(" (mm)"));
 
     Serial.println();
   } else {

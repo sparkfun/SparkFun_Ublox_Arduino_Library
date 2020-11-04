@@ -53,11 +53,11 @@ getGroundSpeed	KEYWORD2
 getHeading	KEYWORD2
 getPDOP	KEYWORD2
 getTimeOfWeek	KEYWORD2
-getHorizontalAccEst KEYWORD2
-getVerticalAccEst KEYWORD2
-getNedNorthVel KEYWORD2
-getNedEastVel KEYWORD2
-getNedDownVel KEYWORD2
+getHorizontalAccEst	KEYWORD2
+getVerticalAccEst	KEYWORD2
+getNedNorthVel	KEYWORD2
+getNedEastVel	KEYWORD2
+getNedDownVel	KEYWORD2
 
 setPortOutput	KEYWORD2
 setPortInput	KEYWORD2
