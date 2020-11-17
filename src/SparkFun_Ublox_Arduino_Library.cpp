@@ -554,7 +554,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
         //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
         else if ((packetBuf.cls == requestedClass) &&
           (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
-          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) || 
+          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
            ((packetBuf.id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
         {
           //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
@@ -827,7 +827,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
       else if ((incomingUBX->cls == requestedClass) &&
         (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
-        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) || 
+        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
         ((incomingUBX->id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
       {
         // This isn't the message we are looking for...
@@ -979,25 +979,25 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gpsSecond = extractByte(10);
       gpsDateValid = extractByte(11) & 0x01;
       gpsTimeValid = (extractByte(11) & 0x02) >> 1;
-      gpsNanosecond = extractLong(16); //Includes milliseconds
+      gpsNanosecond = extractSignedLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
       gnssFixOk = extractByte(21 - startingSpot) & 0x1; //Get the 1st bit
       diffSoln = extractByte(21 - startingSpot) >> 1 & 0x1; //Get the 2nd bit
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
       SIV = extractByte(23 - startingSpot);
-      longitude = extractLong(24 - startingSpot);
-      latitude = extractLong(28 - startingSpot);
-      altitude = extractLong(32 - startingSpot);
-      altitudeMSL = extractLong(36 - startingSpot);
+      longitude = extractSignedLong(24 - startingSpot);
+      latitude = extractSignedLong(28 - startingSpot);
+      altitude = extractSignedLong(32 - startingSpot);
+      altitudeMSL = extractSignedLong(36 - startingSpot);
       horizontalAccEst = extractLong(40 - startingSpot);
       verticalAccEst = extractLong(44 - startingSpot);
-      nedNorthVel = extractLong(48 - startingSpot);
-      nedEastVel = extractLong(52 - startingSpot);
-      nedDownVel = extractLong(56 - startingSpot);
+      nedNorthVel = extractSignedLong(48 - startingSpot);
+      nedEastVel = extractSignedLong(52 - startingSpot);
+      nedDownVel = extractSignedLong(56 - startingSpot);
 
-      groundSpeed = extractLong(60 - startingSpot);
-      headingOfMotion = extractLong(64 - startingSpot);
+      groundSpeed = extractSignedLong(60 - startingSpot);
+      headingOfMotion = extractSignedLong(64 - startingSpot);
       pDOP = extractInt(76 - startingSpot);
 
       //Mark all datums as fresh (not read before)
@@ -1036,10 +1036,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
     {
       timeOfWeek = extractLong(4);
-      highResLongitude = extractLong(8);
-      highResLatitude = extractLong(12);
-      elipsoid = extractLong(16);
-      meanSeaLevel = extractLong(20);
+      highResLongitude = extractSignedLong(8);
+      highResLatitude = extractSignedLong(12);
+      elipsoid = extractSignedLong(16);
+      meanSeaLevel = extractSignedLong(20);
       highResLongitudeHp = extractSignedChar(24);
       highResLatitudeHp = extractSignedChar(25);
       elipsoidHp = extractSignedChar(26);
@@ -2973,6 +2973,19 @@ uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
   return (val);
 }
 
+//Just so there is no ambiguity about whether a uint32_t will cast to a int32_t correctly...
+int32_t SFE_UBLOX_GPS::extractSignedLong(uint8_t spotToStart)
+{
+  union // Use a union to convert from uint32_t to int32_t
+  {
+      uint32_t unsignedLong;
+      int32_t signedLong;
+  } unsignedSigned;
+
+  unsignedSigned.unsignedLong = extractLong(spotToStart);
+  return (unsignedSigned.signedLong);
+}
+
 //Given a spot in the payload array, extract two bytes and build an int
 uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
 {
@@ -3444,7 +3457,7 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
       return (true);
-    
+
     if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_PVT))
     {
       if (_printDebug == true)
@@ -3733,7 +3746,7 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
   for (uint8_t extensionNumber = 0; extensionNumber < 10; extensionNumber++)
   {
     //Now we need to find "PROTVER=18.00" in the incoming byte stream
-    if (payloadCfg[(30 * extensionNumber) + 0] == 'P' && payloadCfg[(30 * extensionNumber) + 6] == 'R')
+    if ((payloadCfg[(30 * extensionNumber) + 0] == 'P') && (payloadCfg[(30 * extensionNumber) + 6] == 'R'))
     {
       versionHigh = (payloadCfg[(30 * extensionNumber) + 8] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 9] - '0');  //Convert '18' to 18
       versionLow = (payloadCfg[(30 * extensionNumber) + 11] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 12] - '0'); //Convert '00' to 00
@@ -3818,6 +3831,9 @@ void SFE_UBLOX_GPS::flushDOP()
 
 //Relative Positioning Information in NED frame
 //Returns true if commands was successful
+//Note:
+//  RELPOSNED on the M8 is only 40 bytes long
+//  RELPOSNED on the F9 is 64 bytes long and contains much more information
 boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_NAV;
@@ -3836,35 +3852,73 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
   int32_t tempRelPos;
 
-  tempRelPos = extractLong(8);
-  relPosInfo.relPosN = tempRelPos / 100.0; //Convert cm to m
+  tempRelPos = extractSignedLong(8);
+  relPosInfo.relPosN = ((float)tempRelPos) / 100.0; //Convert cm to m
 
-  tempRelPos = extractLong(12);
-  relPosInfo.relPosE = tempRelPos / 100.0; //Convert cm to m
+  tempRelPos = extractSignedLong(12);
+  relPosInfo.relPosE = ((float)tempRelPos) / 100.0; //Convert cm to m
 
-  tempRelPos = extractLong(16);
-  relPosInfo.relPosD = tempRelPos / 100.0; //Convert cm to m
+  tempRelPos = extractSignedLong(16);
+  relPosInfo.relPosD = ((float)tempRelPos) / 100.0; //Convert cm to m
 
-  relPosInfo.relPosLength = extractLong(20);
-  relPosInfo.relPosHeading = extractLong(24);
+  if (packetCfg.len == 40)
+  {
+    // The M8 version does not contain relPosLength or relPosHeading
+    relPosInfo.relPosLength = 0;
+    relPosInfo.relPosHeading = 0;
+  }
+  else
+  {
+    relPosInfo.relPosLength = extractSignedLong(20);
+    relPosInfo.relPosHeading = extractSignedLong(24);
+  }
 
-  relPosInfo.relPosHPN = payloadCfg[32];
-  relPosInfo.relPosHPE = payloadCfg[33];
-  relPosInfo.relPosHPD = payloadCfg[34];
-  relPosInfo.relPosHPLength = payloadCfg[35];
+  if (packetCfg.len == 40)
+  {
+    relPosInfo.relPosHPN = payloadCfg[20];
+    relPosInfo.relPosHPE = payloadCfg[21];
+    relPosInfo.relPosHPD = payloadCfg[22];
+    relPosInfo.relPosHPLength = 0; // The M8 version does not contain relPosHPLength
+  }
+  else
+  {
+    relPosInfo.relPosHPN = payloadCfg[32];
+    relPosInfo.relPosHPE = payloadCfg[33];
+    relPosInfo.relPosHPD = payloadCfg[34];
+    relPosInfo.relPosHPLength = payloadCfg[35];
+  }
 
   uint32_t tempAcc;
 
-  tempAcc = extractLong(36);
-  relPosInfo.accN = tempAcc / 10000.0; //Convert 0.1 mm to m
+  if (packetCfg.len == 40)
+  {
+    tempAcc = extractLong(24);
+    relPosInfo.accN = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(28);
+    relPosInfo.accE = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(32);
+    relPosInfo.accD = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+  }
+  else
+  {
+    tempAcc = extractLong(36);
+    relPosInfo.accN = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(40);
+    relPosInfo.accE = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(44);
+    relPosInfo.accD = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+  }
 
-  tempAcc = extractLong(40);
-  relPosInfo.accE = tempAcc / 10000.0; //Convert 0.1 mm to m
+  uint8_t flags;
 
-  tempAcc = extractLong(44);
-  relPosInfo.accD = tempAcc / 10000.0; //Convert 0.1 mm to m
-
-  uint8_t flags = payloadCfg[60];
+  if (packetCfg.len == 40)
+  {
+    flags = payloadCfg[36];
+  }
+  else
+  {
+    flags = payloadCfg[60];
+  }
 
   relPosInfo.gnssFixOk = flags & (1 << 0);
   relPosInfo.diffSoln = flags & (1 << 1);
@@ -3876,6 +3930,7 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
   return (true);
 }
+
 boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
 {
   // Requesting Data from the receiver
@@ -3914,20 +3969,20 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   // Validity of each sensor value below
   uint32_t validity = extractLong(0);
 
-  imuMeas.xAngRateVald = (validity && 0x0080) >> 8;
-  imuMeas.yAngRateVald = (validity && 0x0100) >> 9;
-  imuMeas.zAngRateVald = (validity && 0x0200) >> 10;
-  imuMeas.xAccelVald = (validity && 0x0400) >> 11;
-  imuMeas.yAccelVald = (validity && 0x0800) >> 12;
-  imuMeas.zAccelVald = (validity && 0x1000) >> 13;
+  imuMeas.xAngRateVald = (validity & 0x0100) >> 8;
+  imuMeas.yAngRateVald = (validity & 0x0200) >> 9;
+  imuMeas.zAngRateVald = (validity & 0x0400) >> 10;
+  imuMeas.xAccelVald = (validity & 0x0800) >> 11;
+  imuMeas.yAccelVald = (validity & 0x1000) >> 12;
+  imuMeas.zAccelVald = (validity & 0x2000) >> 13;
 
-  imuMeas.xAngRate = extractLong(12); // deg/s
-  imuMeas.yAngRate = extractLong(16); // deg/s
-  imuMeas.zAngRate = extractLong(20); // deg/s
+  imuMeas.xAngRate = extractSignedLong(12); // 0.001 deg/s
+  imuMeas.yAngRate = extractSignedLong(16); // 0.001 deg/s
+  imuMeas.zAngRate = extractSignedLong(20); // 0.001 deg/s
 
-  imuMeas.xAccel = extractLong(24); // m/s
-  imuMeas.yAccel = extractLong(28); // m/s
-  imuMeas.zAccel = extractLong(32); // m/s
+  imuMeas.xAccel = extractSignedLong(24); // 0.01 m/s^2
+  imuMeas.yAccel = extractSignedLong(28); // 0.01 m/s^2
+  imuMeas.zAccel = extractSignedLong(32); // 0.01 m/s^2
 
   return (true);
 }
@@ -3949,23 +4004,34 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   uint32_t timeStamp = extractLong(0);
   uint32_t flags = extractInt(4);
 
-  uint8_t timeSent = (flags && 0x01) >> 1;
-  uint8_t timeEdge = (flags && 0x02) >> 2;
-  uint8_t tagValid = (flags && 0x04) >> 3;
-  uint8_t numMeas = (flags && 0x1000) >> 15;
+  uint8_t timeSent = flags & 0x03; // timeSent is 2-bit: 0 = none, 1 = on Ext0, 2 = on Ext1
+  uint8_t timeEdge = (flags & 0x04) >> 2;
+  uint8_t tagValid = (flags & 0x08) >> 3;
+  uint8_t numMeas = (flags & 0xF800) >> 11;
 
-  if (numMeas > DEF_NUM_SENS)
+  if (numMeas > DEF_NUM_SENS) // Truncate numMeas if required
     numMeas = DEF_NUM_SENS;
 
   uint8_t byteOffset = 4;
 
   for (uint8_t i = 0; i < numMeas; i++)
   {
+    uint32_t bitField = extractLong(8 + (byteOffset * i));
+    imuMeas.dataType[i] = (bitField & 0x3F000000) >> 24;
+    imuMeas.data[i] = (bitField & 0xFFFFFF);
+  }
 
-    uint32_t bitField = extractLong(4 + byteOffset * i);
-    imuMeas.dataType[i] = (bitField && 0xFF000000) >> 23;
-    imuMeas.data[i] = (bitField && 0xFFFFFF);
-    imuMeas.dataTStamp[i] = extractLong(8 + byteOffset * i);
+  numMeas = (flags & 0xF800) >> 11; // Restore numMeas
+
+  if (packetCfg.len > (8 + (4 * numMeas))) // The calibTtag is optional - only extract it if it is present
+  {
+    uint8_t startOfTtag = 8 + (4 * numMeas); // Calculate where the Ttag data starts
+    if (numMeas > DEF_NUM_SENS) // Truncate numMeas if required
+      numMeas = DEF_NUM_SENS;
+    for (uint8_t i = 0; i < numMeas; i++)
+    {
+      imuMeas.dataTStamp[i] = extractLong(startOfTtag + (byteOffset * i));
+    }
   }
 
   return (true);
@@ -3987,13 +4053,15 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   checkUblox();
 
   uint32_t bitField = extractLong(4);
-  imuMeas.rawDataType = (bitField && 0xFF000000) >> 23;
-  imuMeas.rawData = (bitField && 0xFFFFFF);
+  imuMeas.rawDataType = (bitField & 0xFF000000) >> 24;
+  imuMeas.rawData = (bitField & 0xFFFFFF);
+
   imuMeas.rawTStamp = extractLong(8);
 
   return (true);
 }
 
+// Note: senor numbering starts at 1 (not 0)
 sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
 {
 
@@ -4018,22 +4086,22 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
   for (uint8_t i = 0; i < sensor; i++)
   {
 
-    uint8_t sensorFieldOne = extractByte(16 + offset * i);
-    uint8_t sensorFieldTwo = extractByte(17 + offset * i);
-    ubloxSen.freq = extractByte(18 + offset * i);
+    uint8_t sensorFieldOne = extractByte(16 + (offset * i));
+    uint8_t sensorFieldTwo = extractByte(17 + (offset * i));
+    ubloxSen.freq = extractByte(18 + (offset * i));
     uint8_t sensorFieldThr = extractByte(19 + offset * i);
 
-    ubloxSen.senType = (sensorFieldOne && 0x10) >> 5;
-    ubloxSen.isUsed = (sensorFieldOne && 0x20) >> 6;
-    ubloxSen.isReady = (sensorFieldOne && 0x30) >> 7;
+    ubloxSen.senType = (sensorFieldOne & 0x3F);
+    ubloxSen.isUsed = (sensorFieldOne & 0x40) >> 6;
+    ubloxSen.isReady = (sensorFieldOne & 0x80) >> 7;
 
-    ubloxSen.calibStatus = sensorFieldTwo && 0x03;
-    ubloxSen.timeStatus = (sensorFieldTwo && 0xC) >> 2;
+    ubloxSen.calibStatus = sensorFieldTwo & 0x03;
+    ubloxSen.timeStatus = (sensorFieldTwo & 0xC) >> 2;
 
-    ubloxSen.badMeas = (sensorFieldThr && 0x01);
-    ubloxSen.badTag = (sensorFieldThr && 0x02) >> 1;
-    ubloxSen.missMeas = (sensorFieldThr && 0x04) >> 2;
-    ubloxSen.noisyMeas = (sensorFieldThr && 0x08) >> 3;
+    ubloxSen.badMeas = (sensorFieldThr & 0x01);
+    ubloxSen.badTag = (sensorFieldThr & 0x02) >> 1;
+    ubloxSen.missMeas = (sensorFieldThr & 0x04) >> 2;
+    ubloxSen.noisyMeas = (sensorFieldThr & 0x08) >> 3;
   }
 
   return (SFE_UBLOX_STATUS_SUCCESS);
@@ -4052,13 +4120,13 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
 
   checkUblox();
 
-  vehAtt.roll = extractLong(8);
-  vehAtt.pitch = extractLong(12);
-  vehAtt.heading = extractLong(16);
+  vehAtt.roll = extractSignedLong(8); // 0.00001 deg
+  vehAtt.pitch = extractSignedLong(12); // 0.00001 deg
+  vehAtt.heading = extractSignedLong(16); // 0.00001 deg
 
-  vehAtt.accRoll = extractLong(20);
-  vehAtt.accPitch = extractLong(24);
-  vehAtt.accHeading = extractLong(28);
+  vehAtt.accRoll = extractLong(20); // 0.00001 deg
+  vehAtt.accPitch = extractLong(24); // 0.00001 deg
+  vehAtt.accHeading = extractLong(28); // 0.00001 deg
 
   return (true);
 }
