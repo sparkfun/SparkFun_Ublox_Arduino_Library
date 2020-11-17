@@ -4026,11 +4026,11 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   if (packetCfg.len > (8 + (4 * numMeas))) // The calibTtag is optional - only extract it if it is present
   {
     uint8_t startOfTtag = 8 + (4 * numMeas); // Calculate where the Ttag data starts
-    if (numMeas > DEF_NUM_SENS) // Truncate numMeas if required
+    if (numMeas > DEF_NUM_SENS) // Truncate numMeas again if required
       numMeas = DEF_NUM_SENS;
     for (uint8_t i = 0; i < numMeas; i++)
     {
-      imuMeas.dataTStamp[i] = extractLong(startOfTtag + (byteOffset * i));
+      imuMeas.dataTStamp[i] = extractLong(startOfTtag); // calibTtag is only appended once
     }
   }
 
