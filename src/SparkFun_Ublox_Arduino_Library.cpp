@@ -2347,10 +2347,8 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false);                                                       //If command send fails then bail
 
-  uint16_t measurementRate = 0;
-
   //payloadCfg is now loaded with current bytes. Get what we need
-  measurementRate = extractInt(0); //Pull from payloadCfg at measRate LSB
+  uint16_t measurementRate = extractInt(0); //Pull from payloadCfg at measRate LSB
 
   measurementRate = 1000 / measurementRate; //This may return an int when it's a float, but I'd rather not return 4 bytes
   return (measurementRate);
