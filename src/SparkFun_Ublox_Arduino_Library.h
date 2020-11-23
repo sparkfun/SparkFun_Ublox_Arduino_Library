@@ -52,19 +52,6 @@
 
 #include "u-blox_config_keys.h"
 
-// Define Serial for SparkFun SAMD based boards.
-// Boards like the RedBoard Turbo use SerialUSB (not Serial).
-// But other boards like the SAMD51 Thing Plus use Serial (not SerialUSB).
-// The next nine lines let the code compile cleanly on as many SAMD boards as possible.
-#if defined(ARDUINO_ARCH_SAMD)			// Is this a SAMD board?
-#if defined(USB_VID)					// Is the USB Vendor ID defined?
-#if (USB_VID == 0x1B4F)					// Is this a SparkFun board?
-#if !defined(ARDUINO_SAMD51_THING_PLUS) & !defined(ARDUINO_SAMD51_MICROMOD) // If it is not a SAMD51 Thing Plus or SAMD51 MicroMod
-#define Serial SerialUSB				// Define Serial as SerialUSB
-#endif
-#endif
-#endif
-#endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Define a digital pin to aid checksum failure capture and analysis
@@ -623,7 +610,28 @@ public:
 
 	boolean getRELPOSNED(uint16_t maxWait = 1100); //Get Relative Positioning Information of the NED frame
 
+	// Enable debug messages using the chosen Serial port (Stream)
+	// Boards like the RedBoard Turbo use SerialUSB (not Serial).
+	// But other boards like the SAMD51 Thing Plus use Serial (not SerialUSB).
+	// These lines let the code compile cleanly on as many SAMD boards as possible.
+	#if defined(ARDUINO_ARCH_SAMD)	// Is this a SAMD board?
+	#if defined(USB_VID)						// Is the USB Vendor ID defined?
+	#if (USB_VID == 0x1B4F)					// Is this a SparkFun board?
+	#if !defined(ARDUINO_SAMD51_THING_PLUS) & !defined(ARDUINO_SAMD51_MICROMOD) // If it is not a SAMD51 Thing Plus or SAMD51 MicroMod
+	void enableDebugging(Stream &debugPort = SerialUSB, boolean printLimitedDebug = false); //Given a port to print to, enable debug messages. Default to all, not limited.
+	#else
 	void enableDebugging(Stream &debugPort = Serial, boolean printLimitedDebug = false); //Given a port to print to, enable debug messages. Default to all, not limited.
+	#endif
+	#else
+	void enableDebugging(Stream &debugPort = Serial, boolean printLimitedDebug = false); //Given a port to print to, enable debug messages. Default to all, not limited.
+	#endif
+	#else
+	void enableDebugging(Stream &debugPort = Serial, boolean printLimitedDebug = false); //Given a port to print to, enable debug messages. Default to all, not limited.
+	#endif
+	#else
+	void enableDebugging(Stream &debugPort = Serial, boolean printLimitedDebug = false); //Given a port to print to, enable debug messages. Default to all, not limited.
+	#endif
+
 	void disableDebugging(void);														 //Turn off debug statements
 	void debugPrint(char *message);														 //Safely print debug statements
 	void debugPrintln(char *message);													 //Safely print debug statements
