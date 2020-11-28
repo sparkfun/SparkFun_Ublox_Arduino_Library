@@ -924,14 +924,14 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
     uint16_t startingSpot = incomingUBX->startingSpot;
     if (incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
       startingSpot = 0;
-    //Begin recording if counter goes past startingSpot
-    if ((incomingUBX->counter - 4) >= startingSpot)
+    // Check if this is payload data which should be ignored
+    if (ignoreThisPayload == false)
     {
-      //Check to see if we have room for this byte
-      if (((incomingUBX->counter - 4) - startingSpot) < MAX_PAYLOAD_SIZE) //If counter = 208, starting spot = 200, we're good to record.
+      //Begin recording if counter goes past startingSpot
+      if ((incomingUBX->counter - 4) >= startingSpot)
       {
-        // Check if this is payload data which should be ignored
-        if (ignoreThisPayload == false)
+        //Check to see if we have room for this byte
+        if (((incomingUBX->counter - 4) - startingSpot) < MAX_PAYLOAD_SIZE) //If counter = 208, starting spot = 200, we're good to record.
         {
           incomingUBX->payload[incomingUBX->counter - 4 - startingSpot] = incoming; //Store this byte into payload array
         }
