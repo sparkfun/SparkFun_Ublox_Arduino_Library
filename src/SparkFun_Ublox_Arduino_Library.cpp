@@ -962,7 +962,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
   switch (msg->cls)
   {
   case UBX_CLASS_NAV:
-    if (msg->id == UBX_NAV_PVT && msg->len == 92)
+    if (msg->id == UBX_NAV_PVT && (msg->len == 92 || (msg->len == 84 && getProtocolVersionHigh(defaultMaxWait) == 14)))
     {
       //Parse various byte fields into global vars
       constexpr int startingSpot = 0; //fixed value used in processUBX
