@@ -761,6 +761,9 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 //a subset of bytes within a larger packet.
 void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
+   size_t max_payload_size = (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG) ? MAX_PAYLOAD_SIZE : 2;
+   bool overrun = false;
+
   //Add all incoming bytes to the rolling checksum
   //Stop at len+4 as this is the checksum bytes to that should not be added to the rolling checksum
   if (incomingUBX->counter < incomingUBX->len + 4)
@@ -926,16 +929,20 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
     uint16_t startingSpot = incomingUBX->startingSpot;
     if (incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
       startingSpot = 0;
-    //Begin recording if counter goes past startingSpot
-    if ((incomingUBX->counter - 4) >= startingSpot)
+    // Check if this is payload data which should be ignored
+    if (ignoreThisPayload == false)
     {
-      //Check to see if we have room for this byte
-      if (((incomingUBX->counter - 4) - startingSpot) < MAX_PAYLOAD_SIZE) //If counter = 208, starting spot = 200, we're good to record.
+      //Begin recording if counter goes past startingSpot
+      if ((incomingUBX->counter - 4) >= startingSpot)
       {
-        // Check if this is payload data which should be ignored
-        if (ignoreThisPayload == false)
+        //Check to see if we have room for this byte
+        if (((incomingUBX->counter - 4) - startingSpot) < max_payload_size) //If counter = 208, starting spot = 200, we're good to record.
         {
           incomingUBX->payload[incomingUBX->counter - 4 - startingSpot] = incoming; //Store this byte into payload array
+        }
+        else
+        {
+          overrun = true;
         }
       }
     }
@@ -944,7 +951,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
   //Increment the counter
   incomingUBX->counter++;
 
-  if (incomingUBX->counter == MAX_PAYLOAD_SIZE)
+  if (overrun or incomingUBX->counter == MAX_PAYLOAD_SIZE)
   {
     //Something has gone very wrong
     currentSentence = NONE; //Reset the sentence to being looking for a new start char
