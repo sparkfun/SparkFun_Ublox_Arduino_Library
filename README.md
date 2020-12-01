@@ -49,6 +49,12 @@ Thanks to:
 * [blazczak](https://github.com/blazczak) and [geeksville](https://github.com/geeksville) for adding support for the series 6 and 7 modules.
 * [bjorn@unsurv](https://github.com/unsurv) for adding powerOff and powerOffWithInterrupt.
 * [dotMorten](https://github.com/dotMorten) for the MSGOUT keys, autoHPPOSLLH, autoDOP and upgrades to autoPVT.
+* [markuckermann](https://github.com/markuckermann) for spotting the config layer gremlins
+* [vid553](https://github.com/vid553) for the Zephyr port
+* [balamuruganky](https://github.com/balamuruganky) for the NAV-PVT velocity parameters
+* [nelarsen](https://github.com/nelarsen) for the buffer overrun improvements
+* [mstranne](https://github.com/mstranne) and [shaneperera](https://github.com/shaneperera) for the pushRawData suggestion
+* [rubienr](https://github.com/rubienr) for spotting the logical AND issues
 
 Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
 
