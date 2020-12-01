@@ -1190,7 +1190,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
   //Point at 0xFF data register
   _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
   _i2cPort->write(0xFF);
-  if (_i2cPort->endTransmission() != 0)         //Don't release bus
+  if (_i2cPort->endTransmission(false) != 0)         //Don't release bus
     return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
 
   //Write header bytes
