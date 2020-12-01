@@ -173,6 +173,8 @@ getI2CTransactionSize	KEYWORD2
 
 setStaticPosition   KEYWORD2
 
+pushRawData   KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################

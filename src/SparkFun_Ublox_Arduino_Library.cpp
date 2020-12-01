@@ -4197,3 +4197,51 @@ bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, in
 {
   return (setStaticPosition(ecefXOrLat, 0, ecefYOrLon, 0, ecefZOrAlt, 0, latlong, maxWait));
 }
+
+// Push (e.g.) RTCM data directly to the module
+// Returns true if all numDataBytes were pushed successfully
+// Warning: this function does not check that the data is valid. It is the user's responsibility to ensure the data is valid before pushing.
+boolean SFE_UBLOX_GPS::pushRawData(uint8_t *dataBytes, size_t numDataBytes)
+{
+  if (commType == COMM_TYPE_SERIAL)
+  {
+    // Serial: write all the bytes in one go
+    size_t bytesWritten = _serialPort->write(dataBytes, numDataBytes);
+    return (bytesWritten == numDataBytes);
+  }
+  else
+  {
+    // I2C: split the data up into packets of i2cTransactionSize
+    size_t bytesLeftToWrite = numDataBytes;
+    size_t bytesWrittenTotal = 0;
+
+    while (bytesLeftToWrite > 0)
+    {
+      size_t bytesToWrite; // Limit bytesToWrite to i2cTransactionSize
+      if (bytesLeftToWrite > i2cTransactionSize)
+        bytesToWrite = i2cTransactionSize;
+      else
+        bytesToWrite = bytesLeftToWrite;
+
+      _i2cPort->beginTransmission(_gpsI2Caddress);
+      size_t bytesWritten = _i2cPort->write(dataBytes, bytesToWrite); // Write the bytes
+
+      bytesWrittenTotal += bytesWritten; // Update the totals
+      bytesLeftToWrite -= bytesToWrite;
+      dataBytes += bytesToWrite; // Point to fresh data
+
+      if (bytesLeftToWrite > 0)
+      {
+        if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
+          return (false);                          //Sensor did not ACK
+      }
+      else
+      {
+        if (_i2cPort->endTransmission() != 0) //We're done. Release bus.
+          return (false);                     //Sensor did not ACK
+      }
+    }
+
+    return (bytesWrittenTotal == numDataBytes);
+  }
+}

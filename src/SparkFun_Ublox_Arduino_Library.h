@@ -666,6 +666,10 @@ public:
 	bool setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, int32_t ecefYOrLon, int8_t ecefYOrLonHP, int32_t ecefZOrAlt, int8_t ecefZOrAltHP, bool latLong = false, uint16_t maxWait = 250);
 	bool setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latLong = false, uint16_t maxWait = 250);
 
+	// Push (e.g.) RTCM data directly to the module
+	// Warning: this function does not check that the data is valid. It is the user's responsibility to ensure the data is valid before pushing.
+	boolean pushRawData(uint8_t *dataBytes, size_t numDataBytes);
+
 	//Survey-in specific controls
 	struct svinStructure
 	{

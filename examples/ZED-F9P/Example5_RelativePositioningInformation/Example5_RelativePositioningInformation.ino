@@ -26,11 +26,20 @@
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
+//#define USE_SERIAL1 // Uncomment this line to push the RTCM data from Serial1 to the module via I2C
+
+size_t numBytes = 0; // Record the number os bytes received from Serial1
+
 void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
   Serial.println("Ublox Base station example");
+
+#ifdef USE_SERIAL1
+  // If our board supports it, we can receive the RTCM data on Serial1
+  Serial1.begin(115200);
+#endif
 
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
@@ -40,6 +49,15 @@ void setup()
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
+
+  // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
+  //myGPS.factoryDefault(); delay(5000);
+
+#ifdef USE_SERIAL1
+  Serial.print(F("Enabling UBX and RTCM input on I2C. Result: "));
+  Serial.print(myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3)); //Enable UBX and RTCM input on I2C
+  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
+#endif
 }
 
 void loop()
@@ -121,5 +139,23 @@ void loop()
   else
     Serial.println("RELPOS request failed");
 
-  delay(4000);
+  for (int i = 0; i < 500; i++)
+  {
+#ifdef USE_SERIAL1
+    uint8_t store[256];
+    while ((Serial1.available()) && (numBytes < 256)) // Check if data has been received
+    {
+      store[numBytes++] = Serial1.read(); // Read a byte from Serial1 and store it
+    }
+    if (numBytes > 0) // Check if data was received
+    {
+      //Serial.print("Pushing ");
+      //Serial.print(numBytes);
+      //Serial.println(" bytes via I2C");
+      myGPS.pushRawData(((uint8_t *)&store), numBytes); // Push the RTCM data via I2C
+      numBytes = 0; // Reset numBytes
+    }
+#endif
+    delay(10);
+  }
 }
