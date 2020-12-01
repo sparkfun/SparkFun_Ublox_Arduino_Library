@@ -951,13 +951,16 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
   //Increment the counter
   incomingUBX->counter++;
 
-  if (overrun or incomingUBX->counter == MAX_PAYLOAD_SIZE)
+  if (overrun || (incomingUBX->counter == MAX_PAYLOAD_SIZE))
   {
     //Something has gone very wrong
     currentSentence = NONE; //Reset the sentence to being looking for a new start char
-    if (_printDebug == true)
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
     {
-      _debugSerial->println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
+      if (overrun)
+        _debugSerial->println(F("processUBX: buffer overrun detected"));
+      else
+        _debugSerial->println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
     }
   }
 }
