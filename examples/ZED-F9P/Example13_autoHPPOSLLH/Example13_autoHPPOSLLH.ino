@@ -43,6 +43,7 @@ void setup()
   Wire.begin();
 
   //myGPS.enableDebugging(); // Uncomment this line to enable lots of helpful debug messages
+  //myGPS.enableDebugging(Serial, true); // Uncomment this line to enable the minimum of helpful debug messages
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
@@ -55,21 +56,21 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
-  
+
   myGPS.setNavigationFrequency(1); //Produce one solution per second
-  
+
 
   // The acid test: all four of these combinations should work seamlessly :-)
-  
+
   //myGPS.setAutoPVT(false); // Library will poll each reading
   //myGPS.setAutoHPPOSLLH(false); // Library will poll each reading
-  
+
   //myGPS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
   //myGPS.setAutoHPPOSLLH(false); // Library will poll each reading
 
   //myGPS.setAutoPVT(false); // Library will poll each reading
   //myGPS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
-  
+
   myGPS.setAutoPVT(true); // Tell the GPS to "send" each solution automatically
   myGPS.setAutoHPPOSLLH(true); // Tell the GPS to "send" each hi res solution automatically
 }
@@ -81,31 +82,31 @@ void loop()
   if ((myGPS.getHPPOSLLH()) || (myGPS.getPVT()))
   {
     Serial.println();
-      
+
     long highResLatitude = myGPS.getHighResLatitude();
     Serial.print(F("Hi Res Lat: "));
     Serial.print(highResLatitude);
-  
+
     int highResLatitudeHp = myGPS.getHighResLatitudeHp();
     Serial.print(F(" "));
     Serial.print(highResLatitudeHp);
-  
+
     long highResLongitude = myGPS.getHighResLongitude();
     Serial.print(F(" Hi Res Long: "));
     Serial.print(highResLongitude);
-  
+
     int highResLongitudeHp = myGPS.getHighResLongitudeHp();
     Serial.print(F(" "));
     Serial.print(highResLongitudeHp);
-  
+
     unsigned long horizAccuracy = myGPS.getHorizontalAccuracy();
     Serial.print(F(" Horiz accuracy: "));
     Serial.print(horizAccuracy);
-  
+
     long latitude = myGPS.getLatitude();
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
-  
+
     long longitude = myGPS.getLongitude();
     Serial.print(F(" Long: "));
     Serial.println(longitude);

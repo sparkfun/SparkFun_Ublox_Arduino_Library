@@ -553,8 +553,9 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
         //This is not an ACK and we do not have a complete class and ID match
         //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
         else if ((packetBuf.cls == requestedClass) &&
-          (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
-          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+          (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
+          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
+           ((packetBuf.id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
         {
           //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
           activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
@@ -563,7 +564,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
           if (_printDebug == true)
           {
-            _debugSerial->print(F("process: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+            _debugSerial->print(F("process: auto PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
             _debugSerial->print(requestedID, HEX);
             _debugSerial->print(F(" Message ID: 0x"));
             _debugSerial->println(packetBuf.id, HEX);
@@ -760,6 +761,9 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 //a subset of bytes within a larger packet.
 void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
+   size_t max_payload_size = (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG) ? MAX_PAYLOAD_SIZE : 2;
+   bool overrun = false;
+
   //Add all incoming bytes to the rolling checksum
   //Stop at len+4 as this is the checksum bytes to that should not be added to the rolling checksum
   if (incomingUBX->counter < incomingUBX->len + 4)
@@ -825,14 +829,15 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       //This is not an ACK and we do not have a complete class and ID match
       //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
       else if ((incomingUBX->cls == requestedClass) &&
-        (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH)) ||
-        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT))))
+        (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
+        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
+        ((incomingUBX->id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
       {
         // This isn't the message we are looking for...
         // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
         if (_printDebug == true)
         {
-          _debugSerial->print(F("processUBX: auto PVT/HPPOSLLH collision: Requested ID: 0x"));
+          _debugSerial->print(F("processUBX: auto PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
           _debugSerial->print(requestedID, HEX);
           _debugSerial->print(F(" Message ID: 0x"));
           _debugSerial->println(incomingUBX->id, HEX);
@@ -924,16 +929,20 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
     uint16_t startingSpot = incomingUBX->startingSpot;
     if (incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
       startingSpot = 0;
-    //Begin recording if counter goes past startingSpot
-    if ((incomingUBX->counter - 4) >= startingSpot)
+    // Check if this is payload data which should be ignored
+    if (ignoreThisPayload == false)
     {
-      //Check to see if we have room for this byte
-      if (((incomingUBX->counter - 4) - startingSpot) < MAX_PAYLOAD_SIZE) //If counter = 208, starting spot = 200, we're good to record.
+      //Begin recording if counter goes past startingSpot
+      if ((incomingUBX->counter - 4) >= startingSpot)
       {
-        // Check if this is payload data which should be ignored
-        if (ignoreThisPayload == false)
+        //Check to see if we have room for this byte
+        if (((incomingUBX->counter - 4) - startingSpot) < max_payload_size) //If counter = 208, starting spot = 200, we're good to record.
         {
           incomingUBX->payload[incomingUBX->counter - 4 - startingSpot] = incoming; //Store this byte into payload array
+        }
+        else
+        {
+          overrun = true;
         }
       }
     }
@@ -942,13 +951,16 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
   //Increment the counter
   incomingUBX->counter++;
 
-  if (incomingUBX->counter == MAX_PAYLOAD_SIZE)
+  if (overrun || (incomingUBX->counter == MAX_PAYLOAD_SIZE))
   {
     //Something has gone very wrong
     currentSentence = NONE; //Reset the sentence to being looking for a new start char
-    if (_printDebug == true)
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
     {
-      _debugSerial->println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
+      if (overrun)
+        _debugSerial->println(F("processUBX: buffer overrun detected"));
+      else
+        _debugSerial->println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
     }
   }
 }
@@ -977,17 +989,25 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gpsSecond = extractByte(10);
       gpsDateValid = extractByte(11) & 0x01;
       gpsTimeValid = (extractByte(11) & 0x02) >> 1;
-      gpsNanosecond = extractLong(16); //Includes milliseconds
+      gpsNanosecond = extractSignedLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
+      gnssFixOk = extractByte(21 - startingSpot) & 0x1; //Get the 1st bit
+      diffSoln = extractByte(21 - startingSpot) >> 1 & 0x1; //Get the 2nd bit
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
       SIV = extractByte(23 - startingSpot);
-      longitude = extractLong(24 - startingSpot);
-      latitude = extractLong(28 - startingSpot);
-      altitude = extractLong(32 - startingSpot);
-      altitudeMSL = extractLong(36 - startingSpot);
-      groundSpeed = extractLong(60 - startingSpot);
-      headingOfMotion = extractLong(64 - startingSpot);
+      longitude = extractSignedLong(24 - startingSpot);
+      latitude = extractSignedLong(28 - startingSpot);
+      altitude = extractSignedLong(32 - startingSpot);
+      altitudeMSL = extractSignedLong(36 - startingSpot);
+      horizontalAccEst = extractLong(40 - startingSpot);
+      verticalAccEst = extractLong(44 - startingSpot);
+      nedNorthVel = extractSignedLong(48 - startingSpot);
+      nedEastVel = extractSignedLong(52 - startingSpot);
+      nedDownVel = extractSignedLong(56 - startingSpot);
+
+      groundSpeed = extractSignedLong(60 - startingSpot);
+      headingOfMotion = extractSignedLong(64 - startingSpot);
       pDOP = extractInt(76 - startingSpot);
 
       //Mark all datums as fresh (not read before)
@@ -1003,10 +1023,19 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.gpsNanosecond = true;
 
       moduleQueried.all = true;
+      moduleQueried.gnssFixOk = true;
+      moduleQueried.diffSoln = true;
       moduleQueried.longitude = true;
       moduleQueried.latitude = true;
       moduleQueried.altitude = true;
       moduleQueried.altitudeMSL = true;
+
+      moduleQueried.horizontalAccEst = true;
+      moduleQueried.verticalAccEst = true;
+      moduleQueried.nedNorthVel = true;
+      moduleQueried.nedEastVel = true;
+      moduleQueried.nedDownVel = true;
+
       moduleQueried.SIV = true;
       moduleQueried.fixType = true;
       moduleQueried.carrierSolution = true;
@@ -1017,10 +1046,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
     {
       timeOfWeek = extractLong(4);
-      highResLongitude = extractLong(8);
-      highResLatitude = extractLong(12);
-      elipsoid = extractLong(16);
-      meanSeaLevel = extractLong(20);
+      highResLongitude = extractSignedLong(8);
+      highResLatitude = extractSignedLong(12);
+      elipsoid = extractSignedLong(16);
+      meanSeaLevel = extractSignedLong(20);
       highResLongitudeHp = extractSignedChar(24);
       highResLatitudeHp = extractSignedChar(25);
       elipsoidHp = extractSignedChar(26);
@@ -1079,6 +1108,24 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         _debugSerial->println(((float)(int32_t)extractLong(32)) / 10000.0f);
       }
 */
+    }
+    else if (msg->id == UBX_NAV_DOP && msg->len == 18)
+    {
+      geometricDOP = extractInt(4);
+      positionDOP = extractInt(6);
+      timeDOP = extractInt(8);
+      verticalDOP = extractInt(10);
+      horizontalDOP = extractInt(12);
+      northingDOP = extractInt(14);
+      eastingDOP = extractInt(16);
+      dopModuleQueried.all = true;
+      dopModuleQueried.geometricDOP = true;
+      dopModuleQueried.positionDOP = true;
+      dopModuleQueried.timeDOP = true;
+      dopModuleQueried.verticalDOP = true;
+      dopModuleQueried.horizontalDOP = true;
+      dopModuleQueried.northingDOP = true;
+      dopModuleQueried.eastingDOP = true;
     }
     break;
   }
@@ -1143,7 +1190,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendI2cCommand(ubxPacket *outgoingUBX, uint16_
   //Point at 0xFF data register
   _i2cPort->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
   _i2cPort->write(0xFF);
-  if (_i2cPort->endTransmission() != 0)         //Don't release bus
+  if (_i2cPort->endTransmission(false) != 0)         //Don't release bus
     return (SFE_UBLOX_STATUS_I2C_COMM_FAILURE); //Sensor did not ACK
 
   //Write header bytes
@@ -2310,10 +2357,8 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
     return (false);                                                       //If command send fails then bail
 
-  uint16_t measurementRate = 0;
-
   //payloadCfg is now loaded with current bytes. Get what we need
-  measurementRate = extractInt(0); //Pull from payloadCfg at measRate LSB
+  uint16_t measurementRate = extractInt(0); //Pull from payloadCfg at measRate LSB
 
   measurementRate = 1000 / measurementRate; //This may return an int when it's a float, but I'd rather not return 4 bytes
   return (measurementRate);
@@ -2400,6 +2445,49 @@ boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, u
     autoHPPOSLLHImplicitUpdate = implicitUpdate;
   }
   highResModuleQueried.all = false;
+  return ok;
+}
+
+
+//In case no config access to the GPS is possible and DOP is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoDOP(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoDOP != enabled || autoDOPImplicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    autoDOP = enabled;
+    autoDOPImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getDOP
+//works.
+boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, uint16_t maxWait)
+{
+  return setAutoDOP(enable, true, maxWait);
+}
+
+//Enable or disable automatic navigation message generation by the GPS. This changes the way getDOP
+//works.
+boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_NAV;
+  payloadCfg[1] = UBX_NAV_DOP;
+  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+  boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    autoDOP = enable;
+    autoDOPImplicitUpdate = implicitUpdate;
+  }
+  dopModuleQueried.all = false;
   return ok;
 }
 
@@ -2893,6 +2981,19 @@ uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
   return (val);
 }
 
+//Just so there is no ambiguity about whether a uint32_t will cast to a int32_t correctly...
+int32_t SFE_UBLOX_GPS::extractSignedLong(uint8_t spotToStart)
+{
+  union // Use a union to convert from uint32_t to int32_t
+  {
+      uint32_t unsignedLong;
+      int32_t signedLong;
+  } unsignedSigned;
+
+  unsignedSigned.unsignedLong = extractLong(spotToStart);
+  return (unsignedSigned.signedLong);
+}
+
 //Given a spot in the payload array, extract two bytes and build an int
 uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
 {
@@ -3050,6 +3151,15 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
       if (_printDebug == true)
       {
         _debugSerial->println(F("getPVT: data was OVERWRITTEN by HPPOSLLH (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_DOP))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by DOP (but that's OK)"));
       }
       return (true);
     }
@@ -3229,6 +3339,14 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
       }
       return (true);
     }
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_DOP))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by DOP (but that's OK)"));
+      }
+      return (true);
+    }
 
     if (_printDebug == true)
     {
@@ -3239,6 +3357,141 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
   }
 }
 
+uint16_t SFE_UBLOX_GPS::getGeometricDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.geometricDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.geometricDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (geometricDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getPositionDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.positionDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.positionDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (positionDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getTimeDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.timeDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.timeDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (timeDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getVerticalDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.verticalDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.verticalDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (verticalDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getHorizontalDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.horizontalDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.horizontalDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (horizontalDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getNorthingDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.northingDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.northingDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (northingDOP);
+}
+
+uint16_t SFE_UBLOX_GPS::getEastingDOP(uint16_t maxWait /* = 250*/)
+{
+  if (dopModuleQueried.eastingDOP == false)
+    getDOP(maxWait);
+  dopModuleQueried.eastingDOP = false; //Since we are about to give this to user, mark this data as stale
+  dopModuleQueried.all = false;
+
+  return (eastingDOP);
+}
+
+boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
+{
+  if (autoDOP && autoDOPImplicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getDOP: Autoreporting"));
+    }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_DOP);
+    return dopModuleQueried.all;
+  }
+  else if (autoDOP && !autoDOPImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getDOP: Exit immediately"));
+    }
+    return (false);
+  }
+  else
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getDOP: Polling"));
+    }
+
+    //The GPS is not automatically reporting navigation position so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_NAV;
+    packetCfg.id = UBX_NAV_DOP;
+    packetCfg.len = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_PVT))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by PVT (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_HPPOSLLH))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by HPPOSLLH (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("getDOP retVal: "));
+      _debugSerial->println(statusString(retVal));
+    }
+    return (false);
+  }
+}
 //Get the current 3D high precision positional accuracy - a fun thing to watch
 //Returns a long representing the 3D accuracy in millimeters
 uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
@@ -3308,6 +3561,56 @@ int32_t SFE_UBLOX_GPS::getAltitudeMSL(uint16_t maxWait)
   return (altitudeMSL);
 }
 
+int32_t SFE_UBLOX_GPS::getHorizontalAccEst(uint16_t maxWait)
+{
+  if (moduleQueried.horizontalAccEst == false)
+    getPVT(maxWait);
+  moduleQueried.horizontalAccEst = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (horizontalAccEst);
+}
+
+int32_t SFE_UBLOX_GPS::getVerticalAccEst(uint16_t maxWait)
+{
+  if (moduleQueried.verticalAccEst == false)
+    getPVT(maxWait);
+  moduleQueried.verticalAccEst = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (verticalAccEst);
+}
+
+int32_t SFE_UBLOX_GPS::getNedNorthVel(uint16_t maxWait)
+{
+  if (moduleQueried.nedNorthVel == false)
+    getPVT(maxWait);
+  moduleQueried.nedNorthVel = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (nedNorthVel);
+}
+
+int32_t SFE_UBLOX_GPS::getNedEastVel(uint16_t maxWait)
+{
+  if (moduleQueried.nedEastVel == false)
+    getPVT(maxWait);
+  moduleQueried.nedEastVel = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (nedEastVel);
+}
+
+int32_t SFE_UBLOX_GPS::getNedDownVel(uint16_t maxWait)
+{
+  if (moduleQueried.nedDownVel == false)
+    getPVT(maxWait);
+  moduleQueried.nedDownVel = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (nedDownVel);
+}
+
 //Get the number of satellites used in fix
 uint8_t SFE_UBLOX_GPS::getSIV(uint16_t maxWait)
 {
@@ -3331,6 +3634,28 @@ uint8_t SFE_UBLOX_GPS::getFixType(uint16_t maxWait)
   moduleQueried.all = false;
 
   return (fixType);
+}
+
+//Get whether we have a valid fix (i.e within DOP & accuracy masks)
+bool SFE_UBLOX_GPS::getGnssFixOk(uint16_t maxWait)
+{
+  if (moduleQueried.gnssFixOk == false)
+    getPVT(maxWait);
+  moduleQueried.gnssFixOk = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (gnssFixOk);
+}
+
+//Get whether differential corrections were applied
+bool SFE_UBLOX_GPS::getDiffSoln(uint16_t maxWait)
+{
+  if (moduleQueried.diffSoln == false)
+    getPVT(maxWait);
+  moduleQueried.diffSoln = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (diffSoln);
 }
 
 //Get the carrier phase range solution status
@@ -3429,7 +3754,7 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
   for (uint8_t extensionNumber = 0; extensionNumber < 10; extensionNumber++)
   {
     //Now we need to find "PROTVER=18.00" in the incoming byte stream
-    if (payloadCfg[(30 * extensionNumber) + 0] == 'P' && payloadCfg[(30 * extensionNumber) + 6] == 'R')
+    if ((payloadCfg[(30 * extensionNumber) + 0] == 'P') && (payloadCfg[(30 * extensionNumber) + 6] == 'R'))
     {
       versionHigh = (payloadCfg[(30 * extensionNumber) + 8] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 9] - '0');  //Convert '18' to 18
       versionLow = (payloadCfg[(30 * extensionNumber) + 11] - '0') * 10 + (payloadCfg[(30 * extensionNumber) + 12] - '0'); //Convert '00' to 00
@@ -3465,6 +3790,8 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.gpsNanosecond = false;
 
   moduleQueried.all = false;
+  moduleQueried.gnssFixOk = false;
+  moduleQueried.diffSoln = false;
   moduleQueried.longitude = false;
   moduleQueried.latitude = false;
   moduleQueried.altitude = false;
@@ -3496,8 +3823,25 @@ void SFE_UBLOX_GPS::flushHPPOSLLH()
   //moduleQueried.gpsiTOW = false; // this can arrive via HPPOS too.
 }
 
+//Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
+void SFE_UBLOX_GPS::flushDOP()
+{
+  //Mark all DOPs as stale (read before)
+  dopModuleQueried.all = false;
+  dopModuleQueried.geometricDOP = false;
+  dopModuleQueried.positionDOP = false;
+  dopModuleQueried.timeDOP = false;
+  dopModuleQueried.verticalDOP = false;
+  dopModuleQueried.horizontalDOP = false;
+  dopModuleQueried.northingDOP = false;
+  dopModuleQueried.eastingDOP = false;
+}
+
 //Relative Positioning Information in NED frame
 //Returns true if commands was successful
+//Note:
+//  RELPOSNED on the M8 is only 40 bytes long
+//  RELPOSNED on the F9 is 64 bytes long and contains much more information
 boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_NAV;
@@ -3516,35 +3860,73 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
   int32_t tempRelPos;
 
-  tempRelPos = extractLong(8);
-  relPosInfo.relPosN = tempRelPos / 100.0; //Convert cm to m
+  tempRelPos = extractSignedLong(8);
+  relPosInfo.relPosN = ((float)tempRelPos) / 100.0; //Convert cm to m
 
-  tempRelPos = extractLong(12);
-  relPosInfo.relPosE = tempRelPos / 100.0; //Convert cm to m
+  tempRelPos = extractSignedLong(12);
+  relPosInfo.relPosE = ((float)tempRelPos) / 100.0; //Convert cm to m
 
-  tempRelPos = extractLong(16);
-  relPosInfo.relPosD = tempRelPos / 100.0; //Convert cm to m
+  tempRelPos = extractSignedLong(16);
+  relPosInfo.relPosD = ((float)tempRelPos) / 100.0; //Convert cm to m
 
-  relPosInfo.relPosLength = extractLong(20);
-  relPosInfo.relPosHeading = extractLong(24);
+  if (packetCfg.len == 40)
+  {
+    // The M8 version does not contain relPosLength or relPosHeading
+    relPosInfo.relPosLength = 0;
+    relPosInfo.relPosHeading = 0;
+  }
+  else
+  {
+    relPosInfo.relPosLength = extractSignedLong(20);
+    relPosInfo.relPosHeading = extractSignedLong(24);
+  }
 
-  relPosInfo.relPosHPN = payloadCfg[32];
-  relPosInfo.relPosHPE = payloadCfg[33];
-  relPosInfo.relPosHPD = payloadCfg[34];
-  relPosInfo.relPosHPLength = payloadCfg[35];
+  if (packetCfg.len == 40)
+  {
+    relPosInfo.relPosHPN = payloadCfg[20];
+    relPosInfo.relPosHPE = payloadCfg[21];
+    relPosInfo.relPosHPD = payloadCfg[22];
+    relPosInfo.relPosHPLength = 0; // The M8 version does not contain relPosHPLength
+  }
+  else
+  {
+    relPosInfo.relPosHPN = payloadCfg[32];
+    relPosInfo.relPosHPE = payloadCfg[33];
+    relPosInfo.relPosHPD = payloadCfg[34];
+    relPosInfo.relPosHPLength = payloadCfg[35];
+  }
 
   uint32_t tempAcc;
 
-  tempAcc = extractLong(36);
-  relPosInfo.accN = tempAcc / 10000.0; //Convert 0.1 mm to m
+  if (packetCfg.len == 40)
+  {
+    tempAcc = extractLong(24);
+    relPosInfo.accN = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(28);
+    relPosInfo.accE = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(32);
+    relPosInfo.accD = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+  }
+  else
+  {
+    tempAcc = extractLong(36);
+    relPosInfo.accN = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(40);
+    relPosInfo.accE = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+    tempAcc = extractLong(44);
+    relPosInfo.accD = ((float)tempAcc) / 10000.0; //Convert 0.1 mm to m
+  }
 
-  tempAcc = extractLong(40);
-  relPosInfo.accE = tempAcc / 10000.0; //Convert 0.1 mm to m
+  uint8_t flags;
 
-  tempAcc = extractLong(44);
-  relPosInfo.accD = tempAcc / 10000.0; //Convert 0.1 mm to m
-
-  uint8_t flags = payloadCfg[60];
+  if (packetCfg.len == 40)
+  {
+    flags = payloadCfg[36];
+  }
+  else
+  {
+    flags = payloadCfg[60];
+  }
 
   relPosInfo.gnssFixOk = flags & (1 << 0);
   relPosInfo.diffSoln = flags & (1 << 1);
@@ -3556,6 +3938,7 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
   return (true);
 }
+
 boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
 {
   // Requesting Data from the receiver
@@ -3594,20 +3977,20 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   // Validity of each sensor value below
   uint32_t validity = extractLong(0);
 
-  imuMeas.xAngRateVald = (validity && 0x0080) >> 8;
-  imuMeas.yAngRateVald = (validity && 0x0100) >> 9;
-  imuMeas.zAngRateVald = (validity && 0x0200) >> 10;
-  imuMeas.xAccelVald = (validity && 0x0400) >> 11;
-  imuMeas.yAccelVald = (validity && 0x0800) >> 12;
-  imuMeas.zAccelVald = (validity && 0x1000) >> 13;
+  imuMeas.xAngRateVald = (validity & 0x0100) >> 8;
+  imuMeas.yAngRateVald = (validity & 0x0200) >> 9;
+  imuMeas.zAngRateVald = (validity & 0x0400) >> 10;
+  imuMeas.xAccelVald = (validity & 0x0800) >> 11;
+  imuMeas.yAccelVald = (validity & 0x1000) >> 12;
+  imuMeas.zAccelVald = (validity & 0x2000) >> 13;
 
-  imuMeas.xAngRate = extractLong(12); // deg/s
-  imuMeas.yAngRate = extractLong(16); // deg/s
-  imuMeas.zAngRate = extractLong(20); // deg/s
+  imuMeas.xAngRate = extractSignedLong(12); // 0.001 deg/s
+  imuMeas.yAngRate = extractSignedLong(16); // 0.001 deg/s
+  imuMeas.zAngRate = extractSignedLong(20); // 0.001 deg/s
 
-  imuMeas.xAccel = extractLong(24); // m/s
-  imuMeas.yAccel = extractLong(28); // m/s
-  imuMeas.zAccel = extractLong(32); // m/s
+  imuMeas.xAccel = extractSignedLong(24); // 0.01 m/s^2
+  imuMeas.yAccel = extractSignedLong(28); // 0.01 m/s^2
+  imuMeas.zAccel = extractSignedLong(32); // 0.01 m/s^2
 
   return (true);
 }
@@ -3629,23 +4012,34 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   uint32_t timeStamp = extractLong(0);
   uint32_t flags = extractInt(4);
 
-  uint8_t timeSent = (flags && 0x01) >> 1;
-  uint8_t timeEdge = (flags && 0x02) >> 2;
-  uint8_t tagValid = (flags && 0x04) >> 3;
-  uint8_t numMeas = (flags && 0x1000) >> 15;
+  uint8_t timeSent = flags & 0x03; // timeSent is 2-bit: 0 = none, 1 = on Ext0, 2 = on Ext1
+  uint8_t timeEdge = (flags & 0x04) >> 2;
+  uint8_t tagValid = (flags & 0x08) >> 3;
+  uint8_t numMeas = (flags & 0xF800) >> 11;
 
-  if (numMeas > DEF_NUM_SENS)
+  if (numMeas > DEF_NUM_SENS) // Truncate numMeas if required
     numMeas = DEF_NUM_SENS;
 
   uint8_t byteOffset = 4;
 
   for (uint8_t i = 0; i < numMeas; i++)
   {
+    uint32_t bitField = extractLong(8 + (byteOffset * i));
+    imuMeas.dataType[i] = (bitField & 0x3F000000) >> 24;
+    imuMeas.data[i] = (bitField & 0xFFFFFF);
+  }
 
-    uint32_t bitField = extractLong(4 + byteOffset * i);
-    imuMeas.dataType[i] = (bitField && 0xFF000000) >> 23;
-    imuMeas.data[i] = (bitField && 0xFFFFFF);
-    imuMeas.dataTStamp[i] = extractLong(8 + byteOffset * i);
+  numMeas = (flags & 0xF800) >> 11; // Restore numMeas
+
+  if (packetCfg.len > (8 + (4 * numMeas))) // The calibTtag is optional - only extract it if it is present
+  {
+    uint8_t startOfTtag = 8 + (4 * numMeas); // Calculate where the Ttag data starts
+    if (numMeas > DEF_NUM_SENS) // Truncate numMeas again if required
+      numMeas = DEF_NUM_SENS;
+    for (uint8_t i = 0; i < numMeas; i++)
+    {
+      imuMeas.dataTStamp[i] = extractLong(startOfTtag); // calibTtag is only appended once
+    }
   }
 
   return (true);
@@ -3667,13 +4061,15 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   checkUblox();
 
   uint32_t bitField = extractLong(4);
-  imuMeas.rawDataType = (bitField && 0xFF000000) >> 23;
-  imuMeas.rawData = (bitField && 0xFFFFFF);
+  imuMeas.rawDataType = (bitField & 0xFF000000) >> 24;
+  imuMeas.rawData = (bitField & 0xFFFFFF);
+
   imuMeas.rawTStamp = extractLong(8);
 
   return (true);
 }
 
+// Note: senor numbering starts at 1 (not 0)
 sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
 {
 
@@ -3698,22 +4094,22 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
   for (uint8_t i = 0; i < sensor; i++)
   {
 
-    uint8_t sensorFieldOne = extractByte(16 + offset * i);
-    uint8_t sensorFieldTwo = extractByte(17 + offset * i);
-    ubloxSen.freq = extractByte(18 + offset * i);
+    uint8_t sensorFieldOne = extractByte(16 + (offset * i));
+    uint8_t sensorFieldTwo = extractByte(17 + (offset * i));
+    ubloxSen.freq = extractByte(18 + (offset * i));
     uint8_t sensorFieldThr = extractByte(19 + offset * i);
 
-    ubloxSen.senType = (sensorFieldOne && 0x10) >> 5;
-    ubloxSen.isUsed = (sensorFieldOne && 0x20) >> 6;
-    ubloxSen.isReady = (sensorFieldOne && 0x30) >> 7;
+    ubloxSen.senType = (sensorFieldOne & 0x3F);
+    ubloxSen.isUsed = (sensorFieldOne & 0x40) >> 6;
+    ubloxSen.isReady = (sensorFieldOne & 0x80) >> 7;
 
-    ubloxSen.calibStatus = sensorFieldTwo && 0x03;
-    ubloxSen.timeStatus = (sensorFieldTwo && 0xC) >> 2;
+    ubloxSen.calibStatus = sensorFieldTwo & 0x03;
+    ubloxSen.timeStatus = (sensorFieldTwo & 0xC) >> 2;
 
-    ubloxSen.badMeas = (sensorFieldThr && 0x01);
-    ubloxSen.badTag = (sensorFieldThr && 0x02) >> 1;
-    ubloxSen.missMeas = (sensorFieldThr && 0x04) >> 2;
-    ubloxSen.noisyMeas = (sensorFieldThr && 0x08) >> 3;
+    ubloxSen.badMeas = (sensorFieldThr & 0x01);
+    ubloxSen.badTag = (sensorFieldThr & 0x02) >> 1;
+    ubloxSen.missMeas = (sensorFieldThr & 0x04) >> 2;
+    ubloxSen.noisyMeas = (sensorFieldThr & 0x08) >> 3;
   }
 
   return (SFE_UBLOX_STATUS_SUCCESS);
@@ -3732,13 +4128,13 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
 
   checkUblox();
 
-  vehAtt.roll = extractLong(8);
-  vehAtt.pitch = extractLong(12);
-  vehAtt.heading = extractLong(16);
+  vehAtt.roll = extractSignedLong(8); // 0.00001 deg
+  vehAtt.pitch = extractSignedLong(12); // 0.00001 deg
+  vehAtt.heading = extractSignedLong(16); // 0.00001 deg
 
-  vehAtt.accRoll = extractLong(20);
-  vehAtt.accPitch = extractLong(24);
-  vehAtt.accHeading = extractLong(28);
+  vehAtt.accRoll = extractLong(20); // 0.00001 deg
+  vehAtt.accPitch = extractLong(24); // 0.00001 deg
+  vehAtt.accHeading = extractLong(28); // 0.00001 deg
 
   return (true);
 }
@@ -3800,4 +4196,52 @@ bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, i
 bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefXOrLat, int32_t ecefYOrLon, int32_t ecefZOrAlt, bool latlong, uint16_t maxWait)
 {
   return (setStaticPosition(ecefXOrLat, 0, ecefYOrLon, 0, ecefZOrAlt, 0, latlong, maxWait));
+}
+
+// Push (e.g.) RTCM data directly to the module
+// Returns true if all numDataBytes were pushed successfully
+// Warning: this function does not check that the data is valid. It is the user's responsibility to ensure the data is valid before pushing.
+boolean SFE_UBLOX_GPS::pushRawData(uint8_t *dataBytes, size_t numDataBytes)
+{
+  if (commType == COMM_TYPE_SERIAL)
+  {
+    // Serial: write all the bytes in one go
+    size_t bytesWritten = _serialPort->write(dataBytes, numDataBytes);
+    return (bytesWritten == numDataBytes);
+  }
+  else
+  {
+    // I2C: split the data up into packets of i2cTransactionSize
+    size_t bytesLeftToWrite = numDataBytes;
+    size_t bytesWrittenTotal = 0;
+
+    while (bytesLeftToWrite > 0)
+    {
+      size_t bytesToWrite; // Limit bytesToWrite to i2cTransactionSize
+      if (bytesLeftToWrite > i2cTransactionSize)
+        bytesToWrite = i2cTransactionSize;
+      else
+        bytesToWrite = bytesLeftToWrite;
+
+      _i2cPort->beginTransmission(_gpsI2Caddress);
+      size_t bytesWritten = _i2cPort->write(dataBytes, bytesToWrite); // Write the bytes
+
+      bytesWrittenTotal += bytesWritten; // Update the totals
+      bytesLeftToWrite -= bytesToWrite;
+      dataBytes += bytesToWrite; // Point to fresh data
+
+      if (bytesLeftToWrite > 0)
+      {
+        if (_i2cPort->endTransmission(false) != 0) //Send a restart command. Do not release bus.
+          return (false);                          //Sensor did not ACK
+      }
+      else
+      {
+        if (_i2cPort->endTransmission() != 0) //We're done. Release bus.
+          return (false);                     //Sensor did not ACK
+      }
+    }
+
+    return (bytesWrittenTotal == numDataBytes);
+  }
 }

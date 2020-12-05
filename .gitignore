@@ -53,3 +53,6 @@ Temporary Items
 *~
 [._]*.un~
 *.swp
+
+# Zephyr build files
+examples/Zephyr/*/build/*

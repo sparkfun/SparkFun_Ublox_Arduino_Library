@@ -899,7 +899,9 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
   switch (msg->cls)
   {
   case UBX_CLASS_NAV:
-    if (msg->id == UBX_NAV_PVT && msg->len == 92)
+    //u-blox8 length == 92
+    //u-blox7 length == 84
+    if ((msg->id == UBX_NAV_PVT) && ((msg->len == 92) || (msg->len == 84)))
     {
       //Parse various byte fields into global vars
       constexpr int startingSpot = 0; //fixed value used in processUBX
@@ -915,6 +917,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gpsNanosecond = extractLong(16); //Includes milliseconds
 
       fixType = extractByte(20 - startingSpot);
+      //Note: the u-blox7 does not support carrSoln. carrierSolution will be zero.
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
       SIV = extractByte(23 - startingSpot);
       longitude = extractLong(24 - startingSpot);

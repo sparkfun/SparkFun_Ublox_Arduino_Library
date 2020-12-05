@@ -48,18 +48,32 @@ Thanks to:
 * [averywallis](https://github.com/averywallis) for adding good comments to the various constants.
 * [blazczak](https://github.com/blazczak) and [geeksville](https://github.com/geeksville) for adding support for the series 6 and 7 modules.
 * [bjorn@unsurv](https://github.com/unsurv) for adding powerOff and powerOffWithInterrupt.
+* [dotMorten](https://github.com/dotMorten) for the MSGOUT keys, autoHPPOSLLH, autoDOP and upgrades to autoPVT.
+* [markuckermann](https://github.com/markuckermann) for spotting the config layer gremlins
+* [vid553](https://github.com/vid553) for the Zephyr port
+* [balamuruganky](https://github.com/balamuruganky) for the NAV-PVT velocity parameters
+* [nelarsen](https://github.com/nelarsen) for the buffer overrun improvements
+* [mstranne](https://github.com/mstranne) and [shaneperera](https://github.com/shaneperera) for the pushRawData suggestion
+* [rubienr](https://github.com/rubienr) for spotting the logical AND issues
 
 Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
 
 Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
+
+Contributing
+--------------
+
+If you would like to contribute to this library: please do, we truly appreciate it, but please follow [these guidelines](./CONTRIBUTING.md). Thanks!
 
 Repository Contents
 -------------------
 
 * **/examples** - Example sketches for the library (.ino). Run these from the Arduino IDE.
 * **/src** - Source files for the library (.cpp, .h).
-* **keywords.txt** - Keywords from this library that will be highlighted in the Arduino IDE.
-* **library.properties** - General library properties for the Arduino package manager.
+* **[keywords.txt](./keywords.txt)** - Keywords from this library that will be highlighted in the Arduino IDE.
+* **[library.properties](./library.properties)** - General library properties for the Arduino package manager.
+* **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guidelines on how to contribute to this library.
+* **[Theory.md](./Theory.md)** - provides detail on how data is processed by the library.
 
 Documentation
 --------------

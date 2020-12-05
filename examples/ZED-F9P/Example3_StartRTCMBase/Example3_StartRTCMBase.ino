@@ -29,11 +29,18 @@
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
+//#define USE_SERIAL1 // Uncomment this line to push the RTCM data to Serial1
+
 void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
   Serial.println("Ublox Base station example");
+
+#ifdef USE_SERIAL1
+  // If our board supports it, we can output the RTCM data on Serial1
+  Serial1.begin(115200);
+#endif
 
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
@@ -44,8 +51,11 @@ void setup()
     while (1);
   }
 
+  // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
+  //myGPS.factoryDefault(); delay(5000);
+
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save the communications port settings to flash and BBR
 
   while (Serial.available()) Serial.read(); //Clear any latent chars in serial buffer
   Serial.println("Press any key to send commands to begin Survey-In");
@@ -153,7 +163,12 @@ void loop()
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 {
-  //Let's just pretty-print the HEX values for now
+#ifdef USE_SERIAL1
+  //Push the RTCM data to Serial1
+  Serial1.write(incoming);
+#endif
+
+  //Pretty-print the HEX values to Serial
   if (myGPS.rtcmFrameCounter % 16 == 0) Serial.println();
   Serial.print(" ");
   if (incoming < 0x10) Serial.print("0");
