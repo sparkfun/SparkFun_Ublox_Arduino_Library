@@ -113,6 +113,21 @@ packets in its internal buffer (about 500 bytes) and the library will read those
 called, update its internal copy of the nav data 5 times, and return `true` to the sketch. The
 sketch calls `getLatitude`, etc. and retrieve the data of the most recent of those 5 packets.
 
+The library also supports:
+* `autoHPPOSLLH`
+* `autoDOP`
+* `autoHNRAtt`
+* `autoHNRDyn`
+* `autoHNRPVT`
+
+Memory Usage
+---------------------------------
+
+Version 1.8.9 introduced support for `autoHNR` on the NEO-M8U, and that tipped the balance in terms of RAM use on the ATmega328.
+The library does still run on the ATmega328 but you will see _**Low memory available, stability problems may occur**_ warnings
+as the global variables now occupy 1540 bytes of RAM. If you do want to run this library on the ATmega328, you may need to regress
+to Version 1.8.8 via the Library Manager.
+
 Products That Use This Library
 ---------------------------------
 * [GPS-16481](https://www.sparkfun.com/products/16481) - SparkFun GPS-RTK-SMA Breakout - ZED-F9P (Qwiic)
