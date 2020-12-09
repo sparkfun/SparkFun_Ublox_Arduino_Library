@@ -554,7 +554,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
         //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
         else if ((packetBuf.cls == requestedClass) &&
           (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
-          ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
+           ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
            ((packetBuf.id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
         {
           //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
@@ -564,7 +564,25 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
           if (_printDebug == true)
           {
-            _debugSerial->print(F("process: auto PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
+            _debugSerial->print(F("process: auto NAV PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
+            _debugSerial->print(requestedID, HEX);
+            _debugSerial->print(F(" Message ID: 0x"));
+            _debugSerial->println(packetBuf.id, HEX);
+          }
+        }
+        else if ((packetBuf.cls == requestedClass) &&
+          (((packetBuf.id == UBX_HNR_ATT) && (requestedID == UBX_HNR_INS || requestedID == UBX_HNR_PVT)) ||
+           ((packetBuf.id == UBX_HNR_INS) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_PVT)) ||
+           ((packetBuf.id == UBX_HNR_PVT) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_INS))))
+        {
+          //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
+          activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
+          incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
+          incomingUBX->id = packetBuf.id;
+          incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
+          if (_printDebug == true)
+          {
+            _debugSerial->print(F("process: auto HNR ATT/INS/PVT collision: Requested ID: 0x"));
             _debugSerial->print(requestedID, HEX);
             _debugSerial->print(F(" Message ID: 0x"));
             _debugSerial->println(packetBuf.id, HEX);
@@ -837,12 +855,28 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
         if (_printDebug == true)
         {
-          _debugSerial->print(F("processUBX: auto PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
+          _debugSerial->print(F("processUBX: auto NAV PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
           _debugSerial->print(requestedID, HEX);
           _debugSerial->print(F(" Message ID: 0x"));
           _debugSerial->println(incomingUBX->id, HEX);
         }
       }
+      // Let's do the same for the HNR messages
+      else if ((incomingUBX->cls == requestedClass) &&
+        (((incomingUBX->id == UBX_HNR_ATT) && (requestedID == UBX_HNR_INS || requestedID == UBX_HNR_PVT)) ||
+         ((incomingUBX->id == UBX_HNR_INS) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_PVT)) ||
+         ((incomingUBX->id == UBX_HNR_PVT) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_INS))))
+       {
+         // This isn't the message we are looking for...
+         // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
+         if (_printDebug == true)
+         {
+           _debugSerial->print(F("processUBX: auto HNR ATT/INS/PVT collision: Requested ID: 0x"));
+           _debugSerial->print(requestedID, HEX);
+           _debugSerial->print(F(" Message ID: 0x"));
+           _debugSerial->println(incomingUBX->id, HEX);
+         }
+       }
 
       if (_printDebug == true)
       {
@@ -3233,9 +3267,9 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getPVT: data was OVERWRITTEN by a HNR message (but that's OK)"));
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by a HNR message (and that's not OK)"));
       }
-      return (true);
+      return (false);
     }
 
     if (_printDebug == true)
@@ -3417,9 +3451,9 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by a HNR message (but that's OK)"));
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by a HNR message (and that's not OK)"));
       }
-      return (true);
+      return (false);
     }
 
     if (_printDebug == true)
@@ -3544,7 +3578,7 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by another NAV message (but that's OK)"));
+        _debugSerial->println(F("getDOP: data was OVERWRITTEN by another NAV message (but that's OK)"));
       }
       return (true);
     }
@@ -3553,9 +3587,9 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getPVT: data was OVERWRITTEN by a HNR message (but that's OK)"));
+        _debugSerial->println(F("getDOP: data was OVERWRITTEN by a HNR message (and that's not OK)"));
       }
-      return (true);
+      return (false);
     }
 
     if (_printDebug == true)
@@ -4459,9 +4493,9 @@ boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHNRAtt: data was OVERWRITTEN by a NAV message (but that's OK)"));
+        _debugSerial->println(F("getHNRAtt: data was OVERWRITTEN by a NAV message (and that's not OK)"));
       }
-      return (true);
+      return (false);
     }
 
     if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
@@ -4579,9 +4613,9 @@ boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHNRDyn: data was OVERWRITTEN by a NAV message (but that's OK)"));
+        _debugSerial->println(F("getHNRDyn: data was OVERWRITTEN by a NAV message (and that's not OK)"));
       }
-      return (true);
+      return (false);
     }
 
     if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
@@ -4699,9 +4733,9 @@ boolean SFE_UBLOX_GPS::getHNRPVT(uint16_t maxWait)
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHNRPVT: data was OVERWRITTEN by a NAV message (but that's OK)"));
+        _debugSerial->println(F("getHNRPVT: data was OVERWRITTEN by a NAV message (and that's not OK)"));
       }
-      return (true);
+      return (false);
     }
 
     if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
