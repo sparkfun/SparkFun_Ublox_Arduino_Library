@@ -1128,6 +1128,80 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       dopModuleQueried.eastingDOP = true;
     }
     break;
+  case UBX_CLASS_HNR:
+    if (msg->id == UBX_HNR_ATT && msg->len == 32)
+    {
+      //Parse various byte fields into global vars
+      hnrAtt.iTOW = extractLong(0);
+      hnrAtt.roll = extractSignedLong(8);
+      hnrAtt.pitch = extractSignedLong(12);
+      hnrAtt.heading = extractSignedLong(16);
+      hnrAtt.accRoll = extractLong(20);
+      hnrAtt.accPitch = extractLong(24);
+      hnrAtt.accHeading = extractLong(28);
+
+      hnrAttQueried = true;
+    }
+    else if (msg->id == UBX_HNR_INS && msg->len == 36)
+    {
+      //Parse various byte fields into global vars
+      hnrVehDyn.iTOW = extractLong(8);
+      hnrVehDyn.xAngRate = extractSignedLong(12);
+      hnrVehDyn.yAngRate = extractSignedLong(16);
+      hnrVehDyn.zAngRate = extractSignedLong(20);
+      hnrVehDyn.xAccel = extractSignedLong(24);
+      hnrVehDyn.yAccel = extractSignedLong(28);
+      hnrVehDyn.zAccel = extractSignedLong(32);
+
+      uint32_t bitfield0 = extractLong(0);
+      hnrVehDyn.xAngRateValid = (bitfield0 & 0x00000100) > 0;
+      hnrVehDyn.yAngRateValid = (bitfield0 & 0x00000200) > 0;
+      hnrVehDyn.zAngRateValid = (bitfield0 & 0x00000400) > 0;
+      hnrVehDyn.xAccelValid = (bitfield0 & 0x00000800) > 0;
+      hnrVehDyn.yAccelValid = (bitfield0 & 0x00001000) > 0;
+      hnrVehDyn.zAccelValid = (bitfield0 & 0x00002000) > 0;
+
+      hnrDynQueried = true;
+    }
+    else if (msg->id == UBX_HNR_PVT && msg->len == 72)
+    {
+      //Parse various byte fields into global vars
+      hnrPVT.iTOW = extractLong(0);
+      hnrPVT.year = extractInt(4);
+      hnrPVT.month = extractByte(6);
+      hnrPVT.day = extractByte(7);
+      hnrPVT.hour = extractByte(8);
+      hnrPVT.min = extractByte(9);
+      hnrPVT.sec = extractByte(10);
+      hnrPVT.nano = extractSignedLong(12);
+      hnrPVT.gpsFix = extractByte(16);
+      hnrPVT.lon = extractSignedLong(20);
+      hnrPVT.lat = extractSignedLong(24);
+      hnrPVT.height = extractSignedLong(28);
+      hnrPVT.hMSL = extractSignedLong(32);
+      hnrPVT.gSpeed = extractSignedLong(36);
+      hnrPVT.speed = extractSignedLong(40);
+      hnrPVT.headMot = extractSignedLong(44);
+      hnrPVT.headVeh = extractSignedLong(48);
+      hnrPVT.hAcc = extractLong(52);
+      hnrPVT.vAcc = extractLong(56);
+      hnrPVT.sAcc = extractLong(60);
+      hnrPVT.headAcc = extractLong(64);
+
+      uint8_t valid = extractByte(11);
+      hnrPVT.validDate = (valid & 0x01) > 0;
+      hnrPVT.validTime = (valid & 0x02) > 0;
+      hnrPVT.fullyResolved = (valid & 0x04) > 0;
+
+      uint8_t flags = extractByte(17);
+      hnrPVT.gpsFixOK = (flags & 0x01) > 0;
+      hnrPVT.diffSoln = (flags & 0x02) > 0;
+      hnrPVT.WKNSET = (flags & 0x04) > 0;
+      hnrPVT.TOWSET = (flags & 0x08) > 0;
+      hnrPVT.headVehValid = (flags & 0x10) > 0;
+
+      hnrPVTQueried = true;
+    }
   }
 }
 
@@ -2323,7 +2397,7 @@ boolean SFE_UBLOX_GPS::setNavigationFrequency(uint8_t navFreq, uint16_t maxWait)
   //if(updateRate > 40) updateRate = 40; //Not needed: module will correct out of bounds values
 
   //Adjust the I2C polling timeout based on update rate
-  i2cPollingWait = 1000 / (navFreq * 4); //This is the number of ms to wait between checks for new I2C data
+  i2cPollingWait = 1000 / (((int)navFreq) * 4); //This is the number of ms to wait between checks for new I2C data
 
   //Query the module for the latest lat/long
   packetCfg.cls = UBX_CLASS_CFG;
@@ -3146,20 +3220,20 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
       return (true);
 
-    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_HPPOSLLH))
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_NAV))
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getPVT: data was OVERWRITTEN by HPPOSLLH (but that's OK)"));
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by another NAV message (but that's OK)"));
       }
       return (true);
     }
 
-    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_DOP))
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getPVT: data was OVERWRITTEN by DOP (but that's OK)"));
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by a HNR message (but that's OK)"));
       }
       return (true);
     }
@@ -3331,19 +3405,19 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
     if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
       return (true);
 
-    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_PVT))
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_NAV))
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by PVT (but that's OK)"));
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by another NAV message (but that's OK)"));
       }
       return (true);
     }
-    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_DOP))
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by DOP (but that's OK)"));
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by a HNR message (but that's OK)"));
       }
       return (true);
     }
@@ -3466,20 +3540,20 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
     if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
       return (true);
 
-    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_PVT))
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_NAV))
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by PVT (but that's OK)"));
+        _debugSerial->println(F("getHPPOSLLH: data was OVERWRITTEN by another NAV message (but that's OK)"));
       }
       return (true);
     }
 
-    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.id == UBX_NAV_HPPOSLLH))
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
     {
       if (_printDebug == true)
       {
-        _debugSerial->println(F("getPVT: data was OVERWRITTEN by HPPOSLLH (but that's OK)"));
+        _debugSerial->println(F("getPVT: data was OVERWRITTEN by a HNR message (but that's OK)"));
       }
       return (true);
     }
@@ -3492,6 +3566,7 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
     return (false);
   }
 }
+
 //Get the current 3D high precision positional accuracy - a fun thing to watch
 //Returns a long representing the 3D accuracy in millimeters
 uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
@@ -3950,7 +4025,7 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
 
-  checkUblox();
+  //checkUblox();
 
   // payload should be loaded.
   imuMeas.version = extractByte(4);
@@ -3972,7 +4047,7 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
 
-  checkUblox();
+  //checkUblox();
 
   // Validity of each sensor value below
   uint32_t validity = extractLong(0);
@@ -4007,7 +4082,7 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
 
-  checkUblox();
+  //checkUblox();
 
   uint32_t timeStamp = extractLong(0);
   uint32_t flags = extractInt(4);
@@ -4058,7 +4133,7 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (false); //If command send fails then bail
 
-  checkUblox();
+  //checkUblox();
 
   uint32_t bitField = extractLong(4);
   imuMeas.rawDataType = (bitField & 0xFF000000) >> 24;
@@ -4086,7 +4161,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getSensState(uint8_t sensor, uint16_t maxWait)
   if (sensor > ubloxSen.numSens)
     return (SFE_UBLOX_STATUS_OUT_OF_RANGE);
 
-  checkUblox();
+  //checkUblox();
 
   uint8_t offset = 4;
 
@@ -4126,7 +4201,7 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (SFE_UBLOX_STATUS_FAIL); //If command send fails then bail
 
-  checkUblox();
+  //checkUblox();
 
   vehAtt.roll = extractSignedLong(8); // 0.00001 deg
   vehAtt.pitch = extractSignedLong(12); // 0.00001 deg
@@ -4244,4 +4319,407 @@ boolean SFE_UBLOX_GPS::pushRawData(uint8_t *dataBytes, size_t numDataBytes)
 
     return (bytesWrittenTotal == numDataBytes);
   }
+}
+
+// Set the High Navigation Rate
+// Returns true if the setHNRNavigationRate is successful
+boolean SFE_UBLOX_GPS::setHNRNavigationRate(uint8_t rate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_HNR;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current HNR settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (false);
+
+  //Load the new navigation rate into payloadCfg
+  payloadCfg[0] = rate;
+
+  //Update the navigation rate
+  sfe_ublox_status_e result = sendCommand(&packetCfg, maxWait); // We are only expecting an ACK
+
+  //Adjust the I2C polling timeout based on update rate
+  if (result == SFE_UBLOX_STATUS_DATA_SENT)
+    i2cPollingWait = 1000 / (((int)rate) * 4); //This is the number of ms to wait between checks for new I2C data
+
+  return (result == SFE_UBLOX_STATUS_DATA_SENT);
+}
+
+// Get the High Navigation Rate
+// Returns 0 if the getHNRNavigationRate fails
+uint8_t SFE_UBLOX_GPS::getHNRNavigationRate(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_HNR;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  //Ask module for the current HNR settings. Loads into payloadCfg.
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (0);
+
+  //Return the navigation rate
+  return (payloadCfg[0]);
+}
+
+//In case no config access to the GPS is possible and HNR attitude is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoHNRAtt != enabled || autoHNRAttImplicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    autoHNRAtt = enabled;
+    autoHNRAttImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+//Enable or disable automatic HNR attitude message generation by the GPS. This changes the way getHNRAtt
+//works.
+boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, uint16_t maxWait)
+{
+  return setAutoHNRAtt(enable, true, maxWait);
+}
+
+//Enable or disable automatic HNR attitude message generation by the GPS. This changes the way getHNRAtt
+//works.
+boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_HNR;
+  payloadCfg[1] = UBX_HNR_ATT;
+  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+  boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    autoHNRAtt = enable;
+    autoHNRAttImplicitUpdate = implicitUpdate;
+  }
+  hnrAttQueried = false; // Mark data as stale
+  return ok;
+}
+
+//Get the HNR Attitude data
+// Returns true if the get HNR attitude is successful. Data is returned in hnrAtt
+// Note: if hnrAttQueried is true, it gets set to false by this function since we assume
+//       that the user will read hnrAtt immediately after this. I.e. this function will
+//       only return true _once_ after each auto HNR Att is processed
+boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
+{
+  if (autoHNRAtt && autoHNRAttImplicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRAtt: Autoreporting"));
+    }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_ATT);
+    if (hnrAttQueried)
+    {
+      hnrAttQueried = false; // Mark data as stale as we assume the user will read it after this
+      return true;
+    }
+    return false;
+  }
+  else if (autoHNRAtt && !autoHNRAttImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRAtt: Exit immediately"));
+    }
+    return (false);
+  }
+  else
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRAtt: Polling"));
+    }
+
+    //The GPS is not automatically reporting HNR attitude so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_HNR;
+    packetCfg.id = UBX_HNR_ATT;
+    packetCfg.len = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_NAV))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHNRAtt: data was OVERWRITTEN by a NAV message (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHNRAtt: data was OVERWRITTEN by another HNR message (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("getHNRAtt retVal: "));
+      _debugSerial->println(statusString(retVal));
+    }
+    return (false);
+  }
+
+  return (false); // Trap. We should never get here...
+}
+
+//In case no config access to the GPS is possible and HNR vehicle dynamics is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoHNRDyn != enabled || autoHNRDynImplicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    autoHNRDyn = enabled;
+    autoHNRDynImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+//Enable or disable automatic HNR vehicle dynamics message generation by the GPS. This changes the way getHNRDyn
+//works.
+boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, uint16_t maxWait)
+{
+  return setAutoHNRDyn(enable, true, maxWait);
+}
+
+//Enable or disable automatic HNR vehicle dynamics message generation by the GPS. This changes the way getHNRDyn
+//works.
+boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_HNR;
+  payloadCfg[1] = UBX_HNR_INS;
+  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+  boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    autoHNRDyn = enable;
+    autoHNRDynImplicitUpdate = implicitUpdate;
+  }
+  hnrDynQueried = false; // Mark data as stale
+  return ok;
+}
+
+//Get the HNR vehicle dynamics data
+// Returns true if the get HNR vehicle dynamics is successful. Data is returned in hnrVehDyn
+// Note: if hnrDynQueried is true, it gets set to false by this function since we assume
+//       that the user will read hnrVehDyn immediately after this. I.e. this function will
+//       only return true _once_ after each auto HNR Dyn is processed
+boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
+{
+  if (autoHNRDyn && autoHNRDynImplicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRDyn: Autoreporting"));
+    }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_INS);
+    if (hnrDynQueried)
+    {
+      hnrDynQueried = false; // Mark data as stale as we assume the user will read it after this
+      return true;
+    }
+    return false;
+  }
+  else if (autoHNRDyn && !autoHNRDynImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRDyn: Exit immediately"));
+    }
+    return (false);
+  }
+  else
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRDyn: Polling"));
+    }
+
+    //The GPS is not automatically reporting HNR vehicle dynamics so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_HNR;
+    packetCfg.id = UBX_HNR_INS;
+    packetCfg.len = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_NAV))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHNRDyn: data was OVERWRITTEN by a NAV message (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHNRDyn: data was OVERWRITTEN by another HNR message (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("getHNRDyn retVal: "));
+      _debugSerial->println(statusString(retVal));
+    }
+    return (false);
+  }
+
+  return (false); // Trap. We should never get here...
+}
+
+//In case no config access to the GPS is possible and HNR PVT is send cyclically already
+//set config to suitable parameters
+boolean SFE_UBLOX_GPS::assumeAutoHNRPVT(boolean enabled, boolean implicitUpdate)
+{
+  boolean changes = autoHNRPVT != enabled || autoHNRPVTImplicitUpdate != implicitUpdate;
+  if (changes)
+  {
+    autoHNRPVT = enabled;
+    autoHNRPVTImplicitUpdate = implicitUpdate;
+  }
+  return changes;
+}
+
+//Enable or disable automatic HNR PVT message generation by the GPS. This changes the way getHNRPVT
+//works.
+boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, uint16_t maxWait)
+{
+  return setAutoHNRPVT(enable, true, maxWait);
+}
+
+//Enable or disable automatic HNR PVT message generation by the GPS. This changes the way getHNRPVT
+//works.
+boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_HNR;
+  payloadCfg[1] = UBX_HNR_PVT;
+  payloadCfg[2] = enable ? 1 : 0; // rate relative to navigation freq.
+
+  boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  if (ok)
+  {
+    autoHNRPVT = enable;
+    autoHNRPVTImplicitUpdate = implicitUpdate;
+  }
+  hnrPVTQueried = false; // Mark data as stale
+  return ok;
+}
+
+//Get the HNR PVT data
+// Returns true if the get HNR PVT is successful. Data is returned in hnrPVT
+// Note: if hnrPVTQueried is true, it gets set to false by this function since we assume
+//       that the user will read hnrPVT immediately after this. I.e. this function will
+//       only return true _once_ after each auto HNR PVT is processed
+boolean SFE_UBLOX_GPS::getHNRPVT(uint16_t maxWait)
+{
+  if (autoHNRPVT && autoHNRPVTImplicitUpdate)
+  {
+    //The GPS is automatically reporting, we just check whether we got unread data
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRPVT: Autoreporting"));
+    }
+    checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_PVT);
+    if (hnrPVTQueried)
+    {
+      hnrPVTQueried = false; // Mark data as stale as we assume the user will read it after this
+      return true;
+    }
+    return false;
+  }
+  else if (autoHNRPVT && !autoHNRPVTImplicitUpdate)
+  {
+    //Someone else has to call checkUblox for us...
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRPVT: Exit immediately"));
+    }
+    return (false);
+  }
+  else
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("getHNRPVT: Polling"));
+    }
+
+    //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
+    packetCfg.cls = UBX_CLASS_HNR;
+    packetCfg.id = UBX_HNR_PVT;
+    packetCfg.len = 0;
+
+    //The data is parsed as part of processing the response
+    sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
+
+    if (retVal == SFE_UBLOX_STATUS_DATA_RECEIVED)
+      return (true);
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_NAV))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHNRPVT: data was OVERWRITTEN by a NAV message (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if ((retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN) && (packetCfg.cls == UBX_CLASS_HNR))
+    {
+      if (_printDebug == true)
+      {
+        _debugSerial->println(F("getHNRPVT: data was OVERWRITTEN by another HNR message (but that's OK)"));
+      }
+      return (true);
+    }
+
+    if (_printDebug == true)
+    {
+      _debugSerial->print(F("getHNRPVT retVal: "));
+      _debugSerial->println(statusString(retVal));
+    }
+    return (false);
+  }
+
+  return (false); // Trap. We should never get here...
 }

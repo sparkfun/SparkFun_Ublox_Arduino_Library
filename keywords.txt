@@ -175,6 +175,18 @@ setStaticPosition   KEYWORD2
 
 pushRawData   KEYWORD2
 
+setHNRNavigationRate   KEYWORD2
+getHNRNavigationRate   KEYWORD2
+assumeAutoHNRAtt   KEYWORD2
+setAutoHNRAtt   KEYWORD2
+getHNRAtt   KEYWORD2
+assumeAutoHNRDyn   KEYWORD2
+setAutoHNRDyn   KEYWORD2
+getHNRDyn   KEYWORD2
+assumeAutoHNRPVT   KEYWORD2
+setAutoHNRPVT   KEYWORD2
+getHNRPVT   KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################
