@@ -1029,6 +1029,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       gnssFixOk = extractByte(21 - startingSpot) & 0x1; //Get the 1st bit
       diffSoln = extractByte(21 - startingSpot) >> 1 & 0x1; //Get the 2nd bit
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
+      headVehValid = extractByte(21 - startingSpot) >> 5 & 0x1; // Get the 5th bit
       SIV = extractByte(23 - startingSpot);
       longitude = extractSignedLong(24 - startingSpot);
       latitude = extractSignedLong(28 - startingSpot);
@@ -1064,6 +1065,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.all = true;
       moduleQueried.gnssFixOk = true;
       moduleQueried.diffSoln = true;
+      moduleQueried.headVehValid = true;
       moduleQueried.longitude = true;
       moduleQueried.latitude = true;
       moduleQueried.altitude = true;
@@ -3850,6 +3852,18 @@ uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
   return (carrierSolution);
 }
 
+//Get whether head vehicle valid or not
+bool SFE_UBLOX_GPS::getHeadVehValid(uint16_t maxWait)
+{
+  if (moduleQueried.headVehValid == false)
+    getPVT(maxWait);
+  moduleQueried.headVehValid = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (headVehValid);
+}
+
+
 //Get the ground speed in mm/s
 int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
 {
@@ -3971,6 +3985,7 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.all = false;
   moduleQueried.gnssFixOk = false;
   moduleQueried.diffSoln = false;
+  moduleQueried.headVehValid = false;
   moduleQueried.longitude = false;
   moduleQueried.latitude = false;
   moduleQueried.altitude = false;
@@ -3980,7 +3995,13 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.carrierSolution = false;
   moduleQueried.groundSpeed = false;
   moduleQueried.headingOfMotion = false;
+  moduleQueried.speedAccEst = false;
+  moduleQueried.headingAccEst = false;
   moduleQueried.pDOP = false;
+  moduleQueried.invalidLlh = false;
+  moduleQueried.headVeh = false;
+  moduleQueried.magDec = false;
+  moduleQueried.magAcc = false;
 }
 
 //Mark all the HPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure

@@ -64,6 +64,7 @@ getInvalidLlh	KEYWORD2
 getHeadVeh	KEYWORD2
 getMagDec	KEYWORD2
 getMagAcc	KEYWORD2
+getHeadVehValid	KEYWORD2
 
 setPortOutput	KEYWORD2
 setPortInput	KEYWORD2
