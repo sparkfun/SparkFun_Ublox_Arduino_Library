@@ -58,6 +58,13 @@ getVerticalAccEst	KEYWORD2
 getNedNorthVel	KEYWORD2
 getNedEastVel	KEYWORD2
 getNedDownVel	KEYWORD2
+getSpeedAccEst	KEYWORD2
+getHeadingAccEst	KEYWORD2
+getInvalidLlh	KEYWORD2
+getHeadVeh	KEYWORD2
+getMagDec	KEYWORD2
+getMagAcc	KEYWORD2
+getHeadVehValid	KEYWORD2
 
 setPortOutput	KEYWORD2
 setPortInput	KEYWORD2

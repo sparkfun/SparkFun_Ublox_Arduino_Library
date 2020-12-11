@@ -1027,8 +1027,9 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
       fixType = extractByte(20 - startingSpot);
       gnssFixOk = extractByte(21 - startingSpot) & 0x1; //Get the 1st bit
-      diffSoln = extractByte(21 - startingSpot) >> 1 & 0x1; //Get the 2nd bit
+      diffSoln = (extractByte(21 - startingSpot) >> 1) & 0x1; //Get the 2nd bit
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
+      headVehValid = (extractByte(21 - startingSpot) >> 5) & 0x1; // Get the 5th bit
       SIV = extractByte(23 - startingSpot);
       longitude = extractSignedLong(24 - startingSpot);
       latitude = extractSignedLong(28 - startingSpot);
@@ -1039,10 +1040,15 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       nedNorthVel = extractSignedLong(48 - startingSpot);
       nedEastVel = extractSignedLong(52 - startingSpot);
       nedDownVel = extractSignedLong(56 - startingSpot);
-
       groundSpeed = extractSignedLong(60 - startingSpot);
       headingOfMotion = extractSignedLong(64 - startingSpot);
+      speedAccEst = extractLong(68 - startingSpot);
+      headingAccEst = extractLong(72 - startingSpot);
       pDOP = extractInt(76 - startingSpot);
+      invalidLlh = extractByte(78 - startingSpot) & 0x1;
+      headVeh = extractSignedLong(84 - startingSpot);
+      magDec = extractSignedInt(88 - startingSpot);
+      magAcc = extractInt(90 - startingSpot);
 
       //Mark all datums as fresh (not read before)
       moduleQueried.gpsiTOW = true;
@@ -1059,23 +1065,28 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       moduleQueried.all = true;
       moduleQueried.gnssFixOk = true;
       moduleQueried.diffSoln = true;
+      moduleQueried.headVehValid = true;
       moduleQueried.longitude = true;
       moduleQueried.latitude = true;
       moduleQueried.altitude = true;
       moduleQueried.altitudeMSL = true;
-
       moduleQueried.horizontalAccEst = true;
       moduleQueried.verticalAccEst = true;
       moduleQueried.nedNorthVel = true;
       moduleQueried.nedEastVel = true;
       moduleQueried.nedDownVel = true;
-
       moduleQueried.SIV = true;
       moduleQueried.fixType = true;
       moduleQueried.carrierSolution = true;
       moduleQueried.groundSpeed = true;
       moduleQueried.headingOfMotion = true;
+      moduleQueried.speedAccEst = true;
+      moduleQueried.headingAccEst = true;
       moduleQueried.pDOP = true;
+      moduleQueried.invalidLlh = true;
+      moduleQueried.headVeh = true;
+      moduleQueried.magDec = true;
+      moduleQueried.magAcc = true;
     }
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == 36)
     {
@@ -3111,6 +3122,19 @@ uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
   return (val);
 }
 
+//Just so there is no ambiguity about whether a uint16_t will cast to a int16_t correctly...
+int16_t SFE_UBLOX_GPS::extractSignedInt(int8_t spotToStart)
+{
+  union // Use a union to convert from uint16_t to int16_t
+  {
+      uint16_t unsignedInt;
+      int16_t signedInt;
+  } stSignedInt;
+
+  stSignedInt.unsignedInt = extractInt(spotToStart);
+  return (stSignedInt.signedInt);
+}
+
 //Given a spot, extract a byte from the payload
 uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
 {
@@ -3193,6 +3217,54 @@ bool SFE_UBLOX_GPS::getTimeValid(uint16_t maxWait)
     getPVT(maxWait);
   moduleQueried.gpsTimeValid = false; //Since we are about to give this to user, mark this data as stale
   return (gpsTimeValid);
+}
+
+uint32_t SFE_UBLOX_GPS::getSpeedAccEst(uint16_t maxWait)
+{
+  if (moduleQueried.speedAccEst == false)
+    getPVT(maxWait);
+  moduleQueried.speedAccEst = false; //Since we are about to give this to user, mark this data as stale
+  return (speedAccEst);
+}
+
+uint32_t SFE_UBLOX_GPS::getHeadingAccEst(uint16_t maxWait)
+{
+  if (moduleQueried.headingAccEst == false)
+    getPVT(maxWait);
+  moduleQueried.headingAccEst = false; //Since we are about to give this to user, mark this data as stale
+  return (headingAccEst);
+}
+
+bool SFE_UBLOX_GPS::getInvalidLlh(uint16_t maxWait)
+{
+  if (moduleQueried.invalidLlh == false)
+    getPVT(maxWait);
+  moduleQueried.invalidLlh = false; //Since we are about to give this to user, mark this data as stale
+  return (invalidLlh);
+}
+
+int32_t SFE_UBLOX_GPS::getHeadVeh(uint16_t maxWait)
+{
+  if (moduleQueried.headVeh == false)
+    getPVT(maxWait);
+  moduleQueried.headVeh = false; //Since we are about to give this to user, mark this data as stale
+  return (headVeh);
+}
+
+int16_t SFE_UBLOX_GPS::getMagDec(uint16_t maxWait)
+{
+  if (moduleQueried.magDec == false)
+    getPVT(maxWait);
+  moduleQueried.magDec = false; //Since we are about to give this to user, mark this data as stale
+  return (magDec);
+}
+
+uint16_t SFE_UBLOX_GPS::getMagAcc(uint16_t maxWait)
+{
+  if (moduleQueried.magAcc == false)
+    getPVT(maxWait);
+  moduleQueried.magAcc = false; //Since we are about to give this to user, mark this data as stale
+  return (magAcc);
 }
 
 //Get the current millisecond
@@ -3780,6 +3852,18 @@ uint8_t SFE_UBLOX_GPS::getCarrierSolutionType(uint16_t maxWait)
   return (carrierSolution);
 }
 
+//Get whether head vehicle valid or not
+bool SFE_UBLOX_GPS::getHeadVehValid(uint16_t maxWait)
+{
+  if (moduleQueried.headVehValid == false)
+    getPVT(maxWait);
+  moduleQueried.headVehValid = false; //Since we are about to give this to user, mark this data as stale
+  moduleQueried.all = false;
+
+  return (headVehValid);
+}
+
+
 //Get the ground speed in mm/s
 int32_t SFE_UBLOX_GPS::getGroundSpeed(uint16_t maxWait)
 {
@@ -3901,6 +3985,7 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.all = false;
   moduleQueried.gnssFixOk = false;
   moduleQueried.diffSoln = false;
+  moduleQueried.headVehValid = false;
   moduleQueried.longitude = false;
   moduleQueried.latitude = false;
   moduleQueried.altitude = false;
@@ -3910,7 +3995,13 @@ void SFE_UBLOX_GPS::flushPVT()
   moduleQueried.carrierSolution = false;
   moduleQueried.groundSpeed = false;
   moduleQueried.headingOfMotion = false;
+  moduleQueried.speedAccEst = false;
+  moduleQueried.headingAccEst = false;
   moduleQueried.pDOP = false;
+  moduleQueried.invalidLlh = false;
+  moduleQueried.headVeh = false;
+  moduleQueried.magDec = false;
+  moduleQueried.magAcc = false;
 }
 
 //Mark all the HPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure
