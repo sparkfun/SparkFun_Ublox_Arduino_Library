@@ -1027,9 +1027,9 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
       fixType = extractByte(20 - startingSpot);
       gnssFixOk = extractByte(21 - startingSpot) & 0x1; //Get the 1st bit
-      diffSoln = extractByte(21 - startingSpot) >> 1 & 0x1; //Get the 2nd bit
+      diffSoln = (extractByte(21 - startingSpot) >> 1) & 0x1; //Get the 2nd bit
       carrierSolution = extractByte(21 - startingSpot) >> 6; //Get 6th&7th bits of this byte
-      headVehValid = extractByte(21 - startingSpot) >> 5 & 0x1; // Get the 5th bit
+      headVehValid = (extractByte(21 - startingSpot) >> 5) & 0x1; // Get the 5th bit
       SIV = extractByte(23 - startingSpot);
       longitude = extractSignedLong(24 - startingSpot);
       latitude = extractSignedLong(28 - startingSpot);
