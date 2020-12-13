@@ -80,53 +80,10 @@ Documentation
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 
-Polling vs. Auto-Reporting
---------------------------
+Theory
+--------------
 
-This library supports two modes of operation for getting navigation information with the `getPVT`
-function (based on the `UBX_NAV_PVT` protocol packet): polling and auto-reporting.
-
-The standard method is for the sketch to call `getPVT` (or one of the `getLatitude`, `getLongitude`,
-etc. methods) when it needs a fresh navigation solution. At that point the library sends a request
-to the GPS to produce a fresh solution. The GPS then waits until the next measurement occurs (e.g.
-once per second or as set using `setNavigationFrequency`) and then sends the fresh data.
-The advantage of this method is that the data received is always fresh, the downside is that getPVT
-can block until the next measurement is made by the GPS, e.g. up to 1 second if the nav frequency is
-set to one second.
-
-An alternate method can be chosen using `setAutoPVT(true)` which instructs the GPS to send the
-navigation information (`UBX_NAV_PVT` packet) as soon as it is produced. This is the way the older
-NMEA navigation data has been used for years. The sketch continues to call `getPVT` as before but
-under the hood the library returns the data of the last solution received from the GPS, which may be
-a bit out of date (how much depends on the `setNavigationFrequency` value).
-
-The advantage of this method is that getPVT does not block: it returns true if new data is available
-and false otherwise. The disadvantages are that the data may be a bit old and that buffering for
-these spontaneus `UBX_NAV_PVT` packets is required (100 bytes each). When using Serial the buffering
-is an issue because the std serial buffer is 32 or 64 bytes long depending on Arduino version. When
-using I2C the buffering is not an issue because the GPS device has at least 1KB of internal buffering
-(possibly as large as 4KB).
-
-As an example, assume that the GPS is set to produce 5 navigation
-solutions per second and that the sketch only calls getPVT once a second, then the GPS will queue 5
-packets in its internal buffer (about 500 bytes) and the library will read those when getPVT is
-called, update its internal copy of the nav data 5 times, and return `true` to the sketch. The
-sketch calls `getLatitude`, etc. and retrieve the data of the most recent of those 5 packets.
-
-The library also supports:
-* `autoHPPOSLLH`
-* `autoDOP`
-* `autoHNRAtt`
-* `autoHNRDyn`
-* `autoHNRPVT`
-
-Memory Usage
----------------------------------
-
-Version 1.8.9 introduced support for `autoHNR` on the NEO-M8U, and that tipped the balance in terms of RAM use on the ATmega328.
-The library does still run on the ATmega328 but you will see _**Low memory available, stability problems may occur**_ warnings
-as the global variables now occupy 1540 bytes of RAM. If you do want to run this library on the ATmega328, you may need to regress
-to Version 1.8.8 via the Library Manager.
+If you would like to learn more about how this library works, including the big changes we made in version 2.0, please see **[Theory.md](./Theory.md)** for full details.
 
 Products That Use This Library
 ---------------------------------

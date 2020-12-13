@@ -1,4 +1,4 @@
-How I2C (aka DDC) communication works with a uBlox module
+How I<sup>2</sup>C (aka DDC) communication works with a uBlox module
 ===========================================================
 
 When the user calls one of the methods the library will poll the Ublox module for new data.
@@ -10,30 +10,27 @@ When the user calls one of the methods the library will poll the Ublox module fo
 * Otherwise, read number of bytes and process into NMEA, UBX, or RTCM frame.
 * If checksum is valid, flag frame as complete.
 
-This library was originally written to use the I2C interface but Serial has been implemented as well.
+This library was originally written to use the I<sup>2</sup>C interface but Serial has been implemented as well.
 
 How data is processed by this library
 ===========================================================
 
-A method will call **sendCommand()**. This will begin waiting for a response with either **waitForACKResponse()** or **waitForNoACKResponse()** depending on the command we have sent (CFG commands generate an ACK where others like PVT do not).
+In Version 1 of this library, we tried to minimize memory usage by being very careful about how much RAM we allocated to UBX packet storage and processing. We used only three buffers or containers to store the incoming data: **packetBuf** (packetBuffer); **packetCfg** (packetConfiguration); and **packetAck** (packetAcknowledge). Once data was received and validated, it would be copied out of **packetCfg** and into 'global' variables with names like ```gpsSecond``` or ```latitude```. We also introduced the concept of _Polling vs. Auto-Reporting_ where messages like PVT (Position, Velocity, Time) could be generated and parsed "automatically". This meant that functions like ```getLatitude``` could be non-blocking, returning the most recent data and requesting fresh data when necessary. But it also meant that _polled_ messages could be _overwritten_ (in **packetCfg**) by any _auto-reported_ messages. The library dealt with this successfully, but it was a headache.
 
-Once **waitForACKResponse()** or **waitForNoACKResponse()** is called the library will start checking the ublox module for new bytes. These bytes may be part of a NMEA sentence, an RTCM sentence, or a UBX packet. The library will file each byte into the appropriate container. Once a given sentence or packet is complete, the appropriate processUBX(), processNMEA() will be called. These functions deal with specific processing for each type.
+Version 1 had two main drawbacks. As time went on:
+- the RAM use increased as we had to add new 'global' storage for each new data type
+- the number of messages which needed "auto" processing through **packetCfg** became complex, requiring significant code changes each time a new "auto" message was added. (We started with NAV-PVT. Then came NAV-HPPOSLLH and NAV-DOP. Things got complicated when HNR-ATT, HNR-INS and HNR-PVT were added to the mix.)
 
-Note: When interfacing to a ublox module over I2C **checkUbloxI2C()** will read all bytes currently sitting in the I2C buffer. This may pick up multiple UBX packets. For example, an ACK for a VALSET may be mixed in with an **AutoPVT** response. We cannot tell **checkUbloxI2C()** to stop once a given ACK is found because we run the risk of leaving unprocessed bytes in the I2C buffer and losing them. We don't have this issue with **checkUbloxSerial()**.
+Version 2 of the library does things differently. Whilst of course trying to keep the library backward-compatible as much as possible, we have started from a clean slate:
+- The library no longer uses 'global' (permanently-allocated) storage for the GNSS data. Instead:
+  - Each message type has a **struct** defined which matches the format of the UBX message. (Structs are just definitions, they don't occupy memory.)
+  - The struct allows each data field (latitude, longitude, etc.) to be extracted simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct.
+  - A variable to store that message is only _allocated_ in RAM if/when required. The allocation is done using the "linked list" technique used by OpenLog Artemis.
+- _Any_ message can be "automatic" if required, but can be polled too.
+- An optional _callback_ can be associated with the arrival of each message type. A simple scheduler triggers the callbacks once I<sup>2</sup>C/Serial data reception is complete.
+  - This means that your code no longer needs to wait for the arrival of a message, you are able to request (e.g.) PVT and your callback is called once the data arrives.
+  - The callbacks are not re-entrant.
+- Incoming data can be copied to a separate buffer for automatic writing to a file on SD card, which will be useful for (e.g.) RAWX logging.
+  - Separate code does the actual writing of data from the buffer to the card - outside of the I<sup>2</sup>C/Serial data reception code.
 
-**processUBX()** will check the CRC of the UBX packet. If validated, the packet will be marked as valid. Once a packet is marked as valid then **processUBXpacket()** is called to extract the contents. This is most commonly used to get the position, velocity, and time (PVT) out of the packet but is also used to check the nature of an ACK packet.
-
-Once a packet has been processed, **waitForACKResponse()/waitForNoACKResponse()** makes the appropriate decision what to do with it. If a packet satisfies the CLS/ID and characteristics of what **waitForACKResponse()/waitForNoACKResponse()** is waiting for, then it returns back to **sendCommand()**. If the packet didn't match or was invalid then **waitForACKResponse()/waitForNoACKResponse()** will continue to wait until the correct packet is received or we time out. **sendCommand()** then returns with a value from the **sfe_ublox_status_e** enum depending on the success of **waitForACKResponse()/waitForNoACKResponse()**.
-
-If we are getting / polling data from the module, **sendCommand()** will return **SFE_UBLOX_STATUS_DATA_RECEIVED** if the get was successful.
-
-If we are setting / writing data to the module, **sendCommand()** will return **SFE_UBLOX_STATUS_DATA_SENT** if the set was successful.
-
-We are proud that this library still compiles and runs on the original RedBoard (ATmega328P). We achieve that by being very careful about how much RAM we allocate to packet storage. We use only three buffers or containers to store the incoming data:
-- **packetBuf** (packetBuffer) - is small and is used to store only the head (and tail) of incoming UBX packets until we know they are. If the packet is _expected_ (i.e. it matches the Class and ID in the packet passed in **sendCommand()**) then the incoming bytes are diverted into **packetCfg** or **packetAck**. Unexpected packets are ignored.
-- **packetCfg** (packetConfiguration) - is used to store an _expected_ incoming UBX packet of up to 256 bytes. E.g. **getProtocolVersion()** returns about 220 bytes. Message data requested by a higher function is returned in packetCfg.
-- **packetAck** (packetAcknowledge) - is small and is used to store the ACK or NACK accompanying any _expected_ packetCfg.
-
-**AutoPVT**, **AutoHPPOSLLH** and **AutoDOP** packets can arrive at any time. They too _have_ to be stored and processed in **packetCfg**. This means there are circumstances where the library can get the data it is expecting from the module, but it is overwritten (e.g. by an **AutoPVT** packet) before **sendCommand()** is able to return. In this case, **sendCommand()** will return the error **SFE_UBLOX_STATUS_DATA_OVERWRITTEN**. We should simply call the library function again, but we will need to reset the packet contents first as they will indeed have been overwritten as the error implies.
-
-Need a command that is not currently "built-in" to the library? You can do that using a Custom Command. Check out [Example20_SendCustomCommand](https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/blob/master/examples/Example20_SendCustomCommand/Example20_SendCustomCommand.ino) for further details. Note: this will of course increase your RAM use.
+In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _alloc_ fails) then an error is generated.
