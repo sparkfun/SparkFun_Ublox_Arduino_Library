@@ -47,33 +47,11 @@ SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
   currentGeofenceParams.numFences = 0; // Zero the number of geofences currently in use
   moduleQueried.versionNumber = false;
 
-  if (checksumFailurePin >= 0)
+  if (debugPin >= 0)
   {
-    pinMode((uint8_t)checksumFailurePin, OUTPUT);
-    digitalWrite((uint8_t)checksumFailurePin, HIGH);
+    pinMode((uint8_t)debugPin, OUTPUT);
+    digitalWrite((uint8_t)debugPin, HIGH);
   }
-
-  //Define the size of the I2C buffer based on the platform the user has
-  //In general we found that most platforms use 32 bytes as the I2C buffer size. We could
-  //implement platform gaurds here but as you can see, none currently benefit from >32
-  //so we'll leave it up to the user to set it using setI2CTransactionSize if they will benefit from it
-  // //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  // #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
-
-  // i2cTransactionSize = 32;
-
-  // #elif defined(__SAMD21G18A__)
-
-  // i2cTransactionSize = 32;
-
-  //#elif __MK20DX256__
-  //Teensy
-
-  // #elif defined(ARDUINO_ARCH_ESP32)
-
-  // i2cTransactionSize = 32; //The ESP32 has an I2C buffer length of 128. We reduce it to 32 bytes to increase stability with the module
-
-  // #endif
 }
 
 //Initialize the Serial port
@@ -349,11 +327,11 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
         {
           _debugSerial->println(F("checkUbloxI2C: u-blox bug, length lsb is 0xFF"));
         }
-        if (checksumFailurePin >= 0)
+        if (debugPin >= 0)
         {
-          digitalWrite((uint8_t)checksumFailurePin, LOW);
+          digitalWrite((uint8_t)debugPin, LOW);
           delay(10);
-          digitalWrite((uint8_t)checksumFailurePin, HIGH);
+          digitalWrite((uint8_t)debugPin, HIGH);
         }
         lastCheck = millis(); //Put off checking to avoid I2C bus traffic
         return (false);
@@ -383,11 +361,11 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
       {
         _debugSerial->print(F("checkUbloxI2C: Bytes available error:"));
         _debugSerial->println(bytesAvailable);
-        if (checksumFailurePin >= 0)
+        if (debugPin >= 0)
         {
-          digitalWrite((uint8_t)checksumFailurePin, LOW);
+          digitalWrite((uint8_t)debugPin, LOW);
           delay(10);
-          digitalWrite((uint8_t)checksumFailurePin, HIGH);
+          digitalWrite((uint8_t)debugPin, HIGH);
         }
       }
     }
@@ -443,11 +421,11 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
                 _debugSerial->println(F("checkUbloxU2C: u-blox error, module not ready with data"));
               }
               delay(5); //In logic analyzation, the module starting responding after 1.48ms
-              if (checksumFailurePin >= 0)
+              if (debugPin >= 0)
               {
-                digitalWrite((uint8_t)checksumFailurePin, LOW);
+                digitalWrite((uint8_t)debugPin, LOW);
                 delay(10);
-                digitalWrite((uint8_t)checksumFailurePin, HIGH);
+                digitalWrite((uint8_t)debugPin, HIGH);
               }
               goto TRY_AGAIN;
             }
@@ -930,11 +908,11 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
       {
         //Drive an external pin to allow for easier logic analyzation
-        if (checksumFailurePin >= 0)
+        if (debugPin >= 0)
         {
-          digitalWrite((uint8_t)checksumFailurePin, LOW);
+          digitalWrite((uint8_t)debugPin, LOW);
           delay(10);
-          digitalWrite((uint8_t)checksumFailurePin, HIGH);
+          digitalWrite((uint8_t)debugPin, HIGH);
         }
 
         _debugSerial->print(F("Checksum failed:"));

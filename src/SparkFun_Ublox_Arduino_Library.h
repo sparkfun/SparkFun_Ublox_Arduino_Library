@@ -51,12 +51,13 @@
 #include <Wire.h>
 
 #include "u-blox_config_keys.h"
+#include "u-blox_structs.h"
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//Define a digital pin to aid checksum failure capture and analysis
+//Define a digital pin to aid debugging
 //Leave set to -1 if not needed
-const int checksumFailurePin = -1;
+const int debugPin = -1;
 
 // Global Status Returns
 typedef enum
@@ -116,6 +117,7 @@ const uint8_t UBX_CLASS_SEC = 0x27;	 //Security Feature Messages
 const uint8_t UBX_CLASS_HNR = 0x28;	 //(NEO-M8P ONLY!!!) High Rate Navigation Results Messages: High rate time, position speed, heading
 const uint8_t UBX_CLASS_NMEA = 0xF0; //NMEA Strings: standard NMEA strings
 
+//Class: CFG
 //The following are used for configuration. Descriptions are from the ZED-F9P Interface Description pg 33-34 and NEO-M9N Interface Description pg 47-48
 const uint8_t UBX_CFG_ANT = 0x13;		//Antenna Control Settings. Used to configure the antenna control settings
 const uint8_t UBX_CFG_BATCH = 0x93;		//Get/set data batching configuration.
@@ -152,6 +154,7 @@ const uint8_t UBX_CFG_VALDEL = 0x8C;	//Used for config of higher version u-blox 
 const uint8_t UBX_CFG_VALGET = 0x8B;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Configuration Items
 const uint8_t UBX_CFG_VALSET = 0x8A;	//Used for config of higher version u-blox modules (ie protocol v27 and above). Sets values corresponding to provided key-value pairs/ provided key-value pairs within a transaction.
 
+//Class: NMEA
 //The following are used to enable NMEA messages. Descriptions come from the NMEA messages overview in the ZED-F9P Interface Description
 const uint8_t UBX_NMEA_MSB = 0xF0;	//All NMEA enable commands have 0xF0 as MSB
 const uint8_t UBX_NMEA_DTM = 0x0A;	//GxDTM (datum reference)
@@ -184,11 +187,13 @@ const uint8_t UBX_NMEA_MAINTALKERID_GB = 0x05;			  //main talker ID is BeiDou
 const uint8_t UBX_NMEA_GSVTALKERID_GNSS = 0x00;			  //GNSS specific Talker ID (as defined by NMEA)
 const uint8_t UBX_NMEA_GSVTALKERID_MAIN = 0x01;			  //use the main Talker ID
 
+//Class: HNR
 //The following are used to configure the HNR message rates
 const uint8_t UBX_HNR_ATT = 0x01;			  //HNR Attitude
 const uint8_t UBX_HNR_INS = 0x02;			  //HNR Vehicle Dynamics
 const uint8_t UBX_HNR_PVT = 0x00;			  //HNR PVT
 
+//Class: INF
 //The following are used to configure INF UBX messages (information messages).  Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 34)
 const uint8_t UBX_INF_CLASS = 0x04;	  //All INF messages have 0x04 as the class
 const uint8_t UBX_INF_DEBUG = 0x04;	  //ASCII output with debug contents
@@ -197,6 +202,7 @@ const uint8_t UBX_INF_NOTICE = 0x02;  //ASCII output with informational contents
 const uint8_t UBX_INF_TEST = 0x03;	  //ASCII output with test contents
 const uint8_t UBX_INF_WARNING = 0x01; //ASCII output with warning contents
 
+//Class: LOG
 //The following are used to configure LOG UBX messages (loggings messages).  Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 34)
 const uint8_t UBX_LOG_CREATE = 0x07;		   //Create Log File
 const uint8_t UBX_LOG_ERASE = 0x03;			   //Erase Logged Data
@@ -208,6 +214,7 @@ const uint8_t UBX_LOG_RETRIEVESTRING = 0x0D;   //Byte string log entry
 const uint8_t UBX_LOG_RETRIEVE = 0x09;		   //Request log data
 const uint8_t UBX_LOG_STRING = 0x04;		   //Store arbitrary string on on-board flash
 
+//Class: MGA
 //The following are used to configure MGA UBX messages (Multiple GNSS Assistance Messages).  Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 34)
 const uint8_t UBX_MGA_ACK_DATA0 = 0x60;		 //Multiple GNSS Acknowledge message
 const uint8_t UBX_MGA_BDS_EPH = 0x03;		 //BDS Ephemeris Assistance
@@ -239,6 +246,7 @@ const uint8_t UBX_MGA_QZSS_EPH = 0x05;		 //QZSS Ephemeris Assistance
 const uint8_t UBX_MGA_QZSS_ALM = 0x05;		 //QZSS Almanac Assistance
 const uint8_t UBX_MGA_QZAA_HEALTH = 0x05;	 //QZSS Health Assistance
 
+//Class: MON
 //The following are used to configure the MON UBX messages (monitoring messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 35)
 const uint8_t UBX_MON_COMMS = 0x36; //Comm port information
 const uint8_t UBX_MON_GNSS = 0x28;	//Information message major GNSS selection
@@ -254,6 +262,7 @@ const uint8_t UBX_MON_RXR = 0x21;	//Receiver Status Information
 const uint8_t UBX_MON_TXBUF = 0x08; //Transmitter Buffer Status. Used for query tx buffer size/state.
 const uint8_t UBX_MON_VER = 0x04;	//Receiver/Software Version. Used for obtaining Protocol Version.
 
+//Class: NAV
 //The following are used to configure the NAV UBX messages (navigation results messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 35-36)
 const uint8_t UBX_NAV_ATT = 0x05;		//Vehicle "Attitude" Solution
 const uint8_t UBX_NAV_CLOCK = 0x22;		//Clock Solution
@@ -282,6 +291,7 @@ const uint8_t UBX_NAV_TIMEUTC = 0x21;	//UTC Time Solution
 const uint8_t UBX_NAV_VELECEF = 0x11;	//Velocity Solution in ECEF
 const uint8_t UBX_NAV_VELNED = 0x12;	//Velocity Solution in NED
 
+//Class: RXM
 //The following are used to configure the RXM UBX messages (receiver manager messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
 const uint8_t UBX_RXM_MEASX = 0x14; //Satellite Measurements for RRLP
 const uint8_t UBX_RXM_PMREQ = 0x41; //Requests a Power Management task (two differenent packet sizes)
@@ -290,14 +300,17 @@ const uint8_t UBX_RXM_RLM = 0x59;	//Galileo SAR Short-RLM report (two different 
 const uint8_t UBX_RXM_RTCM = 0x32;	//RTCM input status
 const uint8_t UBX_RXM_SFRBX = 0x13; //Boradcast Navigation Data Subframe
 
+//Class: SEC
 //The following are used to configure the SEC UBX messages (security feature messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
 const uint8_t UBX_SEC_UNIQID = 0x03; //Unique chip ID
 
+//Class: TIM
 //The following are used to configure the TIM UBX messages (timing messages). Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 36)
 const uint8_t UBX_TIM_TM2 = 0x03;  //Time mark data
 const uint8_t UBX_TIM_TP = 0x01;   //Time Pulse Timedata
 const uint8_t UBX_TIM_VRFY = 0x06; //Sourced Time Verification
 
+//Class: UPD
 //The following are used to configure the UPD UBX messages (firmware update messages). Descriptions from UBX messages overview (ZED-F9P Interface Description Document page 36)
 const uint8_t UBX_UPD_SOS = 0x14; //Poll Backup Fil Restore Status, Create Backup File in Flash, Clear Backup File in Flash, Backup File Creation Acknowledge, System Restored from Backup
 
@@ -316,10 +329,12 @@ const uint8_t UBX_RTCM_1230 = 0xE6;	  //GLONASS code-phase biases, set to once e
 const uint8_t UBX_RTCM_4072_0 = 0xFE; //Reference station PVT (ublox proprietary RTCM message)
 const uint8_t UBX_RTCM_4072_1 = 0xFD; //Additional reference station information (ublox proprietary RTCM message)
 
+// Class: ACK
 const uint8_t UBX_ACK_NACK = 0x00;
 const uint8_t UBX_ACK_ACK = 0x01;
 const uint8_t UBX_ACK_NONE = 0x02; //Not a real value
 
+//Class: ESF
 // The following constants are used to get External Sensor Measurements and Status
 // Information.
 const uint8_t UBX_ESF_MEAS = 0x02;
@@ -378,9 +393,12 @@ enum dynModel // Possible values for the dynamic platform model, which provide m
 
 #define MAX_PAYLOAD_SIZE 256 //We need ~220 bytes for getProtocolVersion on most ublox modules
 //#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
+//#define MAX_PAYLOAD_SIZE  //Worst case: RAWX packet when tracking multiple constellations on multiple bands
 
 #endif
 
+/*
+INCORPORATED INTO THE APPROPRIATE typedef struct .ubxPacket
 //-=-=-=-=- UBX binary specific variables
 typedef struct
 {
@@ -395,6 +413,7 @@ typedef struct
 	sfe_ublox_packet_validity_e valid;			 //Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
 	sfe_ublox_packet_validity_e classAndIDmatch; // Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
 } ubxPacket;
+*/
 
 // Struct to hold the results returned by getGeofenceState (returned by UBX-NAV-GEOFENCE)
 typedef struct
@@ -684,6 +703,8 @@ public:
 	// Warning: this function does not check that the data is valid. It is the user's responsibility to ensure the data is valid before pushing.
 	boolean pushRawData(uint8_t *dataBytes, size_t numDataBytes);
 
+/*
+REPLACED BY UBX_NAV_SVIN_t
 	//Survey-in specific controls
 	struct svinStructure
 	{
@@ -692,7 +713,10 @@ public:
 		uint16_t observationTime;
 		float meanAccuracy;
 	} svin;
+*/
 
+/*
+REPLACED BY UBX_NAV_RELPOSNED_t
 	//Relative Positioning Info in NED frame specific controls
 	struct frelPosInfoStructure
 	{
@@ -722,7 +746,10 @@ public:
 		bool refPosMiss;
 		bool refObsMiss;
 	} relPosInfo;
+*/
 
+/*
+REPLACED WITH UBX_NAV_PVT_t
 	//The major datums we want to globally store
 	uint16_t gpsYear;
 	uint8_t gpsMonth;
@@ -759,6 +786,10 @@ public:
 	int32_t headVeh;
 	int16_t magDec;
 	uint16_t magAcc;
+*/
+
+/*
+REPLACED WITH UBX_NAV_HPPOSLLH_t
 	uint8_t versionLow;		 //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
 
@@ -774,9 +805,12 @@ public:
 	int8_t meanSeaLevelHp;		 // High precision component of Height above mean sea level in mm * 10^-1
 	int8_t highResLatitudeHp;	 // High precision component of latitude: Degrees * 10^-9
 	int8_t highResLongitudeHp;	 // High precision component of longitude: Degrees * 10^-9
+*/
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
+/*
+REPLACED WITH UBX_NAV_DOP_t
 	uint16_t geometricDOP; // Geometric dilution of precision * 10^-2
 	uint16_t positionDOP; // Posoition dilution of precision * 10^-2
 	uint16_t timeDOP; // Time dilution of precision * 10^-2
@@ -784,6 +818,7 @@ public:
 	uint16_t horizontalDOP; // Horizontal dilution of precision * 10^-2
 	uint16_t northingDOP; // Northing dilution of precision * 10^-2
 	uint16_t eastingDOP; // Easting dilution of precision * 10^-2
+*/
 
 #define DEF_NUM_SENS 7
 	struct deadReckData
@@ -847,6 +882,8 @@ public:
 	} vehAtt;
 
 	//HNR-specific structs
+/*
+REPLACED WITH UBX_HNR_ATT_t
 	struct hnrAttitudeSolution
 	{
 		uint32_t iTOW;
@@ -857,7 +894,10 @@ public:
 		uint32_t accPitch; // Degrees * 1e-5
 		uint32_t accHeading; // Degrees * 1e-5
 	} hnrAtt;
+*/
 
+/*
+REPLACED WITH UBX_HNR_INS_t
 	struct hnrVehicleDynamics
 	{
 		boolean xAngRateValid;
@@ -874,7 +914,10 @@ public:
 		int32_t yAccel; // m/s^2 * 1e-2
 		int32_t zAccel; // m/s^2 * 1e-2
 	} hnrVehDyn;
+*/
 
+/*
+REPLACED WITH UBX_HNR_PVT_t
 	struct hnrPosVelTime
 	{
 		uint32_t iTOW;
@@ -907,6 +950,7 @@ public:
 		uint32_t sAcc; // mm
 		uint32_t headAcc; // Degrees * 1e-5
 	} hnrPVT;
+*/
 
 	//HNR functions
 	boolean setHNRNavigationRate(uint8_t rate, uint16_t maxWait = 1100); // Returns true if the setHNRNavigationRate is successful
@@ -996,6 +1040,9 @@ private:
 	uint8_t i2cPollingWait = 100; //Default to 100ms. Adjusted when user calls setNavigationFrequency()
 
 	unsigned long lastCheck = 0;
+
+/*
+INCORPORATED INTO THE APPROPRIATE typedef struct .ubxPacket
 	boolean autoPVT = false;			  //Whether autoPVT is enabled or not
 	boolean autoPVTImplicitUpdate = true; // Whether autoPVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
 	boolean autoHPPOSLLH = false;			  //Whether autoHPPOSLLH is enabled or not
@@ -1008,11 +1055,15 @@ private:
   boolean autoHNRDynImplicitUpdate = true; // Whether auto HNR dynamics is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
 	boolean autoHNRPVT = false;       //Whether auto HNR PVT is enabled or not
   boolean autoHNRPVTImplicitUpdate = true; // Whether auto HNR PVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+*/
 
 	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 
 	uint8_t rollingChecksumA; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
+
+/*
+INCORPORATED INTO UBX_NAV_PVT_t as .moduleQueried1 and .moduleQueried2
 
 	//Create bit field for staleness of each datum in PVT we want to monitor
 	//moduleQueried.latitude goes true each time we call getPVT()
@@ -1058,7 +1109,10 @@ private:
 		uint32_t magAcc : 1;
 		uint32_t versionNumber : 1;
 	} moduleQueried;
+*/
 
+/*
+INCORPORATED INTO UBX_NAV_HPPOSLLH_t
 	struct
 	{
 		uint16_t all : 1;
@@ -1075,7 +1129,10 @@ private:
 		uint16_t highResLatitudeHp : 1;
 		uint16_t highResLongitudeHp : 1;
 	} highResModuleQueried;
+	*/
 
+/*
+INCORPORATED INTO UBX_NAV_DOP_t
   struct
   {
     uint16_t all : 1;
@@ -1087,10 +1144,14 @@ private:
     uint16_t northingDOP : 1;
     uint16_t eastingDOP : 1;
   } dopModuleQueried;
+*/
 
+/*
+INCORPORATED INTO UBX_HNR_ATT_t, UBX_HNR_INS_t and UBX_HNR_PVT_t
 	boolean hnrAttQueried;
 	boolean hnrDynQueried;
 	boolean hnrPVTQueried;
+*/
 
 	uint16_t rtcmLen = 0;
 };

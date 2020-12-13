@@ -23,7 +23,7 @@ Version 1 had two main drawbacks. As time went on:
 
 Version 2 of the library does things differently. Whilst of course trying to keep the library backward-compatible as much as possible, we have started from a clean slate:
 - The library no longer uses 'global' (permanently-allocated) storage for the GNSS data. Instead:
-  - Each message type has a **struct** defined which matches the format of the UBX message. (Structs are just definitions, they don't occupy memory.)
+  - Each message type has a **typedef struct** defined which matches the format of the UBX message. (_typedef structs_ are just definitions, they don't occupy memory.)
   - The struct allows each data field (latitude, longitude, etc.) to be read simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct.
   - A variable to store that message is only _allocated_ in RAM if/when required. The allocation is done using the "linked list" technique used by OpenLog Artemis.
 - _Any_ message can be "automatic" if required, but can be polled too.
