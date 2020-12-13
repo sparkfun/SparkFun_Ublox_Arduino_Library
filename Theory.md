@@ -24,13 +24,17 @@ Version 1 had two main drawbacks. As time went on:
 Version 2 of the library does things differently. Whilst of course trying to keep the library backward-compatible as much as possible, we have started from a clean slate:
 - The library no longer uses 'global' (permanently-allocated) storage for the GNSS data. Instead:
   - Each message type has a **struct** defined which matches the format of the UBX message. (Structs are just definitions, they don't occupy memory.)
-  - The struct allows each data field (latitude, longitude, etc.) to be extracted simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct.
+  - The struct allows each data field (latitude, longitude, etc.) to be read simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct.
   - A variable to store that message is only _allocated_ in RAM if/when required. The allocation is done using the "linked list" technique used by OpenLog Artemis.
 - _Any_ message can be "automatic" if required, but can be polled too.
 - An optional _callback_ can be associated with the arrival of each message type. A simple scheduler triggers the callbacks once I<sup>2</sup>C/Serial data reception is complete.
   - This means that your code no longer needs to wait for the arrival of a message, you are able to request (e.g.) PVT and your callback is called once the data arrives.
   - The callbacks are not re-entrant.
-- Incoming data can be copied to a separate buffer for automatic writing to a file on SD card, which will be useful for (e.g.) RAWX logging.
-  - Separate code does the actual writing of data from the buffer to the card - outside of the I<sup>2</sup>C/Serial data reception code.
+  - The callback receives a _copy_ of the data, so data reception can continue while the callback is executing. Data integrity is preserved.
+- Incoming data can be copied to a separate buffer to allow automatic writing to a file on SD card, which will be useful for (e.g.) RAWX logging.
+  - Data is stored in a RingBuffer, the size of which can be set by calling ```setFileBufferSize``` _before_ ```.begin```.
+  - The default buffer size is zero - to save memory.
+  - To simplify SD card writing, data can be copied from the RingBuffer to a user-defined linear buffer first using ```extractFileBufferData```.
+  - User-defined code does the actual writing of data from the linear buffer to the SD card - allowing data reception to continue during the SD write. The u-blox GNSS library does not perform the writing and so is not tied to any particular SD library.
 
 In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _alloc_ fails) then an error is generated.
