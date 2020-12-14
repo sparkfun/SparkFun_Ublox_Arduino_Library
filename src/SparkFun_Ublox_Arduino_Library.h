@@ -122,8 +122,12 @@ const uint8_t UBX_CFG_BATCH = 0x93;		//Get/set data batching configuration.
 const uint8_t UBX_CFG_CFG = 0x09;		//Clear, Save, and Load Configurations. Used to save current configuration
 const uint8_t UBX_CFG_DAT = 0x06;		//Set User-defined Datum or The currently defined Datum
 const uint8_t UBX_CFG_DGNSS = 0x70;		//DGNSS configuration
+const uint8_t UBX_CFG_ESFALG = 0x56;		//ESF alignment
+const uint8_t UBX_CFG_ESFA = 0x4C;		//ESF accelerometer
+const uint8_t UBX_CFG_ESFG = 0x4D;		//ESF gyro
 const uint8_t UBX_CFG_GEOFENCE = 0x69;	//Geofencing configuration. Used to configure a geofence
 const uint8_t UBX_CFG_GNSS = 0x3E;		//GNSS system configuration
+const uint8_t UBX_CFG_HNR = 0x5C;		//High Navigation Rate
 const uint8_t UBX_CFG_INF = 0x02;		//Depending on packet length, either: poll configuration for one protocol, or information message configuration
 const uint8_t UBX_CFG_ITFM = 0x39;		//Jamming/Interference Monitor configuration
 const uint8_t UBX_CFG_LOGFILTER = 0x47; //Data Logger Configuration
@@ -179,6 +183,11 @@ const uint8_t UBX_NMEA_MAINTALKERID_GA = 0x04;			  //main talker ID is Galileo
 const uint8_t UBX_NMEA_MAINTALKERID_GB = 0x05;			  //main talker ID is BeiDou
 const uint8_t UBX_NMEA_GSVTALKERID_GNSS = 0x00;			  //GNSS specific Talker ID (as defined by NMEA)
 const uint8_t UBX_NMEA_GSVTALKERID_MAIN = 0x01;			  //use the main Talker ID
+
+//The following are used to configure the HNR message rates
+const uint8_t UBX_HNR_ATT = 0x01;			  //HNR Attitude
+const uint8_t UBX_HNR_INS = 0x02;			  //HNR Vehicle Dynamics
+const uint8_t UBX_HNR_PVT = 0x00;			  //HNR PVT
 
 //The following are used to configure INF UBX messages (information messages).  Descriptions from UBX messages overview (ZED_F9P Interface Description Document page 34)
 const uint8_t UBX_INF_CLASS = 0x04;	  //All INF messages have 0x04 as the class
@@ -482,8 +491,8 @@ public:
 
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true);							//In case no config access to the GPS is possible and PVT is send cyclically already
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = defaultMaxWait);							//Enable/disable automatic PVT reports at the navigation frequency
-	boolean getPVT(uint16_t maxWait = getPVTmaxWait);												//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean getPVT(uint16_t maxWait = getPVTmaxWait);												//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new PVT is available.
 	boolean assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdate = true);							//In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
 	boolean setAutoHPPOSLLH(boolean enabled, uint16_t maxWait = defaultMaxWait);							//Enable/disable automatic HPPOSLLH reports at the navigation frequency
 	boolean setAutoHPPOSLLH(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
@@ -498,17 +507,16 @@ public:
 
 	bool getGnssFixOk(uint16_t maxWait = getPVTmaxWait);          //Get whether we have a valid fix (i.e within DOP & accuracy masks)
 	bool getDiffSoln(uint16_t maxWait = getPVTmaxWait);           //Get whether differential corrections were applied
+	bool getHeadVehValid(uint16_t maxWait = getPVTmaxWait);
 	int32_t getLatitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getLongitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
 	int32_t getAltitude(uint16_t maxWait = getPVTmaxWait);			  //Returns the current altitude in mm above ellipsoid
 	int32_t getAltitudeMSL(uint16_t maxWait = getPVTmaxWait);		  //Returns the current altitude in mm above mean sea level
-
 	int32_t getHorizontalAccEst(uint16_t maxWait = getPVTmaxWait);
 	int32_t getVerticalAccEst(uint16_t maxWait = getPVTmaxWait);
 	int32_t getNedNorthVel(uint16_t maxWait = getPVTmaxWait);
 	int32_t getNedEastVel(uint16_t maxWait = getPVTmaxWait);
 	int32_t getNedDownVel(uint16_t maxWait = getPVTmaxWait);
-
 	uint8_t getSIV(uint16_t maxWait = getPVTmaxWait);				  //Returns number of sats used in fix
 	uint8_t getFixType(uint16_t maxWait = getPVTmaxWait);			  //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 	uint8_t getCarrierSolutionType(uint16_t maxWait = getPVTmaxWait); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
@@ -526,6 +534,12 @@ public:
 	uint32_t getTimeOfWeek(uint16_t maxWait = getPVTmaxWait);
 	bool getDateValid(uint16_t maxWait = getPVTmaxWait);
 	bool getTimeValid(uint16_t maxWait = getPVTmaxWait);
+	uint32_t getSpeedAccEst(uint16_t maxWait = getPVTmaxWait);
+	uint32_t getHeadingAccEst(uint16_t maxWait = getPVTmaxWait);
+	bool getInvalidLlh(uint16_t maxWait = getPVTmaxWait);
+	int32_t getHeadVeh(uint16_t maxWait = getPVTmaxWait);
+	int16_t getMagDec(uint16_t maxWait = getPVTmaxWait);
+	uint16_t getMagAcc(uint16_t maxWait = getPVTmaxWait);
 
 	int32_t getHighResLatitude(uint16_t maxWait = getHPPOSLLHmaxWait);
 	int8_t getHighResLatitudeHp(uint16_t maxWait = getHPPOSLLHmaxWait);
@@ -721,9 +735,9 @@ public:
 	bool gpsDateValid;
 	bool gpsTimeValid;
 
-
 	bool gnssFixOk;      //valid fix (i.e within DOP & accuracy masks)
 	bool diffSoln;       //Differential corrections were applied
+	bool headVehValid;
 	int32_t latitude;		 //Degrees * 10^-7 (more accurate than floats)
 	int32_t longitude;		 //Degrees * 10^-7 (more accurate than floats)
 	int32_t altitude;		 //Number of mm above ellipsoid
@@ -738,7 +752,13 @@ public:
 	uint8_t carrierSolution; //Tells us when we have an RTK float/fixed solution
 	int32_t groundSpeed;	 //mm/s
 	int32_t headingOfMotion; //degrees * 10^-5
+	uint32_t speedAccEst;
+	uint32_t headingAccEst;
 	uint16_t pDOP;			 //Positional dilution of precision * 10^-2 (dimensionless)
+	bool invalidLlh;
+	int32_t headVeh;
+	int16_t magDec;
+	uint16_t magAcc;
 	uint8_t versionLow;		 //Loaded from getProtocolVersion().
 	uint8_t versionHigh;
 
@@ -757,13 +777,13 @@ public:
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
-uint16_t geometricDOP; // Geometric dilution of precision * 10^-2
-uint16_t positionDOP; // Posoition dilution of precision * 10^-2
-uint16_t timeDOP; // Time dilution of precision * 10^-2
-uint16_t verticalDOP; // Vertical dilution of precision * 10^-2
-uint16_t horizontalDOP; // Horizontal dilution of precision * 10^-2
-uint16_t northingDOP; // Northing dilution of precision * 10^-2
-uint16_t eastingDOP; // Easting dilution of precision * 10^-2
+	uint16_t geometricDOP; // Geometric dilution of precision * 10^-2
+	uint16_t positionDOP; // Posoition dilution of precision * 10^-2
+	uint16_t timeDOP; // Time dilution of precision * 10^-2
+	uint16_t verticalDOP; // Vertical dilution of precision * 10^-2
+	uint16_t horizontalDOP; // Horizontal dilution of precision * 10^-2
+	uint16_t northingDOP; // Northing dilution of precision * 10^-2
+	uint16_t eastingDOP; // Easting dilution of precision * 10^-2
 
 #define DEF_NUM_SENS 7
 	struct deadReckData
@@ -826,6 +846,84 @@ uint16_t eastingDOP; // Easting dilution of precision * 10^-2
 		uint32_t accHeading;
 	} vehAtt;
 
+	//HNR-specific structs
+	struct hnrAttitudeSolution
+	{
+		uint32_t iTOW;
+		int32_t roll; // Degrees * 1e-5
+		int32_t pitch; // Degrees * 1e-5
+		int32_t heading; // Degrees * 1e-5
+		uint32_t accRoll; // Degrees * 1e-5
+		uint32_t accPitch; // Degrees * 1e-5
+		uint32_t accHeading; // Degrees * 1e-5
+	} hnrAtt;
+
+	struct hnrVehicleDynamics
+	{
+		boolean xAngRateValid;
+		boolean yAngRateValid;
+		boolean zAngRateValid;
+		boolean xAccelValid;
+		boolean yAccelValid;
+		boolean zAccelValid;
+		uint32_t iTOW;
+		int32_t xAngRate; // Degrees/s * 1e-3
+		int32_t yAngRate; // Degrees/s * 1e-3
+		int32_t zAngRate; // Degrees/s * 1e-3
+		int32_t xAccel; // m/s^2 * 1e-2
+		int32_t yAccel; // m/s^2 * 1e-2
+		int32_t zAccel; // m/s^2 * 1e-2
+	} hnrVehDyn;
+
+	struct hnrPosVelTime
+	{
+		uint32_t iTOW;
+		uint16_t year;
+		uint8_t month;
+		uint8_t day;
+		uint8_t hour;
+		uint8_t min;
+		uint8_t sec;
+		boolean validDate;
+		boolean validTime;
+		boolean fullyResolved;
+		int32_t nano;
+		uint8_t gpsFix;
+		boolean gpsFixOK;
+		boolean diffSoln;
+		boolean WKNSET;
+		boolean TOWSET;
+		boolean headVehValid;
+		int32_t lon; // Degrees * 1e-7
+		int32_t lat; // Degrees * 1e-7
+		int32_t height; // mm above ellipsoid
+		int32_t hMSL; // mm above MSL
+		int32_t gSpeed; // mm/s 2D
+		int32_t speed; // mm/s 3D
+		int32_t headMot; // Degrees * 1e-5
+		int32_t headVeh; // Degrees * 1e-5
+		uint32_t hAcc; // mm
+		uint32_t vAcc; // mm
+		uint32_t sAcc; // mm
+		uint32_t headAcc; // Degrees * 1e-5
+	} hnrPVT;
+
+	//HNR functions
+	boolean setHNRNavigationRate(uint8_t rate, uint16_t maxWait = 1100); // Returns true if the setHNRNavigationRate is successful
+	uint8_t getHNRNavigationRate(uint16_t maxWait = 1100); // Returns 0 if the getHNRNavigationRate fails
+	boolean assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate = true);              //In case no config access to the GPS is possible and HNR Attitude is send cyclically already
+  boolean setAutoHNRAtt(boolean enabled, uint16_t maxWait = defaultMaxWait);              //Enable/disable automatic HNR Attitude reports at the HNR rate
+  boolean setAutoHNRAtt(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR Attitude reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean getHNRAtt(uint16_t maxWait = 1100); // Returns true if the get HNR attitude is successful. Data is returned in hnrAtt
+	boolean assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate = true);              //In case no config access to the GPS is possible and HNR dynamics is send cyclically already
+  boolean setAutoHNRDyn(boolean enabled, uint16_t maxWait = defaultMaxWait);              //Enable/disable automatic HNR dynamics reports at the HNR rate
+  boolean setAutoHNRDyn(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR dynamics reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean getHNRDyn(uint16_t maxWait = 1100); // Returns true if the get HNR dynamics is successful. Data is returned in hnrVehDyn
+	boolean assumeAutoHNRPVT(boolean enabled, boolean implicitUpdate = true);              //In case no config access to the GPS is possible and HNR PVT is send cyclically already
+  boolean setAutoHNRPVT(boolean enabled, uint16_t maxWait = defaultMaxWait);              //Enable/disable automatic HNR PVT reports at the HNR rate
+  boolean setAutoHNRPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR PVT reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean getHNRPVT(uint16_t maxWait = 1100); // Returns true if the get HNR PVT is successful. Data is returned in hnrPVT
+
 private:
 	//Depending on the sentence type the processor will load characters into different arrays
 	enum SentenceTypes
@@ -856,6 +954,7 @@ private:
 	uint32_t extractLong(uint8_t spotToStart);																	 //Combine four bytes from payload into long
 	int32_t extractSignedLong(uint8_t spotToStart);																//Combine four bytes from payload into signed long (avoiding any ambiguity caused by casting)
 	uint16_t extractInt(uint8_t spotToStart);																	 //Combine two bytes from payload into int
+	int16_t extractSignedInt(int8_t spotToStart);
 	uint8_t extractByte(uint8_t spotToStart);																	 //Get byte from payload
 	int8_t extractSignedChar(uint8_t spotToStart);																 //Get signed 8-bit value from payload
 	void addToChecksum(uint8_t incoming);																		 //Given an incoming byte, adjust rollingChecksumA/B
@@ -903,6 +1002,12 @@ private:
 	boolean autoHPPOSLLHImplicitUpdate = true; // Whether autoHPPOSLLH is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
   boolean autoDOP = false;       //Whether autoDOP is enabled or not
   boolean autoDOPImplicitUpdate = true; // Whether autoDOP is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+	boolean autoHNRAtt = false;       //Whether auto HNR attitude is enabled or not
+  boolean autoHNRAttImplicitUpdate = true; // Whether auto HNR attitude is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+	boolean autoHNRDyn = false;       //Whether auto HNR dynamics is enabled or not
+  boolean autoHNRDynImplicitUpdate = true; // Whether auto HNR dynamics is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+	boolean autoHNRPVT = false;       //Whether auto HNR PVT is enabled or not
+  boolean autoHNRPVTImplicitUpdate = true; // Whether auto HNR PVT is triggered by accessing stale data (=true) or by a call to checkUblox (=false)
 
 	uint16_t ubxFrameCounter;			  //It counts all UBX frame. [Fixed header(2bytes), CLS(1byte), ID(1byte), length(2bytes), payload(x bytes), checksums(2bytes)]
 
@@ -929,23 +1034,28 @@ private:
 		uint32_t all : 1;
 		uint32_t gnssFixOk : 1;
 		uint32_t diffSoln : 1;
+		uint32_t headVehValid : 1;
 		uint32_t longitude : 1;
 		uint32_t latitude : 1;
 		uint32_t altitude : 1;
 		uint32_t altitudeMSL : 1;
-
 		uint32_t horizontalAccEst : 1;
 		uint32_t verticalAccEst : 1;
 		uint32_t nedNorthVel : 1;
 		uint32_t nedEastVel : 1;
 		uint32_t nedDownVel : 1;
-
 		uint32_t SIV : 1;
 		uint32_t fixType : 1;
 		uint32_t carrierSolution : 1;
 		uint32_t groundSpeed : 1;
 		uint32_t headingOfMotion : 1;
+		uint32_t speedAccEst : 1;
+		uint32_t headingAccEst : 1;
 		uint32_t pDOP : 1;
+		uint32_t invalidLlh : 1;
+		uint32_t headVeh : 1;
+		uint32_t magDec : 1;
+		uint32_t magAcc : 1;
 		uint32_t versionNumber : 1;
 	} moduleQueried;
 
@@ -977,6 +1087,10 @@ private:
     uint16_t northingDOP : 1;
     uint16_t eastingDOP : 1;
   } dopModuleQueried;
+
+	boolean hnrAttQueried;
+	boolean hnrDynQueried;
+	boolean hnrPVTQueried;
 
 	uint16_t rtcmLen = 0;
 };

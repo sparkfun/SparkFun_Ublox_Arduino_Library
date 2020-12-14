@@ -54,7 +54,8 @@ void setup()
 void loop()
 {
   // Calling getPVT returns true if there actually is a fresh navigation solution available.
-  if (myGPS.getPVT())
+  // Start the reading only when valid LLH is available
+  if (myGPS.getPVT() && (myGPS.getInvalidLlh() == false))
   {
     Serial.println();
     long latitude = myGPS.getLatitude();
@@ -104,6 +105,33 @@ void loop()
     Serial.print(F(" HAccEst: "));
     Serial.print(horizontalAccEst);
     Serial.print(F(" (mm)"));
+
+    int speedAccEst = myGPS.getSpeedAccEst();
+    Serial.print(F(" SpeedAccEst: "));
+    Serial.print(speedAccEst);
+    Serial.print(F(" (mm/s)"));
+
+    int headAccEst = myGPS.getHeadingAccEst();
+    Serial.print(F(" HeadAccEst: "));
+    Serial.print(headAccEst);
+    Serial.print(F(" (degrees * 10^-5)"));
+
+    if (myGPS.getHeadVehValid() == true) {
+      int headVeh = myGPS.getHeadVeh();
+      Serial.print(F(" HeadVeh: "));
+      Serial.print(headVeh);
+      Serial.print(F(" (degrees * 10^-5)"));
+
+      int magDec = myGPS.getMagDec();
+      Serial.print(F(" MagDec: "));
+      Serial.print(magDec);
+      Serial.print(F(" (degrees * 10^-2)"));
+
+      int magAcc = myGPS.getMagAcc();
+      Serial.print(F(" MagAcc: "));
+      Serial.print(magAcc);
+      Serial.print(F(" (degrees * 10^-2)"));
+    }
 
     Serial.println();
   } else {
