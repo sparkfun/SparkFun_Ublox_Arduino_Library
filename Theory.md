@@ -1,7 +1,7 @@
-How I<sup>2</sup>C (aka DDC) communication works with a uBlox module
+How I<sup>2</sup>C (aka DDC) communication works with a u-blox module
 ===========================================================
 
-When the user calls one of the methods the library will poll the Ublox module for new data.
+When the user calls one of the methods the library will poll the u-blox module for new data.
 
 * Wait for a minimum of 25 ms between polls (configured dynamically when update rate is set)
 * Write 0xFD to module
@@ -25,7 +25,7 @@ Version 2 of the library does things differently. Whilst of course trying to kee
 - The library no longer uses 'global' (permanently-allocated) storage for the GNSS data. Instead:
   - Each message type has a **typedef struct** defined which matches the format of the UBX message. (_typedef structs_ are just definitions, they don't occupy memory.)
   - The struct allows each data field (latitude, longitude, etc.) to be read simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct.
-  - A variable to store that message is only _allocated_ in RAM if/when required. The allocation is done using the "linked list" technique used by OpenLog Artemis.
+  - Storage for that message is only _allocated_ in RAM if/when required. The allocation is done using _malloc_ via a pointer to the struct.
 - _Any_ message can be "auto" if required, but can be polled too.
 - An optional _callback_ can be associated with the arrival of each message type. A simple scheduler triggers the callbacks once I<sup>2</sup>C/Serial data reception is complete.
   - This means that your code no longer needs to wait for the arrival of a message, you are able to request (e.g.) PVT and your callback is called once the data arrives.
@@ -36,7 +36,7 @@ Version 2 of the library does things differently. Whilst of course trying to kee
   - The default buffer size is zero - to save memory.
   - To simplify SD card writing, data can be copied from the RingBuffer to a user-defined linear buffer first using ```extractFileBufferData```.
   - Data reception and processing can continue during the SD write.
-  - User-defined code does the actual writing of data from the linear buffer to the SD card. The u-blox GNSS library does not perform the writing and so is not tied to any particular SD library.
+  - User-defined code does the actual writing of data from the linear buffer to the SD card. The u-blox GNSS library itself does not perform the writing and so is not tied to any particular SD library.
   - The logged files can be played back and analyzed with (e.g.) u-center or RTKLIB.
 
 In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _alloc_ fails) then an error is generated.
