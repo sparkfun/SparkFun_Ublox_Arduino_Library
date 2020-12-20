@@ -37,10 +37,12 @@ int main(int argc, char** argv)
     } 
 
     Stream seriComm(argv[1]);
+    seriComm.begin(115200);
     if (!seriComm.isConnected()) {
         printf ("Ublox is not connected. Please connect ublox GNSS module and try again...\n");
         return 0;
     }
+
     myGPS.begin(seriComm);
     myGPS.setNavigationFrequency(8); //Set output to 8 times a second
     myGPS.saveConfiguration(); //Save the current settings to flash and BBR

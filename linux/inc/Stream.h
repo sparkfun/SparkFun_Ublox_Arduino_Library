@@ -33,21 +33,27 @@ SOFTWARE.
 #include <unistd.h>
 #include <pty.h>
 
+#include "Common.h"
 #include "Print.h"
 
 class Stream : public Print {
 public:
-	Stream(char *devName) : m_IsAvailable(false), m_IsConnected(false), m_SerialFd(-1), m_baudRate(115200) {
-		OpenComm(devName);
+	Stream(char *devName) : m_IsAvailable(false), m_IsConnected(false), m_SerialFd(-1), m_baudRate(115200), m_devName({'\0'}) {
+		strcpy(m_devName, devName);
+		open_comm(devName);
 		m_recvdByte = '\0';
 	}
 
 	Stream() : m_IsAvailable(false), m_IsConnected(false), m_SerialFd(-1) {
-		OpenComm(create_pseudo_com());
+		open_comm(create_pseudo_com());
 		m_recvdByte = '\0';
 	}
 
 	virtual ~Stream() {
+		close_comm();
+	}
+
+	void close_comm() {
 		close(m_SerialFd);
 		m_IsAvailable = false;
 		m_IsConnected = false;
@@ -85,16 +91,15 @@ public:
 	}
 	}
 
-	bool OpenComm(char *devName) {
-		m_SerialFd = open(devName, O_NOCTTY|O_RDWR|O_NONBLOCK);C
+	bool open_comm(char *devName) {
+		m_SerialFd = open(devName, O_NOCTTY|O_RDWR|O_NONBLOCK);
 		if (m_SerialFd != -1) {
 			printf ("\n%s is connected successfully!!!\n", devName);
 			// Get device info
 			struct termios newtio;
-			// Set device config, 115200baud for now.
 			memset(&newtio,0,sizeof(newtio));
 			cfmakeraw(&newtio);
-			newtio.c_cflag|=get_baud(m_baudRate);
+			newtio.c_cflag |= get_baud(m_baudRate);
 			tcflush(m_SerialFd, TCIFLUSH);
 			tcsetattr(m_SerialFd,TCSANOW,&newtio);
 			m_IsConnected = true;
@@ -141,15 +146,22 @@ public:
 		return m_SerialFd;
 	}
 
+	void begin(uint16_t baud_rate) {
+		m_baudRate = baud_rate;
+		close_comm();
+		open_comm(m_devName);
+	}
+
 private:
 	bool m_IsAvailable;
 	bool m_IsConnected;
 	int m_SerialFd;
 	uint8_t m_recvdByte;
 	uint16_t m_baudRate;
+	char m_devName[SHORT_BUFF];
 
 	char* create_pseudo_com() {
-		static char name[256] = {'\0'};
+		static char name[SHORT_BUFF] = {'\0'};
 		struct termios tt = {'\0'};
 		int master = 0, slave = 0;
 
