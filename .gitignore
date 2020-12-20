@@ -56,3 +56,9 @@ Temporary Items
 
 # Zephyr build files
 examples/Zephyr/*/build/*
+
+# Linux build files
+linux/bin/*
+linux/lib/*
+linux/build/*
+

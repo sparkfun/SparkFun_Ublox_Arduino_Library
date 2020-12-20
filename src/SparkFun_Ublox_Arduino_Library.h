@@ -42,6 +42,14 @@
 #ifndef SPARKFUN_UBLOX_ARDUINO_LIBRARY_H
 #define SPARKFUN_UBLOX_ARDUINO_LIBRARY_H
 
+#ifdef LINUX_PLATFORM
+
+#include "Stream.h"
+#include "Utils.h"
+#include "Wire.h"
+
+#else
+
 #if (ARDUINO >= 100)
 #include "Arduino.h"
 #else
@@ -49,6 +57,8 @@
 #endif
 
 #include <Wire.h>
+
+#endif
 
 #include "u-blox_config_keys.h"
 
