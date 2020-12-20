@@ -68,11 +68,10 @@ int main(int argc, char** argv)
           printf("HAcc                    : %08d (mm)\n", myGPS.getHorizontalAccEst());
           printf("SpeedAccEst             : %08d (mm/s)\n", myGPS.getSpeedAccEst());
           printf("HeadAccEst              : %08d (degrees * 10^-5)\n", myGPS.getHeadingAccEst());
-          if (myGPS.getHeadVehValid() == true) {
-            printf("HeadVeh                 : %08d (degrees * 10^-5)\n", myGPS.getHeadVeh());
-            printf("MagDec                  : %08d (degrees * 10^-2)\n", myGPS.getMagDec());
-            printf("MagAcc                  : %08d (degrees * 10^-2)\n", myGPS.getMagAcc());
-          }
+          printf("HeadVehValid            : %s\n", myGPS.getHeadVehValid() ? "true" : "false");
+          printf("HeadVeh                 : %08d (degrees * 10^-5)\n", myGPS.getHeadVeh());
+          printf("MagDec                  : %08d (degrees * 10^-2)\n", myGPS.getMagDec());
+          printf("MagAcc                  : %08d (degrees * 10^-2)\n", myGPS.getMagAcc());
           int solnType = myGPS.getCarrierSolutionType();
           if (solnType == 0) printf ("### No RTK Fix yet ###\n");
           else if (solnType == 1) printf ("&&& DGNSS/Float &&&\n");
