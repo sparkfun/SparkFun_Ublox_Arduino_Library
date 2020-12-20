@@ -5,7 +5,7 @@
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
 
-#define I2C_DEV "/dev/ublox_i2c"
+#include "Common.h"
 
 class TwoWire
 {
@@ -83,7 +83,5 @@ private:
 };
 
 extern TwoWire Wire;
-// Preinstantiate Objects //////////////////////////////////////////////////////
-TwoWire Wire = TwoWire();
 
 #endif //Wire_h

@@ -37,7 +37,7 @@ SOFTWARE.
 
 class Stream : public Print {
 public:
-	Stream(char *devName) : m_IsAvailable(false), m_IsConnected(false), m_SerialFd(-1) {
+	Stream(char *devName) : m_IsAvailable(false), m_IsConnected(false), m_SerialFd(-1), m_baudRate(115200) {
 		OpenComm(devName);
 		m_recvdByte = '\0';
 	}
@@ -55,16 +55,46 @@ public:
 		printf ("Stream : Closed\n");
 	}
 
+	int get_baud(int baud)
+	{
+		switch (baud) {
+		case 1200:
+			return B1200;
+		case 2400:
+			return B2400;
+		case 4800:
+			return B4800;
+		case 9600:
+			return B9600;
+		case 19200:
+			return B19200;
+		case 38400:
+			return B38400;
+		case 57600:
+			return B57600;
+		case 115200:
+			return B115200;
+		case 230400:
+			return B230400;
+		case 460800:
+			return B460800;
+		case 921600:
+			return B921600;
+		default: 
+			return B115200;
+	}
+	}
+
 	bool OpenComm(char *devName) {
-		m_SerialFd = open(devName, O_NOCTTY|O_RDWR|O_NONBLOCK);
+		m_SerialFd = open(devName, O_NOCTTY|O_RDWR|O_NONBLOCK);C
 		if (m_SerialFd != -1) {
-			printf ("%s is connected successfully!!!\n", devName);
+			printf ("\n%s is connected successfully!!!\n", devName);
 			// Get device info
 			struct termios newtio;
 			// Set device config, 115200baud for now.
 			memset(&newtio,0,sizeof(newtio));
 			cfmakeraw(&newtio);
-			newtio.c_cflag|=B115200;
+			newtio.c_cflag|=get_baud(m_baudRate);
 			tcflush(m_SerialFd, TCIFLUSH);
 			tcsetattr(m_SerialFd,TCSANOW,&newtio);
 			m_IsConnected = true;
@@ -116,6 +146,7 @@ private:
 	bool m_IsConnected;
 	int m_SerialFd;
 	uint8_t m_recvdByte;
+	uint16_t m_baudRate;
 
 	char* create_pseudo_com() {
 		static char name[256] = {'\0'};
@@ -132,12 +163,9 @@ private:
 
 		return name;
 	}
-
 };
 
 //typedef Stream Serial;
 extern Stream Serial;
-// Preinstantiate Objects //////////////////////////////////////////////////////
-Stream Serial = Stream();
 
 #endif // STREAM__

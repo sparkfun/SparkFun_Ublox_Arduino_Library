@@ -26,9 +26,9 @@ SFE_UBLOX_GPS myGPS;
 int main(int argc, char** argv)
 {
     if(argc == 1) {
-        printf("\nublox_f9p_test <ublox_com> <pseudo_com> (ublox_f9p_test '/dev/ttyACM0' '/dev/pts/1')"); 
+        printf("\nublox_f9p_test <ublox_com> <pseudo_com> (ublox_f9p_test '/dev/ttyACM0')"); 
         return 0;
-    } else if (argc == 2) { 
+    } else if (argc == 2) {
         for(int counter=0;counter<argc;counter++) 
             printf("\nargv[%d]: %s",counter,argv[counter]);        
     } else if(argc >= 3) {
@@ -42,10 +42,10 @@ int main(int argc, char** argv)
         return 0;
     }
     myGPS.begin(seriComm);
-    myGPS.setNavigationFrequency(10); //Set output to 20 times a second
+    myGPS.setNavigationFrequency(8); //Set output to 8 times a second
     myGPS.saveConfiguration(); //Save the current settings to flash and BBR
     
-    printf ("\n----------------------------------------\n");
+    printf ("\n--------------------------------------------------------\n");
     while(true) {
         if (myGPS.getPVT()) {
           printf ("%02d/%02d/%02d %02d:%02d:%02d %d:%d\n", myGPS.getDay(), myGPS.getMonth(), myGPS.getYear(), 
@@ -58,17 +58,24 @@ int main(int argc, char** argv)
           printf("SIV                     : %d\n", myGPS.getSIV());
           printf("PDOP                    : %f\n", myGPS.getPDOP() * 1e-2); 
           printf("Fix type                : %d\n", myGPS.getFixType());
-          printf ("Ground Speed           : %d\n", myGPS.getGroundSpeed());
-          printf ("VelN                   : %08d (mm/s)\n", myGPS.getNedNorthVel());
-          printf ("VelE                   : %08d (mm/s)\n", myGPS.getNedEastVel());
-          printf ("VelD                   : %08d (mm/s)\n", myGPS.getNedDownVel());
-          printf ("VAcc                   : %08d (mm)\n", myGPS.getVerticalAccEst());
-          printf ("HAcc                   : %08d (mm)\n", myGPS.getHorizontalAccEst());
+          printf("Ground Speed            : %d\n", myGPS.getGroundSpeed());
+          printf("VelN                    : %08d (mm/s)\n", myGPS.getNedNorthVel());
+          printf("VelE                    : %08d (mm/s)\n", myGPS.getNedEastVel());
+          printf("VelD                    : %08d (mm/s)\n", myGPS.getNedDownVel());
+          printf("VAcc                    : %08d (mm)\n", myGPS.getVerticalAccEst());
+          printf("HAcc                    : %08d (mm)\n", myGPS.getHorizontalAccEst());
+          printf("SpeedAccEst             : %08d (mm/s)\n", myGPS.getSpeedAccEst());
+          printf("HeadAccEst              : %08d (degrees * 10^-5)\n", myGPS.getHeadingAccEst());
+          if (myGPS.getHeadVehValid() == true) {
+            printf("HeadVeh                 : %08d (degrees * 10^-5)\n", myGPS.getHeadVeh());
+            printf("MagDec                  : %08d (degrees * 10^-2)\n", myGPS.getMagDec());
+            printf("MagAcc                  : %08d (degrees * 10^-2)\n", myGPS.getMagAcc());
+          }
           int solnType = myGPS.getCarrierSolutionType();
           if (solnType == 0) printf ("### No RTK Fix yet ###\n");
           else if (solnType == 1) printf ("&&& DGNSS/Float &&&\n");
           else if (solnType == 2) printf ("*** DGNSS/Fix ***\n");
-          printf ("\n----------------------------------------\n");
+          printf ("\n--------------------------------------------------------\n");
           usleep(50);
         }
 
