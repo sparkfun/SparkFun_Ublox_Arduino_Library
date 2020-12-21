@@ -18,6 +18,8 @@ checkUblox	KEYWORD2
 checkUbloxI2C	KEYWORD2
 checkUbloxSerial	KEYWORD2
 
+setPacketCfgPayloadSize	KEYWORD2
+
 process	KEYWORD2
 processUBX	KEYWORD2
 processRTCMframe	KEYWORD2

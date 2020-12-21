@@ -40,3 +40,9 @@ Version 2 of the library does things differently. Whilst of course trying to kee
   - The logged files can be played back and analyzed with (e.g.) u-center or RTKLIB.
 
 In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _alloc_ fails) then an error is generated.
+
+Migrating your code to v2.0
+===========================================================
+
+- NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned as (int32_t)cm.
+- NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned as (int32_t)mm*0.1.
