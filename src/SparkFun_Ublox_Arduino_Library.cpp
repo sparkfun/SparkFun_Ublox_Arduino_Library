@@ -52,31 +52,39 @@ SFE_UBLOX_GPS::SFE_UBLOX_GPS(void)
 }
 
 //Allow the user to change packetCfgPayloadSize. Handy if you want to process big messages like RAWX
-void SFE_UBLOX_GPS::setPacketCfgPayloadSize(uint16_t payloadSize)
+void SFE_UBLOX_GPS::setPacketCfgPayloadSize(size_t payloadSize)
 {
   if ((payloadSize == 0) && (payloadCfg != NULL))
   {
     // Zero payloadSize? Dangerous! But we'll free the memory anyway...
+    delete[] payloadCfg;
+    packetCfg.payload = payloadCfg;
     if ((_printDebug == true) || (_printLimitedDebug == true))
       _debugSerial->println(F("setPacketCfgPayloadSize: Zero payloadSize! This will end _very_ badly..."));
-    free(payloadCfg);
   }
-  else if (payloadCfg == NULL) //Has memory already been allocated?
+
+  else if (payloadCfg == NULL) //Memory has not yet been allocated - so use new
   {
-  //If the malloc fails, payloadCfg will remain NULL
-  payloadCfg = (uint8_t *)malloc(packetCfgPayloadSize);
-  if (payloadCfg == NULL)
-    if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! payloadCfg malloc failed! This will end _very_ badly..."));
+    payloadCfg = new uint8_t[payloadSize];
+    packetCfg.payload = payloadCfg;
+    if (payloadCfg == NULL)
+      if ((_printDebug == true) || (_printLimitedDebug == true))
+        _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM allocation failed! This will end _very_ badly..."));
   }
-  else //Memory has already been allocated - so use realloc
+
+  else //Memory has already been allocated - so resize
   {
-  //If the realloc fails, payloadCfg will be NULL
-  payloadCfg = (uint8_t *)realloc(payloadCfg, packetCfgPayloadSize);
-  if (payloadCfg == NULL)
-    if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! payloadCfg realloc failed! This will end _very_ badly..."));
+    uint8_t *newPayload = new uint8_t[payloadSize];
+    for (size_t i = 0; (i < payloadSize) && (i < packetCfgPayloadSize); i++) // Copy as much existing data as we can
+      newPayload[i] = payloadCfg[i];
+    delete[] payloadCfg;
+    payloadCfg = newPayload;
+    packetCfg.payload = payloadCfg;
+    if (payloadCfg == NULL)
+      if ((_printDebug == true) || (_printLimitedDebug == true))
+        _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM resize failed! This will end _very_ badly..."));
   }
+
   packetCfgPayloadSize = payloadSize;
 }
 
@@ -336,6 +344,12 @@ boolean SFE_UBLOX_GPS::checkUbloxInternal(ubxPacket *incomingUBX, uint8_t reques
   return false;
 }
 
+//Allow the user to disable the "7F" check (e.g.) when logging RAWX data
+void SFE_UBLOX_GPS::disableUBX7Fcheck(boolean disabled)
+{
+  ubx7FcheckDisabled = disabled;
+}
+
 //Polls I2C for data, passing any new bytes to process()
 //Returns true if new bytes are available
 boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
@@ -448,11 +462,11 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
           //to respond. Stop, wait, and try again
           if (x == 0)
           {
-            if (incoming == 0x7F)
+            if ((incoming == 0x7F) && (ubx7FcheckDisabled == false))
             {
               if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
               {
-                _debugSerial->println(F("checkUbloxU2C: u-blox error, module not ready with data"));
+                _debugSerial->println(F("checkUbloxU2C: u-blox error, module not ready with data (7F error)"));
               }
               delay(5); //In logic analyzation, the module starting responding after 1.48ms
               if (debugPin >= 0)
@@ -489,6 +503,79 @@ boolean SFE_UBLOX_GPS::checkUbloxSerial(ubxPacket *incomingUBX, uint8_t requeste
   return (true);
 
 } //end checkUbloxSerial()
+
+//Check if we have storage allocated for an incoming "automatic" message
+boolean SFE_UBLOX_GPS::checkAutomatic(uint8_t Class, uint8_t ID)
+{
+  boolean result = false;
+  switch (Class)
+  {
+    case UBX_CLASS_NAV:
+    {
+      switch (ID)
+      {
+        case UBX_NAV_DOP:
+          if (packetUBXNAVDOP != NULL) result = true;
+        break;
+        case UBX_NAV_ATT:
+          if (packetUBXNAVATT != NULL) result = true;
+        break;
+        case UBX_NAV_PVT:
+          if (packetUBXNAVPVT != NULL) result = true;
+        break;
+        case UBX_NAV_HPPOSLLH:
+          if (packetUBXNAVHPPOSLLH != NULL) result = true;
+        break;
+        case UBX_NAV_SVIN:
+          if (packetUBXNAVSVIN != NULL) result = true;
+        break;
+        case UBX_NAV_RELPOSNED:
+          if (packetUBXNAVRELPOSNED != NULL) result = true;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_HNR:
+    {
+      switch (ID)
+      {
+        case UBX_HNR_PVT:
+          if (packetUBXHNRPVT != NULL) result = true;
+        break;
+        case UBX_HNR_ATT:
+          if (packetUBXHNRATT != NULL) result = true;
+        break;
+        case UBX_HNR_INS:
+          if (packetUBXHNRINS != NULL) result = true;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_ESF:
+    {
+      switch (ID)
+      {
+        case UBX_ESF_ALG:
+          if (packetUBXESFALG != NULL) result = true;
+        break;
+        case UBX_ESF_INS:
+          if (packetUBXESFINS != NULL) result = true;
+        break;
+        case UBX_ESF_MEAS:
+          if (packetUBXESFMEAS != NULL) result = true;
+        break;
+        case UBX_ESF_RAW:
+          if (packetUBXESFRAW != NULL) result = true;
+        break;
+        case UBX_ESF_STATUS:
+          if (packetUBXESFSTATUS != NULL) result = true;
+        break;
+      }
+    }
+    break;
+  }
+  return (result);
+}
 
 //Processes NMEA and UBX binary sentences one byte at a time
 //Take a given byte and file it into the proper array
@@ -563,40 +650,20 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
         }
         //This is not an ACK and we do not have a complete class and ID match
-        //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
-        else if ((packetBuf.cls == requestedClass) &&
-          (((packetBuf.id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
-           ((packetBuf.id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
-           ((packetBuf.id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
+        //So let's check for an "automatic" message which has its own storage defined
+        else if (checkAutomatic(packetBuf.cls, packetBuf.id))
         {
-          //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
+          //This is not the message we were expecting but it has its own storage and so
+          //we start diverting data into incomingUBX (usually packetCfg) and process it anyway
           activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
           incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
           incomingUBX->id = packetBuf.id;
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
           if (_printDebug == true)
           {
-            _debugSerial->print(F("process: auto NAV PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
-            _debugSerial->print(requestedID, HEX);
-            _debugSerial->print(F(" Message ID: 0x"));
-            _debugSerial->println(packetBuf.id, HEX);
-          }
-        }
-        else if ((packetBuf.cls == requestedClass) &&
-          (((packetBuf.id == UBX_HNR_ATT) && (requestedID == UBX_HNR_INS || requestedID == UBX_HNR_PVT)) ||
-           ((packetBuf.id == UBX_HNR_INS) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_PVT)) ||
-           ((packetBuf.id == UBX_HNR_PVT) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_INS))))
-        {
-          //This is not the message we were expecting but we start diverting data into incomingUBX (usually packetCfg) and process it anyway
-          activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
-          incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
-          incomingUBX->id = packetBuf.id;
-          incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
-          if (_printDebug == true)
-          {
-            _debugSerial->print(F("process: auto HNR ATT/INS/PVT collision: Requested ID: 0x"));
-            _debugSerial->print(requestedID, HEX);
-            _debugSerial->print(F(" Message ID: 0x"));
+            _debugSerial->print(F("process: incoming \"automatic\" message: Class: 0x"));
+            _debugSerial->print(packetBuf.cls, HEX);
+            _debugSerial->print(F(" ID: 0x"));
             _debugSerial->println(packetBuf.id, HEX);
           }
         }
@@ -787,12 +854,15 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 //Given a character, file it away into the uxb packet structure
 //Set valid to VALID or NOT_VALID once sentence is completely received and passes or fails CRC
 //The payload portion of the packet can be 100s of bytes but the max array
-//size is MAX_PAYLOAD_SIZE bytes. startingSpot can be set so we only record
+//size is packetCfgPayloadSize bytes. startingSpot can be set so we only record
 //a subset of bytes within a larger packet.
 void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
-   size_t max_payload_size = (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG) ? MAX_PAYLOAD_SIZE : 2;
-   bool overrun = false;
+    //If incomingUBX is a user-defined custom packet, then the payload size could be different to packetCfgPayloadSize.
+    //TO DO: update this to prevent an overrun when receiving an automatic message
+    //       and the incomingUBX payload size is smaller than packetCfgPayloadSize.
+  size_t max_payload_size = (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG) ? packetCfgPayloadSize : 2;
+  bool overrun = false;
 
   //Add all incoming bytes to the rolling checksum
   //Stop at len+4 as this is the checksum bytes to that should not be added to the rolling checksum
@@ -857,38 +927,19 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       }
 
       //This is not an ACK and we do not have a complete class and ID match
-      //So let's check for an HPPOSLLH message arriving when we were expecting PVT and vice versa
-      else if ((incomingUBX->cls == requestedClass) &&
-        (((incomingUBX->id == UBX_NAV_PVT) && (requestedID == UBX_NAV_HPPOSLLH || requestedID == UBX_NAV_DOP)) ||
-        ((incomingUBX->id == UBX_NAV_HPPOSLLH) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_DOP)) ||
-        ((incomingUBX->id == UBX_NAV_DOP) && (requestedID == UBX_NAV_PVT || requestedID == UBX_NAV_HPPOSLLH))))
+      //So let's check for an "automatic" message arriving
+      else if (checkAutomatic(incomingUBX->cls, incomingUBX->id))
       {
         // This isn't the message we are looking for...
         // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
         if (_printDebug == true)
         {
-          _debugSerial->print(F("processUBX: auto NAV PVT/HPPOSLLH/DOP collision: Requested ID: 0x"));
-          _debugSerial->print(requestedID, HEX);
-          _debugSerial->print(F(" Message ID: 0x"));
+          _debugSerial->print(F("processUBX: incoming \"automatic\" message: Class: 0x"));
+          _debugSerial->print(incomingUBX->cls, HEX);
+          _debugSerial->print(F(" ID: 0x"));
           _debugSerial->println(incomingUBX->id, HEX);
         }
       }
-      // Let's do the same for the HNR messages
-      else if ((incomingUBX->cls == requestedClass) &&
-        (((incomingUBX->id == UBX_HNR_ATT) && (requestedID == UBX_HNR_INS || requestedID == UBX_HNR_PVT)) ||
-         ((incomingUBX->id == UBX_HNR_INS) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_PVT)) ||
-         ((incomingUBX->id == UBX_HNR_PVT) && (requestedID == UBX_HNR_ATT || requestedID == UBX_HNR_INS))))
-       {
-         // This isn't the message we are looking for...
-         // Let's say so and leave incomingUBX->classAndIDmatch _unchanged_
-         if (_printDebug == true)
-         {
-           _debugSerial->print(F("processUBX: auto HNR ATT/INS/PVT collision: Requested ID: 0x"));
-           _debugSerial->print(requestedID, HEX);
-           _debugSerial->print(F(" Message ID: 0x"));
-           _debugSerial->println(incomingUBX->id, HEX);
-         }
-       }
 
       if (_printDebug == true)
       {
@@ -971,9 +1022,9 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
   }
   else //Load this byte into the payload array
   {
-    //If a UBX_NAV_PVT packet comes in asynchronously, we need to fudge the startingSpot
+    //If an automatic packet comes in asynchronously, we need to fudge the startingSpot
     uint16_t startingSpot = incomingUBX->startingSpot;
-    if (incomingUBX->cls == UBX_CLASS_NAV && incomingUBX->id == UBX_NAV_PVT)
+    if (checkAutomatic(incomingUBX->cls, incomingUBX->id))
       startingSpot = 0;
     // Check if this is payload data which should be ignored
     if (ignoreThisPayload == false)
@@ -984,7 +1035,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         //Check to see if we have room for this byte
         if (((incomingUBX->counter - 4) - startingSpot) < max_payload_size) //If counter = 208, starting spot = 200, we're good to record.
         {
-          incomingUBX->payload[incomingUBX->counter - 4 - startingSpot] = incoming; //Store this byte into payload array
+          incomingUBX->payload[(incomingUBX->counter - 4) - startingSpot] = incoming; //Store this byte into payload array
         }
         else
         {
@@ -997,7 +1048,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
   //Increment the counter
   incomingUBX->counter++;
 
-  if (overrun || (incomingUBX->counter == MAX_PAYLOAD_SIZE))
+  if (overrun || (incomingUBX->counter == packetCfgPayloadSize))
   {
     //Something has gone very wrong
     currentSentence = NONE; //Reset the sentence to being looking for a new start char
@@ -1006,15 +1057,12 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       if (overrun)
         _debugSerial->println(F("processUBX: buffer overrun detected"));
       else
-        _debugSerial->println(F("processUBX: counter hit MAX_PAYLOAD_SIZE"));
+        _debugSerial->println(F("processUBX: counter hit packetCfgPayloadSize"));
     }
   }
 }
 
 //Once a packet has been received and validated, identify this packet's class/id and update internal flags
-//Note: if the user requests a PVT or a HPPOSLLH message using a custom packet, the data extraction will
-//      not work as expected beacuse extractLong etc are hardwired to packetCfg payloadCfg. Ideally
-//      extractLong etc should be updated so they receive a pointer to the packet buffer.
 void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 {
   switch (msg->cls)
@@ -1025,14 +1073,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXNAVDOP != NULL)
       {
-        packetUBXNAVDOP->data.iTOW = extractLong(0);
-        packetUBXNAVDOP->data.gDOP = extractInt(4);
-        packetUBXNAVDOP->data.pDOP = extractInt(6);
-        packetUBXNAVDOP->data.tDOP = extractInt(8);
-        packetUBXNAVDOP->data.vDOP = extractInt(10);
-        packetUBXNAVDOP->data.hDOP = extractInt(12);
-        packetUBXNAVDOP->data.nDOP = extractInt(14);
-        packetUBXNAVDOP->data.eDOP = extractInt(16);
+        packetUBXNAVDOP->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVDOP->data.gDOP = extractInt(msg, 4);
+        packetUBXNAVDOP->data.pDOP = extractInt(msg, 6);
+        packetUBXNAVDOP->data.tDOP = extractInt(msg, 8);
+        packetUBXNAVDOP->data.vDOP = extractInt(msg, 10);
+        packetUBXNAVDOP->data.hDOP = extractInt(msg, 12);
+        packetUBXNAVDOP->data.nDOP = extractInt(msg, 14);
+        packetUBXNAVDOP->data.eDOP = extractInt(msg, 16);
         packetUBXNAVDOP->moduleQueried.all = 0xFFFFFFFF;
       }
     }
@@ -1041,14 +1089,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXNAVATT != NULL)
       {
-        packetUBXNAVATT->data.iTOW = extractLong(0);
-        packetUBXNAVATT->data.version = extractByte(4);
-        packetUBXNAVATT->data.roll = extractSignedLong(8);
-        packetUBXNAVATT->data.pitch = extractSignedLong(12);
-        packetUBXNAVATT->data.heading = extractSignedLong(16);
-        packetUBXNAVATT->data.accRoll = extractLong(20);
-        packetUBXNAVATT->data.accPitch = extractLong(24);
-        packetUBXNAVATT->data.accHeading = extractLong(28);
+        packetUBXNAVATT->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVATT->data.version = extractByte(msg, 4);
+        packetUBXNAVATT->data.roll = extractSignedLong(msg, 8);
+        packetUBXNAVATT->data.pitch = extractSignedLong(msg, 12);
+        packetUBXNAVATT->data.heading = extractSignedLong(msg, 16);
+        packetUBXNAVATT->data.accRoll = extractLong(msg, 20);
+        packetUBXNAVATT->data.accPitch = extractLong(msg, 24);
+        packetUBXNAVATT->data.accHeading = extractLong(msg, 28);
         packetUBXNAVATT->moduleQueried.all = 0xFFFFFFFF;
       }
     }
@@ -1057,38 +1105,38 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXNAVPVT != NULL)
       {
-        packetUBXNAVPVT->data.iTOW = extractLong(0);
-        packetUBXNAVPVT->data.year = extractInt(4);
-        packetUBXNAVPVT->data.month = extractByte(6);
-        packetUBXNAVPVT->data.day = extractByte(7);
-        packetUBXNAVPVT->data.hour = extractByte(8);
-        packetUBXNAVPVT->data.min = extractByte(9);
-        packetUBXNAVPVT->data.sec = extractByte(10);
-        packetUBXNAVPVT->data.valid.all = extractByte(11);
-        packetUBXNAVPVT->data.tAcc = extractLong(12);
-        packetUBXNAVPVT->data.nano = extractSignedLong(16); //Includes milliseconds
-        packetUBXNAVPVT->data.fixType = extractByte(20);
-        packetUBXNAVPVT->data.flags.all = extractByte(21);
-        packetUBXNAVPVT->data.flags2.all = extractByte(22);
-        packetUBXNAVPVT->data.numSV = extractByte(23);
-        packetUBXNAVPVT->data.lon = extractSignedLong(24);
-        packetUBXNAVPVT->data.lat = extractSignedLong(28);
-        packetUBXNAVPVT->data.height = extractSignedLong(32);
-        packetUBXNAVPVT->data.hMSL = extractSignedLong(36);
-        packetUBXNAVPVT->data.hAcc = extractLong(40);
-        packetUBXNAVPVT->data.vAcc = extractLong(44);
-        packetUBXNAVPVT->data.velN = extractSignedLong(48);
-        packetUBXNAVPVT->data.velE = extractSignedLong(52);
-        packetUBXNAVPVT->data.velD = extractSignedLong(56);
-        packetUBXNAVPVT->data.gSpeed = extractSignedLong(60);
-        packetUBXNAVPVT->data.headMot = extractSignedLong(64);
-        packetUBXNAVPVT->data.sAcc = extractLong(68);
-        packetUBXNAVPVT->data.headAcc = extractLong(72);
-        packetUBXNAVPVT->data.pDOP = extractInt(76);
-        packetUBXNAVPVT->data.flags3.all = extractByte(78);
-        packetUBXNAVPVT->data.headVeh = extractSignedLong(84);
-        packetUBXNAVPVT->data.magDec = extractSignedInt(88);
-        packetUBXNAVPVT->data.magAcc = extractInt(90);
+        packetUBXNAVPVT->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVPVT->data.year = extractInt(msg, 4);
+        packetUBXNAVPVT->data.month = extractByte(msg, 6);
+        packetUBXNAVPVT->data.day = extractByte(msg, 7);
+        packetUBXNAVPVT->data.hour = extractByte(msg, 8);
+        packetUBXNAVPVT->data.min = extractByte(msg, 9);
+        packetUBXNAVPVT->data.sec = extractByte(msg, 10);
+        packetUBXNAVPVT->data.valid.all = extractByte(msg, 11);
+        packetUBXNAVPVT->data.tAcc = extractLong(msg, 12);
+        packetUBXNAVPVT->data.nano = extractSignedLong(msg, 16); //Includes milliseconds
+        packetUBXNAVPVT->data.fixType = extractByte(msg, 20);
+        packetUBXNAVPVT->data.flags.all = extractByte(msg, 21);
+        packetUBXNAVPVT->data.flags2.all = extractByte(msg, 22);
+        packetUBXNAVPVT->data.numSV = extractByte(msg, 23);
+        packetUBXNAVPVT->data.lon = extractSignedLong(msg, 24);
+        packetUBXNAVPVT->data.lat = extractSignedLong(msg, 28);
+        packetUBXNAVPVT->data.height = extractSignedLong(msg, 32);
+        packetUBXNAVPVT->data.hMSL = extractSignedLong(msg, 36);
+        packetUBXNAVPVT->data.hAcc = extractLong(msg, 40);
+        packetUBXNAVPVT->data.vAcc = extractLong(msg, 44);
+        packetUBXNAVPVT->data.velN = extractSignedLong(msg, 48);
+        packetUBXNAVPVT->data.velE = extractSignedLong(msg, 52);
+        packetUBXNAVPVT->data.velD = extractSignedLong(msg, 56);
+        packetUBXNAVPVT->data.gSpeed = extractSignedLong(msg, 60);
+        packetUBXNAVPVT->data.headMot = extractSignedLong(msg, 64);
+        packetUBXNAVPVT->data.sAcc = extractLong(msg, 68);
+        packetUBXNAVPVT->data.headAcc = extractLong(msg, 72);
+        packetUBXNAVPVT->data.pDOP = extractInt(msg, 76);
+        packetUBXNAVPVT->data.flags3.all = extractByte(msg, 78);
+        packetUBXNAVPVT->data.headVeh = extractSignedLong(msg, 84);
+        packetUBXNAVPVT->data.magDec = extractSignedInt(msg, 88);
+        packetUBXNAVPVT->data.magAcc = extractInt(msg, 90);
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVPVT->moduleQueried1.all = 0xFFFFFFFF;
@@ -1100,19 +1148,19 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXNAVHPPOSLLH != NULL)
       {
-        packetUBXNAVHPPOSLLH->data.version = extractByte(0);
-        packetUBXNAVHPPOSLLH->data.flags.all = extractByte(3);
-        packetUBXNAVHPPOSLLH->data.iTOW = extractLong(4);
-        packetUBXNAVHPPOSLLH->data.lon = extractSignedLong(8);
-        packetUBXNAVHPPOSLLH->data.lat = extractSignedLong(12);
-        packetUBXNAVHPPOSLLH->data.height = extractSignedLong(16);
-        packetUBXNAVHPPOSLLH->data.hMSL = extractSignedLong(20);
-        packetUBXNAVHPPOSLLH->data.lonHp = extractSignedChar(24);
-        packetUBXNAVHPPOSLLH->data.latHp = extractSignedChar(25);
-        packetUBXNAVHPPOSLLH->data.heightHp = extractSignedChar(26);
-        packetUBXNAVHPPOSLLH->data.hMSLHp = extractSignedChar(27);
-        packetUBXNAVHPPOSLLH->data.hAcc = extractLong(28);
-        packetUBXNAVHPPOSLLH->data.vAcc = extractLong(32);
+        packetUBXNAVHPPOSLLH->data.version = extractByte(msg, 0);
+        packetUBXNAVHPPOSLLH->data.flags.all = extractByte(msg, 3);
+        packetUBXNAVHPPOSLLH->data.iTOW = extractLong(msg, 4);
+        packetUBXNAVHPPOSLLH->data.lon = extractSignedLong(msg, 8);
+        packetUBXNAVHPPOSLLH->data.lat = extractSignedLong(msg, 12);
+        packetUBXNAVHPPOSLLH->data.height = extractSignedLong(msg, 16);
+        packetUBXNAVHPPOSLLH->data.hMSL = extractSignedLong(msg, 20);
+        packetUBXNAVHPPOSLLH->data.lonHp = extractSignedChar(msg, 24);
+        packetUBXNAVHPPOSLLH->data.latHp = extractSignedChar(msg, 25);
+        packetUBXNAVHPPOSLLH->data.heightHp = extractSignedChar(msg, 26);
+        packetUBXNAVHPPOSLLH->data.hMSLHp = extractSignedChar(msg, 27);
+        packetUBXNAVHPPOSLLH->data.hAcc = extractLong(msg, 28);
+        packetUBXNAVHPPOSLLH->data.vAcc = extractLong(msg, 32);
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVHPPOSLLH->moduleQueried.all = 0xFFFFFFFF;
@@ -1123,19 +1171,19 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXNAVSVIN != NULL)
       {
-        packetUBXNAVSVIN->data.version = extractByte(0);
-        packetUBXNAVSVIN->data.iTOW = extractLong(4);
-        packetUBXNAVSVIN->data.dur = extractLong(8);
-        packetUBXNAVSVIN->data.meanX = extractSignedLong(12);
-        packetUBXNAVSVIN->data.meanY = extractSignedLong(16);
-        packetUBXNAVSVIN->data.meanZ = extractSignedLong(20);
-        packetUBXNAVSVIN->data.meanXHP = extractSignedChar(24);
-        packetUBXNAVSVIN->data.meanYHP = extractSignedChar(25);
-        packetUBXNAVSVIN->data.meanZHP = extractSignedChar(26);
-        packetUBXNAVSVIN->data.meanAcc = extractLong(28);
-        packetUBXNAVSVIN->data.obs = extractLong(32);
-        packetUBXNAVSVIN->data.valid = extractSignedChar(36);
-        packetUBXNAVSVIN->data.active = extractSignedChar(37);
+        packetUBXNAVSVIN->data.version = extractByte(msg, 0);
+        packetUBXNAVSVIN->data.iTOW = extractLong(msg, 4);
+        packetUBXNAVSVIN->data.dur = extractLong(msg, 8);
+        packetUBXNAVSVIN->data.meanX = extractSignedLong(msg, 12);
+        packetUBXNAVSVIN->data.meanY = extractSignedLong(msg, 16);
+        packetUBXNAVSVIN->data.meanZ = extractSignedLong(msg, 20);
+        packetUBXNAVSVIN->data.meanXHP = extractSignedChar(msg, 24);
+        packetUBXNAVSVIN->data.meanYHP = extractSignedChar(msg, 25);
+        packetUBXNAVSVIN->data.meanZHP = extractSignedChar(msg, 26);
+        packetUBXNAVSVIN->data.meanAcc = extractLong(msg, 28);
+        packetUBXNAVSVIN->data.obs = extractLong(msg, 32);
+        packetUBXNAVSVIN->data.valid = extractSignedChar(msg, 36);
+        packetUBXNAVSVIN->data.active = extractSignedChar(msg, 37);
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVSVIN->moduleQueried.all = 0xFFFFFFFF;
@@ -1150,44 +1198,44 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //  RELPOSNED on the M8 is only 40 bytes long
         //  RELPOSNED on the F9 is 64 bytes long and contains much more information
 
-        packetUBXNAVRELPOSNED->data.version = extractByte(0);
-        packetUBXNAVRELPOSNED->data.refStationId = extractInt(2);
-        packetUBXNAVRELPOSNED->data.iTOW = extractLong(4);
-        packetUBXNAVRELPOSNED->data.relPosN = extractSignedLong(8);
-        packetUBXNAVRELPOSNED->data.relPosE = extractSignedLong(12);
-        packetUBXNAVRELPOSNED->data.relPosD = extractSignedLong(16);
+        packetUBXNAVRELPOSNED->data.version = extractByte(msg, 0);
+        packetUBXNAVRELPOSNED->data.refStationId = extractInt(msg, 2);
+        packetUBXNAVRELPOSNED->data.iTOW = extractLong(msg, 4);
+        packetUBXNAVRELPOSNED->data.relPosN = extractSignedLong(msg, 8);
+        packetUBXNAVRELPOSNED->data.relPosE = extractSignedLong(msg, 12);
+        packetUBXNAVRELPOSNED->data.relPosD = extractSignedLong(msg, 16);
 
         if (packetCfg.len == UBX_NAV_RELPOSNED_LEN)
         {
           // The M8 version does not contain relPosLength or relPosHeading
           packetUBXNAVRELPOSNED->data.relPosLength = 0;
           packetUBXNAVRELPOSNED->data.relPosHeading = 0;
-          packetUBXNAVRELPOSNED->data.relPosHPN = extractSignedChar(20);
-          packetUBXNAVRELPOSNED->data.relPosHPE = extractSignedChar(21);
-          packetUBXNAVRELPOSNED->data.relPosHPD = extractSignedChar(22);
+          packetUBXNAVRELPOSNED->data.relPosHPN = extractSignedChar(msg, 20);
+          packetUBXNAVRELPOSNED->data.relPosHPE = extractSignedChar(msg, 21);
+          packetUBXNAVRELPOSNED->data.relPosHPD = extractSignedChar(msg, 22);
           packetUBXNAVRELPOSNED->data.relPosHPLength = 0; // The M8 version does not contain relPosHPLength
-          packetUBXNAVRELPOSNED->data.accN = extractLong(24);
-          packetUBXNAVRELPOSNED->data.accE = extractLong(28);
-          packetUBXNAVRELPOSNED->data.accD = extractLong(32);
+          packetUBXNAVRELPOSNED->data.accN = extractLong(msg, 24);
+          packetUBXNAVRELPOSNED->data.accE = extractLong(msg, 28);
+          packetUBXNAVRELPOSNED->data.accD = extractLong(msg, 32);
           // The M8 version does not contain accLength or accHeading
           packetUBXNAVRELPOSNED->data.accLength = 0;
           packetUBXNAVRELPOSNED->data.accHeading = 0;
-          packetUBXNAVRELPOSNED->data.flags.all = extractLong(36);
+          packetUBXNAVRELPOSNED->data.flags.all = extractLong(msg, 36);
         }
         else
         {
-          packetUBXNAVRELPOSNED->data.relPosLength = extractSignedLong(20);
-          packetUBXNAVRELPOSNED->data.relPosHeading = extractSignedLong(24);
-          packetUBXNAVRELPOSNED->data.relPosHPN = extractSignedChar(32);
-          packetUBXNAVRELPOSNED->data.relPosHPE = extractSignedChar(33);
-          packetUBXNAVRELPOSNED->data.relPosHPD = extractSignedChar(34);
-          packetUBXNAVRELPOSNED->data.relPosHPLength = extractSignedChar(35);
-          packetUBXNAVRELPOSNED->data.accN = extractLong(36);
-          packetUBXNAVRELPOSNED->data.accE = extractLong(40);
-          packetUBXNAVRELPOSNED->data.accD = extractLong(44);
-          packetUBXNAVRELPOSNED->data.accLength = extractLong(48);
-          packetUBXNAVRELPOSNED->data.accHeading = extractLong(52);
-          packetUBXNAVRELPOSNED->data.flags.all = extractLong(60);
+          packetUBXNAVRELPOSNED->data.relPosLength = extractSignedLong(msg, 20);
+          packetUBXNAVRELPOSNED->data.relPosHeading = extractSignedLong(msg, 24);
+          packetUBXNAVRELPOSNED->data.relPosHPN = extractSignedChar(msg, 32);
+          packetUBXNAVRELPOSNED->data.relPosHPE = extractSignedChar(msg, 33);
+          packetUBXNAVRELPOSNED->data.relPosHPD = extractSignedChar(msg, 34);
+          packetUBXNAVRELPOSNED->data.relPosHPLength = extractSignedChar(msg, 35);
+          packetUBXNAVRELPOSNED->data.accN = extractLong(msg, 36);
+          packetUBXNAVRELPOSNED->data.accE = extractLong(msg, 40);
+          packetUBXNAVRELPOSNED->data.accD = extractLong(msg, 44);
+          packetUBXNAVRELPOSNED->data.accLength = extractLong(msg, 48);
+          packetUBXNAVRELPOSNED->data.accHeading = extractLong(msg, 52);
+          packetUBXNAVRELPOSNED->data.flags.all = extractLong(msg, 60);
         }
 
         //Mark all datums as fresh (not read before)
@@ -1201,29 +1249,29 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXHNRPVT != NULL)
       {
-        packetUBXHNRPVT->data.iTOW = extractLong(0);
-        packetUBXHNRPVT->data.year = extractInt(4);
-        packetUBXHNRPVT->data.month = extractByte(6);
-        packetUBXHNRPVT->data.day = extractByte(7);
-        packetUBXHNRPVT->data.hour = extractByte(8);
-        packetUBXHNRPVT->data.min = extractByte(9);
-        packetUBXHNRPVT->data.sec = extractByte(10);
-        packetUBXHNRPVT->data.valid.all = extractByte(11);
-        packetUBXHNRPVT->data.nano = extractSignedLong(12);
-        packetUBXHNRPVT->data.gpsFix = extractByte(16);
-        packetUBXHNRPVT->data.flags.all = extractByte(17);
-        packetUBXHNRPVT->data.lon = extractSignedLong(20);
-        packetUBXHNRPVT->data.lat = extractSignedLong(24);
-        packetUBXHNRPVT->data.height = extractSignedLong(28);
-        packetUBXHNRPVT->data.hMSL = extractSignedLong(32);
-        packetUBXHNRPVT->data.gSpeed = extractSignedLong(36);
-        packetUBXHNRPVT->data.speed = extractSignedLong(40);
-        packetUBXHNRPVT->data.headMot = extractSignedLong(44);
-        packetUBXHNRPVT->data.headVeh = extractSignedLong(48);
-        packetUBXHNRPVT->data.hAcc = extractLong(52);
-        packetUBXHNRPVT->data.vAcc = extractLong(56);
-        packetUBXHNRPVT->data.sAcc = extractLong(60);
-        packetUBXHNRPVT->data.headAcc = extractLong(64);
+        packetUBXHNRPVT->data.iTOW = extractLong(msg, 0);
+        packetUBXHNRPVT->data.year = extractInt(msg, 4);
+        packetUBXHNRPVT->data.month = extractByte(msg, 6);
+        packetUBXHNRPVT->data.day = extractByte(msg, 7);
+        packetUBXHNRPVT->data.hour = extractByte(msg, 8);
+        packetUBXHNRPVT->data.min = extractByte(msg, 9);
+        packetUBXHNRPVT->data.sec = extractByte(msg, 10);
+        packetUBXHNRPVT->data.valid.all = extractByte(msg, 11);
+        packetUBXHNRPVT->data.nano = extractSignedLong(msg, 12);
+        packetUBXHNRPVT->data.gpsFix = extractByte(msg, 16);
+        packetUBXHNRPVT->data.flags.all = extractByte(msg, 17);
+        packetUBXHNRPVT->data.lon = extractSignedLong(msg, 20);
+        packetUBXHNRPVT->data.lat = extractSignedLong(msg, 24);
+        packetUBXHNRPVT->data.height = extractSignedLong(msg, 28);
+        packetUBXHNRPVT->data.hMSL = extractSignedLong(msg, 32);
+        packetUBXHNRPVT->data.gSpeed = extractSignedLong(msg, 36);
+        packetUBXHNRPVT->data.speed = extractSignedLong(msg, 40);
+        packetUBXHNRPVT->data.headMot = extractSignedLong(msg, 44);
+        packetUBXHNRPVT->data.headVeh = extractSignedLong(msg, 48);
+        packetUBXHNRPVT->data.hAcc = extractLong(msg, 52);
+        packetUBXHNRPVT->data.vAcc = extractLong(msg, 56);
+        packetUBXHNRPVT->data.sAcc = extractLong(msg, 60);
+        packetUBXHNRPVT->data.headAcc = extractLong(msg, 64);
 
         //Mark all datums as fresh (not read before)
         packetUBXHNRPVT->moduleQueried.all = 0xFFFFFFFF;
@@ -1234,14 +1282,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXHNRATT != NULL)
       {
-        packetUBXHNRATT->data.iTOW = extractLong(0);
-        packetUBXHNRATT->data.version = extractByte(4);
-        packetUBXHNRATT->data.roll = extractSignedLong(8);
-        packetUBXHNRATT->data.pitch = extractSignedLong(12);
-        packetUBXHNRATT->data.heading = extractSignedLong(16);
-        packetUBXHNRATT->data.accRoll = extractLong(20);
-        packetUBXHNRATT->data.accPitch = extractLong(24);
-        packetUBXHNRATT->data.accHeading = extractLong(28);
+        packetUBXHNRATT->data.iTOW = extractLong(msg, 0);
+        packetUBXHNRATT->data.version = extractByte(msg, 4);
+        packetUBXHNRATT->data.roll = extractSignedLong(msg, 8);
+        packetUBXHNRATT->data.pitch = extractSignedLong(msg, 12);
+        packetUBXHNRATT->data.heading = extractSignedLong(msg, 16);
+        packetUBXHNRATT->data.accRoll = extractLong(msg, 20);
+        packetUBXHNRATT->data.accPitch = extractLong(msg, 24);
+        packetUBXHNRATT->data.accHeading = extractLong(msg, 28);
 
         //Mark all datums as fresh (not read before)
         packetUBXHNRATT->moduleQueried.all = 0xFFFFFFFF;
@@ -1252,14 +1300,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXHNRINS != NULL)
       {
-        packetUBXHNRINS->data.bitfield0.all = extractLong(0);
-        packetUBXHNRINS->data.iTOW = extractLong(8);
-        packetUBXHNRINS->data.xAngRate = extractSignedLong(12);
-        packetUBXHNRINS->data.yAngRate = extractSignedLong(16);
-        packetUBXHNRINS->data.zAngRate = extractSignedLong(20);
-        packetUBXHNRINS->data.xAccel = extractSignedLong(24);
-        packetUBXHNRINS->data.yAccel = extractSignedLong(28);
-        packetUBXHNRINS->data.zAccel = extractSignedLong(32);
+        packetUBXHNRINS->data.bitfield0.all = extractLong(msg, 0);
+        packetUBXHNRINS->data.iTOW = extractLong(msg, 8);
+        packetUBXHNRINS->data.xAngRate = extractSignedLong(msg, 12);
+        packetUBXHNRINS->data.yAngRate = extractSignedLong(msg, 16);
+        packetUBXHNRINS->data.zAngRate = extractSignedLong(msg, 20);
+        packetUBXHNRINS->data.xAccel = extractSignedLong(msg, 24);
+        packetUBXHNRINS->data.yAccel = extractSignedLong(msg, 28);
+        packetUBXHNRINS->data.zAccel = extractSignedLong(msg, 32);
 
         //Mark all datums as fresh (not read before)
         packetUBXHNRINS->moduleQueried.all = 0xFFFFFFFF;
@@ -1272,13 +1320,13 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Parse various byte fields into storage - but only if we have memory allocated for it
         if (packetUBXESFALG != NULL)
         {
-          packetUBXESFALG->data.iTOW = extractLong(0);
-          packetUBXESFALG->data.version = extractByte(4);
-          packetUBXESFALG->data.flags.all = extractByte(5);
-          packetUBXESFALG->data.error.all = extractByte(6);
-          packetUBXESFALG->data.yaw = extractLong(8);
-          packetUBXESFALG->data.pitch = extractSignedInt(12);
-          packetUBXESFALG->data.roll = extractSignedInt(14);
+          packetUBXESFALG->data.iTOW = extractLong(msg, 0);
+          packetUBXESFALG->data.version = extractByte(msg, 4);
+          packetUBXESFALG->data.flags.all = extractByte(msg, 5);
+          packetUBXESFALG->data.error.all = extractByte(msg, 6);
+          packetUBXESFALG->data.yaw = extractLong(msg, 8);
+          packetUBXESFALG->data.pitch = extractSignedInt(msg, 12);
+          packetUBXESFALG->data.roll = extractSignedInt(msg, 14);
 
           //Mark all datums as fresh (not read before)
           packetUBXESFALG->moduleQueried.all = 0xFFFFFFFF;
@@ -1289,17 +1337,17 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Parse various byte fields into storage - but only if we have memory allocated for it
         if (packetUBXESFINS != NULL)
         {
-          packetUBXESFINS->data.bitfield0.all = extractLong(0);
-          packetUBXESFINS->data.iTOW = extractLong(8);
-          packetUBXESFINS->data.xAngRate = extractSignedLong(12);
-          packetUBXESFINS->data.yAngRate = extractSignedLong(16);
-          packetUBXESFINS->data.zAngRate = extractSignedLong(20);
-          packetUBXESFINS->data.xAccel = extractSignedLong(24);
-          packetUBXESFINS->data.yAccel = extractSignedLong(28);
-          packetUBXESFINS->data.zAccel = extractSignedLong(32);
+          packetUBXESFINS->data.bitfield0.all = extractLong(msg, 0);
+          packetUBXESFINS->data.iTOW = extractLong(msg, 8);
+          packetUBXESFINS->data.xAngRate = extractSignedLong(msg, 12);
+          packetUBXESFINS->data.yAngRate = extractSignedLong(msg, 16);
+          packetUBXESFINS->data.zAngRate = extractSignedLong(msg, 20);
+          packetUBXESFINS->data.xAccel = extractSignedLong(msg, 24);
+          packetUBXESFINS->data.yAccel = extractSignedLong(msg, 28);
+          packetUBXESFINS->data.zAccel = extractSignedLong(msg, 32);
 
           //Mark all datums as fresh (not read before)
-          packetUBXESFALG->moduleQueried.all = 0xFFFFFFFF;
+          packetUBXESFINS->moduleQueried.all = 0xFFFFFFFF;
         }
       }
       else if (msg->id == UBX_ESF_MEAS)
@@ -1307,19 +1355,19 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Parse various byte fields into storage - but only if we have memory allocated for it
         if (packetUBXESFMEAS != NULL)
         {
-          packetUBXESFMEAS->data.timeTag = extractLong(0);
-          packetUBXESFMEAS->data.flags.all = extractInt(4);
-          packetUBXESFMEAS->data.id = extractInt(6);
+          packetUBXESFMEAS->data.timeTag = extractLong(msg, 0);
+          packetUBXESFMEAS->data.flags.all = extractInt(msg, 4);
+          packetUBXESFMEAS->data.id = extractInt(msg, 6);
           for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFMEAS->data.flags.bits.numMeas)
             && ((i * 4) < (msg->len - 8)); i++)
           {
-            packetUBXESFMEAS->data.data[i].all = extractLong(8 + (i * 4));
+            packetUBXESFMEAS->data.data[i].all = extractLong(msg, 8 + (i * 4));
           }
           if (msg->len > (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4)))
-            packetUBXESFMEAS->data.calibTtag = extractLong(8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
+            packetUBXESFMEAS->data.calibTtag = extractLong(msg, 8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
 
           //Mark all datums as fresh (not read before)
-          packetUBXESFALG->moduleQueried.all = 0xFFFFFFFF;
+          packetUBXESFMEAS->moduleQueried.all = 0xFFFFFFFF;
         }
       }
       else if (msg->id == UBX_ESF_RAW)
@@ -1329,8 +1377,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           for (int i = 0; (i < DEF_NUM_SENS) && ((i * 8) < (msg->len - 4)); i++)
           {
-            packetUBXESFRAW->data.data[i].data.all = extractLong(8 + (i * 8));
-            packetUBXESFRAW->data.data[i].sTag = extractLong(8 + (i * 8) + 4);
+            packetUBXESFRAW->data.data[i].data.all = extractLong(msg, 8 + (i * 8));
+            packetUBXESFRAW->data.data[i].sTag = extractLong(msg, 8 + (i * 8) + 4);
           }
 
           //Mark all datums as fresh (not read before)
@@ -1342,17 +1390,17 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Parse various byte fields into storage - but only if we have memory allocated for it
         if (packetUBXESFSTATUS != NULL)
         {
-          packetUBXESFSTATUS->data.iTOW = extractLong(0);
-          packetUBXESFSTATUS->data.version = extractByte(4);
-          packetUBXESFSTATUS->data.fusionMode = extractByte(12);
-          packetUBXESFSTATUS->data.numSens = extractByte(15);
+          packetUBXESFSTATUS->data.iTOW = extractLong(msg, 0);
+          packetUBXESFSTATUS->data.version = extractByte(msg, 4);
+          packetUBXESFSTATUS->data.fusionMode = extractByte(msg, 12);
+          packetUBXESFSTATUS->data.numSens = extractByte(msg, 15);
           for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFSTATUS->data.numSens)
             && ((i * 4) < (msg->len - 16)); i++)
           {
-            packetUBXESFSTATUS->data.status[i].sensStatus1.all = extractByte(16 + (i * 4) + 0);
-            packetUBXESFSTATUS->data.status[i].sensStatus2.all = extractByte(16 + (i * 4) + 1);
-            packetUBXESFSTATUS->data.status[i].freq = extractByte(16 + (i * 4) + 2);
-            packetUBXESFSTATUS->data.status[i].faults.all = extractByte(16 + (i * 4) + 3);
+            packetUBXESFSTATUS->data.status[i].sensStatus1.all = extractByte(msg, 16 + (i * 4) + 0);
+            packetUBXESFSTATUS->data.status[i].sensStatus2.all = extractByte(msg, 16 + (i * 4) + 1);
+            packetUBXESFSTATUS->data.status[i].freq = extractByte(msg, 16 + (i * 4) + 2);
+            packetUBXESFSTATUS->data.status[i].faults.all = extractByte(msg, 16 + (i * 4) + 3);
           }
 
           //Mark all datums as fresh (not read before)
@@ -1673,7 +1721,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       // before the matching ACK. So if we sent a config packet which only produces an ACK
       // then outgoingUBX->classAndIDmatch will be NOT_DEFINED and the packetAck.classAndIDmatch will VALID.
       // We should not check outgoingUBX->valid, outgoingUBX->cls or outgoingUBX->id
-      // as these may have been changed by a PVT packet.
+      // as these may have been changed by an automatic packet.
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED) && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID))
       {
         if (_printDebug == true)
@@ -1687,7 +1735,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
 
       // If both the outgoingUBX->classAndIDmatch and packetAck.classAndIDmatch are VALID
       // but the outgoingUBX->cls or ID no longer match then we can be confident that we had
-      // valid data but it has been or is currently being overwritten by another packet (e.g. PVT).
+      // valid data but it has been or is currently being overwritten by an automatic packet (e.g. PVT).
       // If (e.g.) a PVT packet is _being_ received: outgoingUBX->valid will be NOT_DEFINED
       // If (e.g.) a PVT packet _has been_ received: outgoingUBX->valid will be VALID (or just possibly NOT_VALID)
       // So we cannot use outgoingUBX->valid as part of this check.
@@ -2025,21 +2073,21 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
   if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (0);
 
-  return (extractByte(8));
+  return (extractByte(&packetCfg, 8));
 }
 uint16_t SFE_UBLOX_GPS::getVal16(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
   if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (0);
 
-  return (extractInt(8));
+  return (extractInt(&packetCfg, 8));
 }
 uint32_t SFE_UBLOX_GPS::getVal32(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
   if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
     return (0);
 
-  return (extractLong(8));
+  return (extractLong(&packetCfg, 8));
 }
 
 //Form 32-bit key from group/id/size
@@ -2189,8 +2237,9 @@ uint8_t SFE_UBLOX_GPS::newCfgValset32(uint32_t key, uint32_t value, uint8_t laye
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
-    packetCfg.payload[x] = 0;
+  //for (uint16_t x = 0; x < packetCfgPayloadSize; x++)
+  //  packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfgPayloadSize);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
   payloadCfg[1] = layer; //By default we ask for the BBR layer
@@ -2223,8 +2272,9 @@ uint8_t SFE_UBLOX_GPS::newCfgValset16(uint32_t key, uint16_t value, uint8_t laye
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
-    packetCfg.payload[x] = 0;
+  //for (uint16_t x = 0; x < packetCfgPayloadSize; x++)
+  //  packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfgPayloadSize);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
   payloadCfg[1] = layer; //By default we ask for the BBR layer
@@ -2255,8 +2305,9 @@ uint8_t SFE_UBLOX_GPS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer)
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint16_t x = 0; x < MAX_PAYLOAD_SIZE; x++)
-    packetCfg.payload[x] = 0;
+  //for (uint16_t x = 0; x < packetCfgPayloadSize; x++)
+  //  packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfgPayloadSize);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
   payloadCfg[1] = layer; //By default we ask for the BBR layer
@@ -2564,7 +2615,7 @@ uint8_t SFE_UBLOX_GPS::getNavigationFrequency(uint16_t maxWait)
     return (false);                                                       //If command send fails then bail
 
   //payloadCfg is now loaded with current bytes. Get what we need
-  uint16_t measurementRate = extractInt(0); //Pull from payloadCfg at measRate LSB
+  uint16_t measurementRate = extractInt(&packetCfg, 0); //Pull from payloadCfg at measRate LSB
 
   measurementRate = 1000 / measurementRate; //This may return an int when it's a float, but I'd rather not return 4 bytes
   return (measurementRate);
@@ -3058,18 +3109,18 @@ uint8_t SFE_UBLOX_GPS::getDynamicModel(uint16_t maxWait)
 }
 
 //Given a spot in the payload array, extract four bytes and build a long
-uint32_t SFE_UBLOX_GPS::extractLong(uint8_t spotToStart)
+uint32_t SFE_UBLOX_GPS::extractLong(ubxPacket *msg, uint8_t spotToStart)
 {
   uint32_t val = 0;
-  val |= (uint32_t)payloadCfg[spotToStart + 0] << 8 * 0;
-  val |= (uint32_t)payloadCfg[spotToStart + 1] << 8 * 1;
-  val |= (uint32_t)payloadCfg[spotToStart + 2] << 8 * 2;
-  val |= (uint32_t)payloadCfg[spotToStart + 3] << 8 * 3;
+  val |= (uint32_t)msg->payload[spotToStart + 0] << 8 * 0;
+  val |= (uint32_t)msg->payload[spotToStart + 1] << 8 * 1;
+  val |= (uint32_t)msg->payload[spotToStart + 2] << 8 * 2;
+  val |= (uint32_t)msg->payload[spotToStart + 3] << 8 * 3;
   return (val);
 }
 
 //Just so there is no ambiguity about whether a uint32_t will cast to a int32_t correctly...
-int32_t SFE_UBLOX_GPS::extractSignedLong(uint8_t spotToStart)
+int32_t SFE_UBLOX_GPS::extractSignedLong(ubxPacket *msg, uint8_t spotToStart)
 {
   union // Use a union to convert from uint32_t to int32_t
   {
@@ -3077,21 +3128,21 @@ int32_t SFE_UBLOX_GPS::extractSignedLong(uint8_t spotToStart)
       int32_t signedLong;
   } unsignedSigned;
 
-  unsignedSigned.unsignedLong = extractLong(spotToStart);
+  unsignedSigned.unsignedLong = extractLong(msg, spotToStart);
   return (unsignedSigned.signedLong);
 }
 
 //Given a spot in the payload array, extract two bytes and build an int
-uint16_t SFE_UBLOX_GPS::extractInt(uint8_t spotToStart)
+uint16_t SFE_UBLOX_GPS::extractInt(ubxPacket *msg, uint8_t spotToStart)
 {
   uint16_t val = 0;
-  val |= (uint16_t)payloadCfg[spotToStart + 0] << 8 * 0;
-  val |= (uint16_t)payloadCfg[spotToStart + 1] << 8 * 1;
+  val |= (uint16_t)msg->payload[spotToStart + 0] << 8 * 0;
+  val |= (uint16_t)msg->payload[spotToStart + 1] << 8 * 1;
   return (val);
 }
 
 //Just so there is no ambiguity about whether a uint16_t will cast to a int16_t correctly...
-int16_t SFE_UBLOX_GPS::extractSignedInt(int8_t spotToStart)
+int16_t SFE_UBLOX_GPS::extractSignedInt(ubxPacket *msg, int8_t spotToStart)
 {
   union // Use a union to convert from uint16_t to int16_t
   {
@@ -3099,18 +3150,18 @@ int16_t SFE_UBLOX_GPS::extractSignedInt(int8_t spotToStart)
       int16_t signedInt;
   } stSignedInt;
 
-  stSignedInt.unsignedInt = extractInt(spotToStart);
+  stSignedInt.unsignedInt = extractInt(msg, spotToStart);
   return (stSignedInt.signedInt);
 }
 
 //Given a spot, extract a byte from the payload
-uint8_t SFE_UBLOX_GPS::extractByte(uint8_t spotToStart)
+uint8_t SFE_UBLOX_GPS::extractByte(ubxPacket *msg, uint8_t spotToStart)
 {
-  return (payloadCfg[spotToStart]);
+  return (msg->payload[spotToStart]);
 }
 
 //Given a spot, extract a signed 8-bit value from the payload
-int8_t SFE_UBLOX_GPS::extractSignedChar(uint8_t spotToStart)
+int8_t SFE_UBLOX_GPS::extractSignedChar(ubxPacket *msg, uint8_t spotToStart)
 {
   union // Use a union to convert from uint8_t to int8_t
   {
@@ -3118,7 +3169,7 @@ int8_t SFE_UBLOX_GPS::extractSignedChar(uint8_t spotToStart)
       int8_t signedByte;
   } stSignedByte;
 
-  stSignedByte.unsignedByte = extractByte(spotToStart);
+  stSignedByte.unsignedByte = extractByte(msg, spotToStart);
   return (stSignedByte.signedByte);
 }
 
@@ -3619,34 +3670,35 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
   if (packetUBXNAVPVT->automaticFlags.automatic && packetUBXNAVPVT->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getPVT: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getPVT: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVT);
     return packetUBXNAVPVT->moduleQueried1.bits.all;
   }
   else if (packetUBXNAVPVT->automaticFlags.automatic && !packetUBXNAVPVT->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getPVT: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getPVT: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getPVT: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getPVT: Polling"));
+    // }
 
     //The GPS is not automatically reporting navigation position so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_NAV;
     packetCfg.id = UBX_NAV_PVT;
     packetCfg.len = 0;
-    //packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+MAX_PAYLOAD_SIZE = 84 bytes Note:now hard-coded in processUBX
+    packetCfg.startingSpot = 0;
+    //packetCfg.startingSpot = 20; //Begin listening at spot 20 so we can record up to 20+packetCfgPayloadSize = 84 bytes Note:now hard-coded in processUBX
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -3656,18 +3708,18 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getPVT: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getPVT: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getPVT retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getPVT retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 }
@@ -3733,11 +3785,11 @@ void SFE_UBLOX_GPS::flushPVT()
 // Allocate RAM for packetUBXNAVPVT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVPVT()
 {
-  packetUBXNAVPVT = (UBX_NAV_PVT_t *)malloc(sizeof(UBX_NAV_PVT_t)); //Allocate RAM for the main struct
+  packetUBXNAVPVT = new UBX_NAV_PVT_t; //Allocate RAM for the main struct
   if (packetUBXNAVPVT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXNAVPVT: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXNAVPVT->automaticFlags.automatic = false;
@@ -3908,33 +3960,34 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
   if (packetUBXNAVHPPOSLLH->automaticFlags.automatic && packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHPPOSLLH: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHPPOSLLH: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_HPPOSLLH);
     return packetUBXNAVHPPOSLLH->moduleQueried.bits.all;
   }
   else if (packetUBXNAVHPPOSLLH->automaticFlags.automatic && !packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHPPOSLLH: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHPPOSLLH: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHPPOSLLH: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHPPOSLLH: Polling"));
+    // }
 
     //The GPS is not automatically reporting navigation position so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_NAV;
     packetCfg.id = UBX_NAV_HPPOSLLH;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -3944,18 +3997,18 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getHPPOSLLH: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getHPPOSLLH: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getHPPOSLLH retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getHPPOSLLH retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 }
@@ -4020,11 +4073,11 @@ void SFE_UBLOX_GPS::flushHPPOSLLH()
 // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSLLH()
 {
-  packetUBXNAVHPPOSLLH = (UBX_NAV_HPPOSLLH_t *)malloc(sizeof(UBX_NAV_HPPOSLLH_t)); //Allocate RAM for the main struct
+  packetUBXNAVHPPOSLLH = new UBX_NAV_HPPOSLLH_t; //Allocate RAM for the main struct
   if (packetUBXNAVHPPOSLLH == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXNAVHPPOSLLH: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVHPPOSLLH: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXNAVHPPOSLLH->automaticFlags.automatic = false;
@@ -4136,33 +4189,34 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
   if (packetUBXNAVDOP->automaticFlags.automatic && packetUBXNAVDOP->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getDOP: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getDOP: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_DOP);
     return packetUBXNAVDOP->moduleQueried.bits.all;
   }
   else if (packetUBXNAVDOP->automaticFlags.automatic && !packetUBXNAVDOP->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getDOP: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getDOP: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getDOP: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getDOP: Polling"));
+    // }
 
     //The GPS is not automatically reporting navigation position so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_NAV;
     packetCfg.id = UBX_NAV_DOP;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -4172,18 +4226,18 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getDOP: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getDOP: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getDOP retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getDOP retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 }
@@ -4248,11 +4302,11 @@ void SFE_UBLOX_GPS::flushDOP()
 // Allocate RAM for packetUBXNAVDOP and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVDOP()
 {
-  packetUBXNAVDOP = (UBX_NAV_DOP_t *)malloc(sizeof(UBX_NAV_DOP_t)); //Allocate RAM for the main struct
+  packetUBXNAVDOP = new UBX_NAV_DOP_t; //Allocate RAM for the main struct
   if (packetUBXNAVDOP == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXNAVDOP: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVDOP: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXNAVDOP->automaticFlags.automatic = false;
@@ -4278,28 +4332,28 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
   if (packetUBXNAVRELPOSNED->automaticFlags.automatic && packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getRELPOSNED: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getRELPOSNED: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_RELPOSNED);
     return packetUBXNAVRELPOSNED->moduleQueried.bits.all;
   }
   else if (packetUBXNAVRELPOSNED->automaticFlags.automatic && !packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getRELPOSNED: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getRELPOSNED: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getRELPOSNED: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getRELPOSNED: Polling"));
+    // }
 
     //The GPS is not automatically reporting RELPOSNED so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_NAV;
@@ -4315,18 +4369,18 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getRELPOSNED: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getRELPOSNED: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getRELPOSNED retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getRELPOSNED retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -4383,11 +4437,11 @@ boolean SFE_UBLOX_GPS::assumeAutoRELPOSNED(boolean enabled, boolean implicitUpda
 // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVRELPOSNED()
 {
-  packetUBXNAVRELPOSNED = (UBX_NAV_RELPOSNED_t *)malloc(sizeof(UBX_NAV_RELPOSNED_t)); //Allocate RAM for the main struct
+  packetUBXNAVRELPOSNED = new UBX_NAV_RELPOSNED_t ; //Allocate RAM for the main struct
   if (packetUBXNAVRELPOSNED == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXNAVRELPOSNED: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVRELPOSNED: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXNAVRELPOSNED->automaticFlags.automatic = false;
@@ -4406,33 +4460,34 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
   if (packetUBXNAVATT->automaticFlags.automatic && packetUBXNAVATT->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getVehAtt: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getVehAtt: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_ATT);
     return packetUBXNAVATT->moduleQueried.bits.all;
   }
   else if (packetUBXNAVATT->automaticFlags.automatic && !packetUBXNAVATT->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getVehAtt: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getVehAtt: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getVehAtt: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getVehAtt: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_NAV;
     packetCfg.id = UBX_NAV_ATT;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -4442,18 +4497,18 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getVehAtt: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getVehAtt: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getVehAtt retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getVehAtt retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -4463,11 +4518,11 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
 // Allocate RAM for packetUBXNAVATT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVATT()
 {
-  packetUBXNAVATT = (UBX_NAV_ATT_t *)malloc(sizeof(UBX_NAV_ATT_t)); //Allocate RAM for the main struct
+  packetUBXNAVATT = new UBX_NAV_ATT_t; //Allocate RAM for the main struct
   if (packetUBXNAVATT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXNAVATT: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXNAVATT->automaticFlags.automatic = false;
@@ -4493,33 +4548,34 @@ boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
   if (packetUBXHNRATT->automaticFlags.automatic && packetUBXHNRATT->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRAtt: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRAtt: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_ATT);
     return packetUBXHNRATT->moduleQueried.bits.all;
   }
   else if (packetUBXHNRATT->automaticFlags.automatic && !packetUBXHNRATT->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRAtt: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRAtt: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRAtt: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRAtt: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR attitude so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_HNR;
     packetCfg.id = UBX_HNR_ATT;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -4529,18 +4585,18 @@ boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getHNRAtt: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getHNRAtt: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getHNRAtt retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getHNRAtt retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -4592,11 +4648,11 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate)
 // Allocate RAM for packetUBXHNRATT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXHNRATT()
 {
-  packetUBXHNRATT = (UBX_HNR_ATT_t *)malloc(sizeof(UBX_HNR_ATT_t)); //Allocate RAM for the main struct
+  packetUBXHNRATT = new UBX_HNR_ATT_t; //Allocate RAM for the main struct
   if (packetUBXHNRATT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXHNRATT: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXHNRATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXHNRATT->automaticFlags.automatic = false;
@@ -4622,33 +4678,34 @@ boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
   if (packetUBXHNRINS->automaticFlags.automatic && packetUBXHNRINS->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRDyn: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRDyn: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_INS);
     return packetUBXHNRINS->moduleQueried.bits.all;
   }
   else if (packetUBXHNRINS->automaticFlags.automatic && !packetUBXHNRINS->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRDyn: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRDyn: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRDyn: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRDyn: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR vehicle dynamics so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_HNR;
     packetCfg.id = UBX_HNR_INS;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -4658,18 +4715,18 @@ boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getHNRDyn: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getHNRDyn: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getHNRDyn retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getHNRDyn retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -4721,11 +4778,11 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate)
 // Allocate RAM for packetUBXHNRINS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXHNRINS()
 {
-  packetUBXHNRINS = (UBX_HNR_INS_t *)malloc(sizeof(UBX_HNR_INS_t)); //Allocate RAM for the main struct
+  packetUBXHNRINS = new UBX_HNR_INS_t; //Allocate RAM for the main struct
   if (packetUBXHNRINS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXHNRINS: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXHNRINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXHNRINS->automaticFlags.automatic = false;
@@ -4751,33 +4808,34 @@ boolean SFE_UBLOX_GPS::getHNRPVT(uint16_t maxWait)
   if (packetUBXHNRPVT->automaticFlags.automatic && packetUBXHNRPVT->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRPVT: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRPVT: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_PVT);
     return packetUBXHNRPVT->moduleQueried.bits.all;
   }
   else if (packetUBXHNRPVT->automaticFlags.automatic && !packetUBXHNRPVT->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRPVT: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRPVT: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getHNRPVT: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getHNRPVT: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_HNR;
     packetCfg.id = UBX_HNR_PVT;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -4787,18 +4845,18 @@ boolean SFE_UBLOX_GPS::getHNRPVT(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getHNRPVT: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getHNRPVT: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getHNRPVT retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getHNRPVT retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -4850,11 +4908,11 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRPVT(boolean enabled, boolean implicitUpdate)
 // Allocate RAM for packetUBXHNRPVT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXHNRPVT()
 {
-  packetUBXHNRPVT = (UBX_HNR_PVT_t *)malloc(sizeof(UBX_HNR_PVT_t)); //Allocate RAM for the main struct
+  packetUBXHNRPVT = new UBX_HNR_PVT_t; //Allocate RAM for the main struct
   if (packetUBXHNRPVT == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXHNRPVT: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXHNRPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXHNRPVT->automaticFlags.automatic = false;
@@ -4876,7 +4934,7 @@ uint32_t SFE_UBLOX_GPS::getPositionAccuracy(uint16_t maxWait)
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are only expecting data (no ACK)
     return (0);                                                           //If command send fails then bail
 
-  uint32_t tempAccuracy = extractLong(24); //We got a response, now extract a long beginning at a given position
+  uint32_t tempAccuracy = extractLong(&packetCfg, 24); //We got a response, now extract a long beginning at a given position
 
   if ((tempAccuracy % 10) >= 5)
     tempAccuracy += 5; //Round fraction of mm up to next mm if .5 or above
@@ -4896,33 +4954,34 @@ boolean SFE_UBLOX_GPS::getEsfAlignment(uint16_t maxWait)
   if (packetUBXESFALG->automaticFlags.automatic && packetUBXESFALG->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfAlignment: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfAlignment: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_ALG);
     return packetUBXESFALG->moduleQueried.bits.all;
   }
   else if (packetUBXESFALG->automaticFlags.automatic && !packetUBXESFALG->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfAlignment: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfAlignment: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfAlignment: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfAlignment: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_ESF;
     packetCfg.id = UBX_ESF_ALG;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -4932,18 +4991,18 @@ boolean SFE_UBLOX_GPS::getEsfAlignment(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getEsfAlignment: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getEsfAlignment: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getEsfAlignment retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getEsfAlignment retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -4953,11 +5012,11 @@ boolean SFE_UBLOX_GPS::getEsfAlignment(uint16_t maxWait)
 // Allocate RAM for packetUBXESFALG and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFALG()
 {
-  packetUBXESFALG = (UBX_ESF_ALG_t *)malloc(sizeof(UBX_ESF_ALG_t)); //Allocate RAM for the main struct
+  packetUBXESFALG = new UBX_ESF_ALG_t; //Allocate RAM for the main struct
   if (packetUBXESFALG == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXESFALG: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFALG: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXESFALG->automaticFlags.automatic = false;
@@ -4976,33 +5035,34 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
   if (packetUBXESFSTATUS->automaticFlags.automatic && packetUBXESFSTATUS->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfInfo: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfInfo: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_STATUS);
     return packetUBXESFSTATUS->moduleQueried.bits.all;
   }
   else if (packetUBXESFSTATUS->automaticFlags.automatic && !packetUBXESFSTATUS->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfInfo: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfInfo: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfInfo: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfInfo: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_ESF;
     packetCfg.id = UBX_ESF_STATUS;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -5012,18 +5072,18 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getEsfInfo: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getEsfInfo: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getEsfInfo retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getEsfInfo retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -5033,11 +5093,11 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
 // Allocate RAM for packetUBXESFSTATUS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
 {
-  packetUBXESFSTATUS = (UBX_ESF_STATUS_t *)malloc(sizeof(UBX_ESF_STATUS_t)); //Allocate RAM for the main struct
+  packetUBXESFSTATUS = new UBX_ESF_STATUS_t; //Allocate RAM for the main struct
   if (packetUBXESFSTATUS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXESFSTATUS: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFSTATUS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXESFSTATUS->automaticFlags.automatic = false;
@@ -5056,33 +5116,34 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   if (packetUBXESFINS->automaticFlags.automatic && packetUBXESFINS->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfIns: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfIns: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_INS);
     return packetUBXESFINS->moduleQueried.bits.all;
   }
   else if (packetUBXESFINS->automaticFlags.automatic && !packetUBXESFINS->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfIns: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfIns: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfIns: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfIns: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_ESF;
     packetCfg.id = UBX_ESF_INS;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -5092,18 +5153,18 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getEsfIns: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getEsfIns: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getEsfIns retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getEsfIns retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -5113,11 +5174,11 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
 // Allocate RAM for packetUBXESFINS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFINS()
 {
-  packetUBXESFINS = (UBX_ESF_INS_t *)malloc(sizeof(UBX_ESF_INS_t)); //Allocate RAM for the main struct
+  packetUBXESFINS = new UBX_ESF_INS_t; //Allocate RAM for the main struct
   if (packetUBXESFINS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXESFINS: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXESFINS->automaticFlags.automatic = false;
@@ -5136,33 +5197,34 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   if (packetUBXESFMEAS->automaticFlags.automatic && packetUBXESFMEAS->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfDataInfo: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfDataInfo: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_MEAS);
     return packetUBXESFMEAS->moduleQueried.bits.all;
   }
   else if (packetUBXESFMEAS->automaticFlags.automatic && !packetUBXESFMEAS->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfDataInfo: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfDataInfo: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfDataInfo: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfDataInfo: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_ESF;
     packetCfg.id = UBX_ESF_MEAS;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -5172,18 +5234,18 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getEsfDataInfo: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getEsfDataInfo: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getEsfDataInfo retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getEsfDataInfo retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -5193,11 +5255,11 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
 // Allocate RAM for packetUBXESFMEAS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFMEAS()
 {
-  packetUBXESFMEAS = (UBX_ESF_MEAS_t *)malloc(sizeof(UBX_ESF_MEAS_t)); //Allocate RAM for the main struct
+  packetUBXESFMEAS = new UBX_ESF_MEAS_t; //Allocate RAM for the main struct
   if (packetUBXESFMEAS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXESFMEAS: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFMEAS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXESFMEAS->automaticFlags.automatic = false;
@@ -5216,33 +5278,34 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   if (packetUBXESFRAW->automaticFlags.automatic && packetUBXESFRAW->automaticFlags.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfRawDataInfo: Autoreporting"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfRawDataInfo: Autoreporting"));
+    // }
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_RAW);
     return packetUBXESFRAW->moduleQueried.bits.all;
   }
   else if (packetUBXESFRAW->automaticFlags.automatic && !packetUBXESFRAW->automaticFlags.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfRawDataInfo: Exit immediately"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfRawDataInfo: Exit immediately"));
+    // }
     return (false);
   }
   else
   {
-    if (_printDebug == true)
-    {
-      _debugSerial->println(F("getEsfRawDataInfo: Polling"));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->println(F("getEsfRawDataInfo: Polling"));
+    // }
 
     //The GPS is not automatically reporting HNR PVT so we have to poll explicitly
     packetCfg.cls = UBX_CLASS_ESF;
     packetCfg.id = UBX_ESF_RAW;
     packetCfg.len = 0;
+    packetCfg.startingSpot = 0;
 
     //The data is parsed as part of processing the response
     sfe_ublox_status_e retVal = sendCommand(&packetCfg, maxWait);
@@ -5252,18 +5315,18 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
 
     if (retVal == SFE_UBLOX_STATUS_DATA_OVERWRITTEN)
     {
-      if (_printDebug == true)
-      {
-        _debugSerial->println(F("getEsfRawDataInfo: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
-      }
+      // if (_printDebug == true)
+      // {
+      //   _debugSerial->println(F("getEsfRawDataInfo: data in packetCfg was OVERWRITTEN by another message (but that's OK)"));
+      // }
       return (true);
     }
 
-    if (_printDebug == true)
-    {
-      _debugSerial->print(F("getEsfRawDataInfo retVal: "));
-      _debugSerial->println(statusString(retVal));
-    }
+    // if (_printDebug == true)
+    // {
+    //   _debugSerial->print(F("getEsfRawDataInfo retVal: "));
+    //   _debugSerial->println(statusString(retVal));
+    // }
     return (false);
   }
 
@@ -5273,11 +5336,11 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
 // Allocate RAM for packetUBXESFRAW and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFRAW()
 {
-  packetUBXESFRAW = (UBX_ESF_RAW_t *)malloc(sizeof(UBX_ESF_RAW_t)); //Allocate RAM for the main struct
+  packetUBXESFRAW = new UBX_ESF_RAW_t; //Allocate RAM for the main struct
   if (packetUBXESFRAW == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXESFRAW: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXESFRAW: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXESFRAW->automaticFlags.automatic = false;
@@ -5374,11 +5437,11 @@ boolean SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
 // Allocate RAM for moduleSWVersion and initialize it
 boolean SFE_UBLOX_GPS::initModuleSWVersion()
 {
-  moduleSWVersion = (moduleSWVersion_t *)malloc(sizeof(moduleSWVersion_t)); //Allocate RAM for the main struct
+  moduleSWVersion = new moduleSWVersion_t; //Allocate RAM for the main struct
   if (moduleSWVersion == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initModuleSWVersion: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initModuleSWVersion: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   moduleSWVersion->moduleQueried = false;
@@ -5538,11 +5601,11 @@ uint8_t SFE_UBLOX_GPS::getHNRNavigationRate(uint16_t maxWait)
 // Allocate RAM for packetUBXNAVSVIN and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVSVIN()
 {
-  packetUBXNAVSVIN = (UBX_NAV_SVIN_t *)malloc(sizeof(UBX_NAV_SVIN_t)); //Allocate RAM for the main struct
+  packetUBXNAVSVIN = new UBX_NAV_SVIN_t; //Allocate RAM for the main struct
   if (packetUBXNAVSVIN == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initPacketUBXNAVSVIN: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initPacketUBXNAVSVIN: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   packetUBXNAVSVIN->automaticFlags.automatic = false;
@@ -5555,11 +5618,11 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSVIN()
 // Allocate RAM for currentGeofenceParams and initialize it
 boolean SFE_UBLOX_GPS::initGeofenceParams()
 {
-  currentGeofenceParams = (geofenceParams_t *)malloc(sizeof(geofenceParams_t)); //Allocate RAM for the main struct
+  currentGeofenceParams = new geofenceParams_t; //Allocate RAM for the main struct
   if (currentGeofenceParams == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("initGeofenceParams: PANIC! malloc failed! This will end _very_ badly..."));
+      _debugSerial->println(F("initGeofenceParams: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
   currentGeofenceParams->numFences = 0;

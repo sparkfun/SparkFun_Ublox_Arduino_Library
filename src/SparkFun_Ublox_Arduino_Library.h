@@ -392,11 +392,9 @@ enum dynModel // Possible values for the dynamic platform model, which provide m
 };
 
 #ifndef MAX_PAYLOAD_SIZE
-
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
 #define MAX_PAYLOAD_SIZE 256 //We need ~220 bytes for getProtocolVersion on most ublox modules
 //#define MAX_PAYLOAD_SIZE 768 //Worst case: UBX_CFG_VALSET packet with 64 keyIDs each with 64 bit values
-
 #endif
 
 //-=-=-=-=- UBX binary specific variables
@@ -404,10 +402,10 @@ struct ubxPacket
 {
 	uint8_t cls;
 	uint8_t id;
-	uint16_t len;		   //Length of the payload. Does not include cls, id, or checksum bytes
-	uint16_t counter;	   //Keeps track of number of overall bytes received. Some responses are larger than 255 bytes.
+	uint16_t len; //Length of the payload. Does not include cls, id, or checksum bytes
+	uint16_t counter; //Keeps track of number of overall bytes received. Some responses are larger than 255 bytes.
 	uint16_t startingSpot; //The counter value needed to go past before we begin recording into payload array
-	uint8_t *payload;  // We will allocate RAM for the payload if/when needed.
+	uint8_t *payload; // We will allocate RAM for the payload if/when needed.
 	uint8_t checksumA; //Given to us from module. Checked against the rolling calculated A/B checksums.
 	uint8_t checksumB;
 	sfe_ublox_packet_validity_e valid;			 //Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
@@ -469,7 +467,7 @@ public:
 	boolean isConnected(uint16_t maxWait = 1100);
 
 	//New in v2.0: allow the payload size for packetCfg to be changed
-	void setPacketCfgPayloadSize(uint16_t payloadSize); // Set packetCfgPayloadSize
+	void setPacketCfgPayloadSize(size_t payloadSize); // Set packetCfgPayloadSize
 
 	//Changed in V1.8.1: provides backward compatibility for the examples that call checkUblox directly
 	//Will default to using packetCfg to look for explicit autoPVT packets so they get processed correctly by processUBX
@@ -739,6 +737,8 @@ public:
 	void debugPrintln(char *message);													 //Safely print debug statements
 	const char *statusString(sfe_ublox_status_e stat);									 //Pretty print the return value
 
+	void disableUBX7Fcheck(boolean disabled = true); // When logging RAWX data, we need to be able to disable the "7F" check in checkUbloxI2C
+
 	//Support for geofences
 	boolean addGeofence(int32_t latitude, int32_t longitude, uint32_t radius, byte confidence = 0, byte pinPolarity = 0, byte pin = 0, uint16_t maxWait = 1100); // Add a new geofence
 	boolean clearGeofences(uint16_t maxWait = 1100);																											 //Clears all geofences
@@ -770,6 +770,15 @@ public:
 	// HNR functions
 	boolean setHNRNavigationRate(uint8_t rate, uint16_t maxWait = 1100); // Returns true if the setHNRNavigationRate is successful
 	uint8_t getHNRNavigationRate(uint16_t maxWait = 1100); // Returns 0 if the getHNRNavigationRate fails
+
+	// Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
+	// From v2.0: These are public. The user can call these to extract data from custom packets
+	uint32_t extractLong(ubxPacket *msg, uint8_t spotToStart);																	 //Combine four bytes from payload into long
+	int32_t extractSignedLong(ubxPacket *msg, uint8_t spotToStart);																//Combine four bytes from payload into signed long (avoiding any ambiguity caused by casting)
+	uint16_t extractInt(ubxPacket *msg, uint8_t spotToStart);																	 //Combine two bytes from payload into int
+	int16_t extractSignedInt(ubxPacket *msg, int8_t spotToStart);
+	uint8_t extractByte(ubxPacket *msg, uint8_t spotToStart);																	 //Get byte from payload
+	int8_t extractSignedChar(ubxPacket *msg, uint8_t spotToStart);																 //Get signed 8-bit value from payload
 
 	// Pointers to storage for the "automatic" messages
 
@@ -831,12 +840,6 @@ private:
 
 	//Functions
 	boolean checkUbloxInternal(ubxPacket *incomingUBX, uint8_t requestedClass = 255, uint8_t requestedID = 255); //Checks module with user selected commType
-	uint32_t extractLong(uint8_t spotToStart);																	 //Combine four bytes from payload into long
-	int32_t extractSignedLong(uint8_t spotToStart);																//Combine four bytes from payload into signed long (avoiding any ambiguity caused by casting)
-	uint16_t extractInt(uint8_t spotToStart);																	 //Combine two bytes from payload into int
-	int16_t extractSignedInt(int8_t spotToStart);
-	uint8_t extractByte(uint8_t spotToStart);																	 //Get byte from payload
-	int8_t extractSignedChar(uint8_t spotToStart);																 //Get signed 8-bit value from payload
 	void addToChecksum(uint8_t incoming);																		 //Given an incoming byte, adjust rollingChecksumA/B
 
 	boolean initGeofenceParams(); // Allocate RAM for currentGeofenceParams and initialize it
@@ -854,18 +857,19 @@ private:
 	boolean _printDebug = false;		//Flag to print the serial commands we are sending to the Serial port for debug
 	boolean _printLimitedDebug = false; //Flag to print limited debug messages. Useful for I2C debugging or high navigation rates
 
+	boolean ubx7FcheckDisabled = false; // Flag to indicate if the "7F" check should be ignored in checkUbloxI2C
+
 	//The packet buffers
 	//These are pointed at from within the ubxPacket
 	uint8_t payloadAck[2];				  // Holds the requested ACK/NACK
 	uint8_t payloadBuf[2];				  // Temporary buffer used to screen incoming packets or dump unrequested packets
-	// Default size for the packetCfg payload. .begin will increase this to MAX_PAYLOAD_SIZE if required. User can change with setPacketCfgPayloadSize before or after .begin
-	uint16_t packetCfgPayloadSize = 0; // Set to zero. Do not change this. .begin will increase this to MAX_PAYLOAD_SIZE if required.
-	uint8_t *payloadCfg = NULL; // Holds the requested data packet. RAM is allocated if/when required
+	size_t packetCfgPayloadSize = 0; // Size for the packetCfg payload. .begin will set this to MAX_PAYLOAD_SIZE if necessary. User can change with setPacketCfgPayloadSize
+	uint8_t *payloadCfg = NULL;
 
 	//Init the packet structures and init them with pointers to the payloadAck, payloadCfg and payloadBuf arrays
-	ubxPacket packetAck = {0, 0, 0, 0, 0, (uint8_t *)&payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetAck = {0, 0, 0, 0, 0, payloadAck, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 	ubxPacket packetCfg = {0, 0, 0, 0, 0, payloadCfg, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-	ubxPacket packetBuf = {0, 0, 0, 0, 0, (uint8_t *)&payloadBuf, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+	ubxPacket packetBuf = {0, 0, 0, 0, 0, payloadBuf, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
 	//Flag if this packet is unrequested (and so should be ignored and not copied into packetCfg or packetAck)
 	boolean ignoreThisPayload = false;
@@ -874,6 +878,9 @@ private:
 	//Data is stored in packetBuf until the requested class and ID can be validated
 	//If a match is seen, data is diverted into packetAck or packetCfg
 	sfe_ublox_packet_buffer_e activePacketBuffer = SFE_UBLOX_PACKET_PACKETBUF;
+
+	//Return true if this "automatic" message has storage allocated for it
+	boolean checkAutomatic(uint8_t Class, uint8_t ID);
 
 	//Limit checking of new data to every X ms
 	//If we are expecting an update every X Hz then we should check every half that amount of time

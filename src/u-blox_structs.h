@@ -44,7 +44,9 @@
 
 #include "SparkFun_Ublox_Arduino_Library.h"
 
+#ifndef DEF_NUM_SENS
 #define DEF_NUM_SENS 7 // The maximum number of ESF sensors
+#endif
 
 //Additional flags and pointers that need to be stored with each message type
 struct ubxAutomaticFlags
