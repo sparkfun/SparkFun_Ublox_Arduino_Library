@@ -44,5 +44,13 @@ In terms of RAM, you may find that your total RAM use is lower using v2 compared
 Migrating your code to v2.0
 ===========================================================
 
-- NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned as (int32_t)cm.
-- NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned as (int32_t)mm*0.1.
+- NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.relPosN (etc.) as (int32_t)cm.
+  - Helper functions (getRelPosN, getRelPosE, getRelPosD) provide backward-compatibility
+- NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.accN (etc.) as (uint32_t)mm*0.1.
+  - Helper functions (getRelPosAccN, getRelPosAccE, getRelPosAccD) provide backward-compatibility
+- getSurveyStatus now returns data via UBX_NAV_SVIN_t *packetUBXNAVSVIN
+  - svin.active is replaced with (boolean)packetUBXNAVSVIN->data.active
+  - svin.valid is replaced with (boolean)packetUBXNAVSVIN->data.valid
+  - svin.observationTime is replaced with packetUBXNAVSVIN->data.dur and is now uint32_t (not uint16_t)
+  - svin.MeanAccuracy is replaced with packetUBXNAVSVIN->data.meanAcc and is now uint32_t * 0.1mm (not float * m)
+  - Helper functions (getSurveyInActive, getSurveyInValid, getSurveyInObservationTime, getSurveyInMeanAccuracy) provide backward-compatibility

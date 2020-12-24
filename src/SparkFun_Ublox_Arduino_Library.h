@@ -518,6 +518,12 @@ public:
 
 	// get and set functions for all of the "automatic" message processing
 
+	// Add "auto" support for CFG RATE - because we use it for isConnected (to stop it being mugged by other messages)
+	boolean initPacketUBXCFGRATE(); // Allocate RAM for packetUBXCFGRATE and initialize it
+	boolean getNavigationFrequencyInternal(uint16_t maxWait = defaultMaxWait); //Get the number of nav solutions sent per second currently being output by module
+
+	// PVT
+
 	boolean initPacketUBXNAVPVT(); // Allocate RAM for packetUBXNAVPVT and initialize it
 	boolean getPVT(uint16_t maxWait = getPVTmaxWait);	//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency
@@ -539,6 +545,7 @@ public:
 	boolean assumeAutoDOP(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and DOP is send cyclically already
   void flushDOP(); //Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
 
+	// Add "auto" support for NAV SVIN - to avoid needing 'global' storage
 	boolean initPacketUBXNAVSVIN(); // Allocate RAM for packetUBXNAVSVIN and initialize it
 	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables
 
@@ -550,6 +557,63 @@ public:
 
 	boolean initPacketUBXNAVATT(); // Allocate RAM for packetUBXNAVATT and initialize it
 	boolean getVehAtt(uint16_t maxWait = 1100); // NAV ATT
+	boolean setAutoNAVATT(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic vehicle attitude reports at the navigation frequency
+  boolean setAutoNAVATT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic vehicle attitude reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVATT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and vehicle attitude is send cyclically already
+
+	boolean initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
+	boolean getNAVCLOCK(uint16_t maxWait = 1100); // NAV CLOCK
+	boolean setAutoNAVCLOCK(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic clock reports at the navigation frequency
+  boolean setAutoNAVCLOCK(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic clock reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVCLOCK(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and clock is send cyclically already
+
+	boolean initPacketUBXNAVHPPOSECEF(); // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
+	boolean getNAVHPPOSECEF(uint16_t maxWait = 1100); // NAV HPPOSECEF
+	boolean setAutoNAVHPPOSECEF(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic HPPOSECEF reports at the navigation frequency
+  boolean setAutoNAVHPPOSECEF(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSECEF reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVHPPOSECEF(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HPPOSECEF is send cyclically already
+
+	boolean initPacketUBXNAVODO(); // Allocate RAM for packetUBXNAVODO and initialize it
+	boolean getNAVODO(uint16_t maxWait = 1100); // NAV ODO
+	boolean setAutoNAVODO(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic ODO reports at the navigation frequency
+  boolean setAutoNAVODO(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ODO reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVODO(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ODO is send cyclically already
+
+	boolean initPacketUBXNAVPOSECEF(); // Allocate RAM for packetUBXNAVPOSECEF and initialize it
+	boolean getNAVPOSECEF(uint16_t maxWait = 1100); // NAV POSECEF
+	boolean setAutoNAVPOSECEF(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic POSECEF reports at the navigation frequency
+  boolean setAutoNAVPOSECEF(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic POSECEF reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVPOSECEF(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and POSECEF is send cyclically already
+
+	boolean initPacketUBXNAVPOSLLH(); // Allocate RAM for packetUBXNAVPOSLLH and initialize it
+	boolean getNAVPOSLLH(uint16_t maxWait = 1100); // NAV POSLLH
+	boolean setAutoNAVPOSLLH(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic POSLLH reports at the navigation frequency
+  boolean setAutoNAVPOSLLH(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic POSLLH reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVPOSLLH(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and POSLLH is send cyclically already
+
+	boolean initPacketUBXNAVSTATUS(); // Allocate RAM for packetUBXNAVSTATUS and initialize it
+	boolean getNAVSTATUS(uint16_t maxWait = 1100); // NAV STATUS
+	boolean setAutoNAVSTATUS(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic STATUS reports at the navigation frequency
+  boolean setAutoNAVSTATUS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic STATUS reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVSTATUS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and STATUS is send cyclically already
+
+	boolean initPacketUBXNAVTIMEUTC(); // Allocate RAM for packetUBXNAVTIMEUTC and initialize it
+	boolean getNAVTIMEUTC(uint16_t maxWait = 1100); // NAV TIMEUTC
+	boolean setAutoNAVTIMEUTC(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic TIMEUTC reports at the navigation frequency
+  boolean setAutoNAVTIMEUTC(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic TIMEUTC reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVTIMEUTC(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and TIMEUTC is send cyclically already
+
+	boolean initPacketUBXNAVVELECEF(); // Allocate RAM for packetUBXNAVVELECEF and initialize it
+	boolean getNAVVELECEF(uint16_t maxWait = 1100); // NAV VELECEF
+	boolean setAutoNAVVELECEF(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic VELECEF reports at the navigation frequency
+  boolean setAutoNAVVELECEF(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic VELECEF reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVVELECEF(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and VELECEF is send cyclically already
+
+	boolean initPacketUBXNAVVELNED(); // Allocate RAM for packetUBXNAVVELNED and initialize it
+	boolean getNAVVELNED(uint16_t maxWait = 1100); // NAV VELNED
+	boolean setAutoNAVVELNED(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic VELNED reports at the navigation frequency
+  boolean setAutoNAVVELNED(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic VELNED reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoNAVVELNED(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and VELNED is send cyclically already
 
 	// High navigation rate
 
@@ -575,18 +639,55 @@ public:
 
 	boolean initPacketUBXESFALG(); // Allocate RAM for packetUBXESFALG and initialize it
 	boolean getEsfAlignment(uint16_t maxWait = 1100); // ESF ALG
+	boolean setAutoESFALG(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF ALG reports
+  boolean setAutoESFALG(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF ALG reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoESFALG(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF ALG is send cyclically already
 
 	boolean initPacketUBXESFSTATUS(); // Allocate RAM for packetUBXESFSTATUS and initialize it
 	boolean getEsfInfo(uint16_t maxWait = 1100); // ESF STATUS
+	boolean setAutoESFSTATUS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF STATUS reports
+  boolean setAutoESFSTATUS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF STATUS reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoESFSTATUS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF STATUS is send cyclically already
 
 	boolean initPacketUBXESFINS(); // Allocate RAM for packetUBXESFINS and initialize it
 	boolean getEsfIns(uint16_t maxWait = 1100); // ESF INS
+	boolean setAutoESFINS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF INS reports
+  boolean setAutoESFINS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF INS reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoESFINS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF INS is send cyclically already
 
 	boolean initPacketUBXESFMEAS(); // Allocate RAM for packetUBXESFMEAS and initialize it
 	boolean getEsfDataInfo(uint16_t maxWait = 1100); // ESF MEAS
+	boolean setAutoESFMEAS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF MEAS reports
+  boolean setAutoESFMEAS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF MEAS reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoESFMEAS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF MEAS is send cyclically already
 
 	boolean initPacketUBXESFRAW(); // Allocate RAM for packetUBXESFRAW and initialize it
 	boolean getEsfRawDataInfo(uint16_t maxWait = 1100); // ESF RAW
+	boolean setAutoESFRAW(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF RAW reports
+  boolean setAutoESFRAW(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF RAW reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoESFRAW(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF RAW is send cyclically already
+
+	// Timing messages
+
+	boolean initPacketUBXTIMTM2(); // Allocate RAM for packetUBXTIMTM2 and initialize it
+	boolean getTIMTM2(uint16_t maxWait = 1100); // TIM TM2
+	boolean setAutoTIMTM2(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic TIM TM2 reports at the navigation frequency
+	boolean setAutoTIMTM2(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic TIM TM2 reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoTIMTM2(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and TIM TM2 is send cyclically already
+
+	// Receiver Manager Messages (RXM)
+
+	boolean initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it
+	boolean getRXMSFRBX(uint16_t maxWait = 1100); // RXM SFRBX
+	boolean setAutoRXMSFRBX(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic RXM SFRBX reports at the navigation frequency
+	boolean setAutoRXMSFRBX(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RXM SFRBX reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoRXMSFRBX(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and RXM SFRBX is send cyclically already
+
+	boolean initPacketUBXRXMRAWX(); // Allocate RAM for packetUBXRXMRAWX and initialize it
+	boolean getRXMRAWX(uint16_t maxWait = 1100); // RXM RAWX
+	boolean setAutoRXMRAWX(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic RXM RAWX reports at the navigation frequency
+	boolean setAutoRXMRAWX(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RXM RAWX reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean assumeAutoRXMRAWX(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and RXM RAWX is send cyclically already
 
 	// Helper functions for PVT
 
@@ -650,6 +751,28 @@ public:
   uint16_t getHorizontalDOP(uint16_t maxWait = getDOPmaxWait);
   uint16_t getNorthingDOP(uint16_t maxWait = getDOPmaxWait);
   uint16_t getEastingDOP(uint16_t maxWait = getDOPmaxWait);
+
+	// Helper functions for ESF
+
+	boolean getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
+	boolean getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
+	boolean getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sensorStatus, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
+
+	// Helper functions for SVIN
+
+	boolean getSurveyInActive(uint16_t maxWait = defaultMaxWait);
+	boolean getSurveyInValid(uint16_t maxWait = defaultMaxWait);
+	uint16_t getSurveyInObservationTime(uint16_t maxWait = defaultMaxWait); // Truncated to 65535 seconds
+	float getSurveyInMeanAccuracy(uint16_t maxWait = defaultMaxWait); // Returned as m
+
+	// Helper functions for RELPOSNED
+
+	float getRelPosN(uint16_t maxWait = defaultMaxWait); // Returned as m
+	float getRelPosE(uint16_t maxWait = defaultMaxWait); // Returned as m
+	float getRelPosD(uint16_t maxWait = defaultMaxWait); // Returned as m
+	float getRelPosAccN(uint16_t maxWait = defaultMaxWait); // Returned as m
+	float getRelPosAccE(uint16_t maxWait = defaultMaxWait); // Returned as m
+	float getRelPosAccD(uint16_t maxWait = defaultMaxWait); // Returned as m
 
 	//Port configurations
 	boolean setPortOutput(uint8_t portID, uint8_t comSettings, uint16_t maxWait = defaultMaxWait); //Configure a given port to output UBX, NMEA, RTCM3 or a combination thereof
@@ -782,34 +905,58 @@ public:
 
 	// Pointers to storage for the "automatic" messages
 
+	UBX_CFG_RATE_t *packetUBXCFGRATE = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_DOP_t *packetUBXNAVDOP = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_NAV_DOP_t *packetUBXNAVDOPcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_DOP_data_t *packetUBXNAVDOPcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_ATT_t *packetUBXNAVATT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_NAV_ATT_t *packetUBXNAVATTcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_ATT_data_t *packetUBXNAVATTcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_PVT_t *packetUBXNAVPVT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_NAV_PVT_t *packetUBXNAVPVTcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_PVT_data_t *packetUBXNAVPVTcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_HPPOSLLH_t *packetUBXNAVHPPOSLLH = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_NAV_HPPOSLLH_t *packetUBXNAVHPPOSLLHcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_HPPOSLLH_data_t *packetUBXNAVHPPOSLLHcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_SVIN_t *packetUBXNAVSVIN = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_NAV_SVIN_t *packetUBXNAVSVINcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_NAV_RELPOSNED_t *packetUBXNAVRELPOSNEDcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_RELPOSNED_data_t *packetUBXNAVRELPOSNEDcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_CLOCK_t *packetUBXNAVCLOCK = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_CLOCK_data_t *packetUBXNAVCLOCKcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_HPPOSECEF_t *packetUBXNAVHPPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_HPPOSECEF_data_t *packetUBXNAVHPPOSECEFcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_ODO_t *packetUBXNAVODO = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_ODO_data_t *packetUBXNAVODOcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_POSECEF_t *packetUBXNAVPOSECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_POSECEF_data_t *packetUBXNAVPOSECEFcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_POSLLH_t *packetUBXNAVPOSLLH = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_POSLLH_data_t *packetUBXNAVPOSLLHcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_STATUS_t *packetUBXNAVSTATUS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_STATUS_data_t *packetUBXNAVSTATUScopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_TIMEUTC_t *packetUBXNAVTIMEUTC = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_TIMEUTC_data_t *packetUBXNAVTIMEUTCcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_VELECEF_t *packetUBXNAVVELECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_VELECEF_data_t *packetUBXNAVVELECEFcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_NAV_VELNED_t *packetUBXNAVVELNED = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_NAV_VELNED_data_t *packetUBXNAVVELNEDcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_HNR_PVT_t *packetUBXHNRPVT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_HNR_PVT_t *packetUBXHNRPVTcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_HNR_PVT_data_t *packetUBXHNRPVTcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_HNR_ATT_t *packetUBXHNRATT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_HNR_ATT_t *packetUBXHNRATTcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_HNR_ATT_data_t *packetUBXHNRATTcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_HNR_INS_t *packetUBXHNRINS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_HNR_INS_t *packetUBXHNRINScopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_HNR_INS_data_t *packetUBXHNRINScopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_ESF_ALG_t *packetUBXESFALG = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_ESF_ALG_t *packetUBXESFALGcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_ESF_ALG_data_t *packetUBXESFALGcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_ESF_INS_t *packetUBXESFINS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_ESF_INS_t *packetUBXESFINScopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_ESF_INS_data_t *packetUBXESFINScopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_ESF_MEAS_t *packetUBXESFMEAS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_ESF_MEAS_t *packetUBXESFMEAScopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_ESF_MEAS_data_t *packetUBXESFMEAScopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_ESF_RAW_t *packetUBXESFRAW = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_ESF_RAW_t *packetUBXESFRAWcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_ESF_RAW_data_t *packetUBXESFRAWcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_ESF_STATUS_t *packetUBXESFSTATUS = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_ESF_STATUS_t *packetUBXESFSTATUScopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_ESF_STATUS_data_t *packetUBXESFSTATUScopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_TIM_TM2_t *packetUBXTIMTM2 = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_TIM_TM2_data_t *packetUBXTIMTM2copy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_RXM_SFRBX_t *packetUBXRXMSFRBX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_RXM_SFRBX_t *packetUBXRXMSFRBXcopy = NULL; // Copy of the data - to be passed to the callback if required
+	UBX_RXM_RAWX_t *packetUBXRXMRAWX = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+	UBX_RXM_RAWX_t *packetUBXRXMRAWXcopy = NULL; // Copy of the data - to be passed to the callback if required
 
 	uint16_t rtcmFrameCounter = 0; //Tracks the type of incoming byte inside RTCM frame
 
