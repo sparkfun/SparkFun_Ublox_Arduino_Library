@@ -464,7 +464,9 @@ typedef struct
       uint32_t sAcc : 1;
       uint32_t headAcc : 1;
       uint32_t pDOP : 1;
+
       uint32_t invalidLlh : 1;
+
       uint32_t headVeh : 1;
       uint32_t magDec : 1;
       uint32_t magAcc : 1;
@@ -975,6 +977,8 @@ typedef struct
 
 // UBX-RXM-SFRBX (0x02 0x13): Broadcast navigation data subframe
 // Note: length is variable
+// Note: on protocol version 17: numWords is (0..16)
+//       on protocol version 18+: numWords is (0..10)
 const uint8_t UBX_RXM_SFRBX_MAX_WORDS = 16;
 const uint16_t UBX_RXM_SFRBX_MAX_LEN = 8 + (4 * UBX_RXM_SFRBX_MAX_WORDS);
 
@@ -985,9 +989,9 @@ typedef struct
   uint8_t reserved1;
   uint8_t freqId; // GLONASS frequency slot
   uint8_t numWords; // The number of data words contained in this message (0..16)
-  uint8_t reserved2;
+  uint8_t chn; // The tracking channel number the message was received on
   uint8_t version; // Message version (0x01 for this version)
-  uint8_t reserved3;
+  uint8_t reserved2;
   uint32_t dwrd[UBX_RXM_SFRBX_MAX_WORDS]; // The data words
 } UBX_RXM_SFRBX_data_t;
 

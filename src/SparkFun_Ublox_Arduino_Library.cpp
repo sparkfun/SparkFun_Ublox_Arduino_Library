@@ -1067,23 +1067,57 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 {
   switch (msg->cls)
   {
-  case UBX_CLASS_CFG:
-    if (msg->id == UBX_CFG_RATE && msg->len == UBX_CFG_RATE_LEN)
+  case UBX_CLASS_NAV:
+    if (msg->id == UBX_NAV_POSECEF && msg->len == UBX_NAV_POSECEF_LEN)
     {
       //Parse various byte fields into storage - but only if we have memory allocated for it
-      if (packetUBXCFGRATE != NULL)
+      if (packetUBXNAVPOSECEF != NULL)
       {
-        packetUBXCFGRATE->data.measRate = extractInt(msg, 0);
-        packetUBXCFGRATE->data.navRate = extractInt(msg, 2);
-        packetUBXCFGRATE->data.timeRef = extractInt(msg, 4);
+        packetUBXNAVPOSECEF->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVPOSECEF->data.ecefX = extractSignedLong(msg, 4);
+        packetUBXNAVPOSECEF->data.ecefY = extractSignedLong(msg, 8);
+        packetUBXNAVPOSECEF->data.ecefZ = extractSignedLong(msg, 12);
+        packetUBXNAVPOSECEF->data.pAcc = extractLong(msg, 16);
 
         //Mark all datums as fresh (not read before)
-        packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+        packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
-    break;
-  case UBX_CLASS_NAV:
-    if (msg->id == UBX_NAV_DOP && msg->len == UBX_NAV_DOP_LEN)
+    else if (msg->id == UBX_NAV_POSLLH && msg->len == UBX_NAV_POSLLH_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVPOSLLH != NULL)
+      {
+        packetUBXNAVPOSLLH->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVPOSLLH->data.lon = extractSignedLong(msg, 4);
+        packetUBXNAVPOSLLH->data.lat = extractSignedLong(msg, 8);
+        packetUBXNAVPOSLLH->data.height = extractSignedLong(msg, 12);
+        packetUBXNAVPOSLLH->data.hMSL = extractSignedLong(msg, 16);
+        packetUBXNAVPOSLLH->data.hAcc = extractLong(msg, 20);
+        packetUBXNAVPOSLLH->data.vAcc = extractLong(msg, 24);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVPOSLLH->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_NAV_STATUS && msg->len == UBX_NAV_STATUS_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVSTATUS != NULL)
+      {
+        packetUBXNAVSTATUS->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVSTATUS->data.gpsFix = extractByte(msg, 4);
+        packetUBXNAVSTATUS->data.flags.all = extractByte(msg, 5);
+        packetUBXNAVSTATUS->data.fixStat.all = extractByte(msg, 6);
+        packetUBXNAVSTATUS->data.flags2.all = extractByte(msg, 7);
+        packetUBXNAVSTATUS->data.ttff = extractLong(msg, 8);
+        packetUBXNAVSTATUS->data.msss = extractLong(msg, 12);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_NAV_DOP && msg->len == UBX_NAV_DOP_LEN)
     {
       //Parse various byte fields into storage - but only if we have memory allocated for it
       if (packetUBXNAVDOP != NULL)
@@ -1096,6 +1130,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVDOP->data.hDOP = extractInt(msg, 12);
         packetUBXNAVDOP->data.nDOP = extractInt(msg, 14);
         packetUBXNAVDOP->data.eDOP = extractInt(msg, 16);
+
+        //Mark all datums as fresh (not read before)
         packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
@@ -1112,6 +1148,8 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVATT->data.accRoll = extractLong(msg, 20);
         packetUBXNAVATT->data.accPitch = extractLong(msg, 24);
         packetUBXNAVATT->data.accHeading = extractLong(msg, 28);
+
+        //Mark all datums as fresh (not read before)
         packetUBXNAVATT->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
@@ -1158,6 +1196,75 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0xFFFFFFFF;
       }
     }
+    else if (msg->id == UBX_NAV_ODO && msg->len == UBX_NAV_ODO_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVODO != NULL)
+      {
+        packetUBXNAVODO->data.version = extractByte(msg, 0);
+        packetUBXNAVODO->data.iTOW = extractLong(msg, 4);
+        packetUBXNAVODO->data.distance = extractLong(msg, 8);
+        packetUBXNAVODO->data.totalDistance = extractLong(msg, 12);
+        packetUBXNAVODO->data.distanceStd = extractLong(msg, 16);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVODO->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_NAV_VELECEF && msg->len == UBX_NAV_VELECEF_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVVELECEF != NULL)
+      {
+        packetUBXNAVVELECEF->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVVELECEF->data.ecefVX = extractSignedLong(msg, 4);
+        packetUBXNAVVELECEF->data.ecefVY = extractSignedLong(msg, 8);
+        packetUBXNAVVELECEF->data.ecefVZ = extractSignedLong(msg, 12);
+        packetUBXNAVVELECEF->data.sAcc = extractLong(msg, 16);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_NAV_VELNED && msg->len == UBX_NAV_VELNED_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVVELNED != NULL)
+      {
+        packetUBXNAVVELNED->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVVELNED->data.velN = extractSignedLong(msg, 4);
+        packetUBXNAVVELNED->data.velE = extractSignedLong(msg, 8);
+        packetUBXNAVVELNED->data.velD = extractSignedLong(msg, 12);
+        packetUBXNAVVELNED->data.speed = extractLong(msg, 16);
+        packetUBXNAVVELNED->data.gSpeed = extractLong(msg, 20);
+        packetUBXNAVVELNED->data.heading = extractSignedLong(msg, 24);
+        packetUBXNAVVELNED->data.sAcc = extractLong(msg, 28);
+        packetUBXNAVVELNED->data.cAcc = extractLong(msg, 32);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_NAV_HPPOSECEF && msg->len == UBX_NAV_HPPOSECEF_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVHPPOSECEF != NULL)
+      {
+        packetUBXNAVHPPOSECEF->data.version = extractByte(msg, 0);
+        packetUBXNAVHPPOSECEF->data.iTOW = extractLong(msg, 4);
+        packetUBXNAVHPPOSECEF->data.ecefX = extractSignedLong(msg, 8);
+        packetUBXNAVHPPOSECEF->data.ecefY = extractSignedLong(msg, 12);
+        packetUBXNAVHPPOSECEF->data.ecefZ = extractSignedLong(msg, 16);
+        packetUBXNAVHPPOSECEF->data.ecefXHp = extractSignedChar(msg, 20);
+        packetUBXNAVHPPOSECEF->data.ecefYHp = extractSignedChar(msg, 21);
+        packetUBXNAVHPPOSECEF->data.ecefZHp = extractSignedChar(msg, 22);
+        packetUBXNAVHPPOSECEF->data.flags.all = extractByte(msg, 23);
+        packetUBXNAVHPPOSECEF->data.pAcc = extractLong(msg, 24);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == UBX_NAV_HPPOSLLH_LEN)
     {
       //Parse various byte fields into storage - but only if we have memory allocated for it
@@ -1179,6 +1286,41 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_NAV_TIMEUTC && msg->len == UBX_NAV_TIMEUTC_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVTIMEUTC != NULL)
+      {
+        packetUBXNAVTIMEUTC->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVTIMEUTC->data.tAcc = extractLong(msg, 4);
+        packetUBXNAVTIMEUTC->data.nano = extractSignedLong(msg, 8);
+        packetUBXNAVTIMEUTC->data.year = extractInt(msg, 12);
+        packetUBXNAVTIMEUTC->data.month = extractByte(msg, 14);
+        packetUBXNAVTIMEUTC->data.day = extractByte(msg, 15);
+        packetUBXNAVTIMEUTC->data.hour = extractByte(msg, 16);
+        packetUBXNAVTIMEUTC->data.min = extractByte(msg, 17);
+        packetUBXNAVTIMEUTC->data.sec = extractByte(msg, 18);
+        packetUBXNAVTIMEUTC->data.valid.all = extractByte(msg, 19);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVTIMEUTC->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_NAV_CLOCK && msg->len == UBX_NAV_CLOCK_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXNAVCLOCK != NULL)
+      {
+        packetUBXNAVCLOCK->data.iTOW = extractLong(msg, 0);
+        packetUBXNAVCLOCK->data.clkB = extractSignedLong(msg, 4);
+        packetUBXNAVCLOCK->data.clkD = extractSignedLong(msg, 8);
+        packetUBXNAVCLOCK->data.tAcc = extractLong(msg, 12);
+        packetUBXNAVCLOCK->data.fAcc = extractLong(msg, 16);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
     else if (msg->id == UBX_NAV_SVIN && msg->len == UBX_NAV_SVIN_LEN)
@@ -1258,6 +1400,207 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       }
     }
     break;
+  case UBX_CLASS_RXM:
+    if (msg->id == UBX_RXM_SFRBX)
+    // Note: length is variable
+    // Note: on protocol version 17: numWords is (0..16)
+    //       on protocol version 18+: numWords is (0..10)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXRXMSFRBX != NULL)
+      {
+        packetUBXRXMSFRBX->data.gnssId = extractByte(msg, 0);
+        packetUBXRXMSFRBX->data.svId = extractByte(msg, 1);
+        packetUBXRXMSFRBX->data.freqId = extractByte(msg, 3);
+        packetUBXRXMSFRBX->data.numWords = extractByte(msg, 4);
+        packetUBXRXMSFRBX->data.chn = extractByte(msg, 5);
+        packetUBXRXMSFRBX->data.version = extractByte(msg, 6);
+
+        for (uint8_t i = 0; (i < UBX_RXM_SFRBX_MAX_WORDS) && (i < packetUBXRXMSFRBX->data.numWords)
+          && ((i * 4) < (msg->len - 8)); i++)
+        {
+          packetUBXRXMSFRBX->data.dwrd[i] = extractLong(msg, 8 + (i * 4));
+        }
+
+        //Mark all datums as fresh (not read before)
+        packetUBXRXMSFRBX->moduleQueried = true;
+      }
+    }
+    else if (msg->id == UBX_RXM_RAWX)
+    // Note: length is variable
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXRXMRAWX != NULL)
+      {
+        for (uint8_t i = 0; i < 8; i++)
+        {
+          packetUBXRXMRAWX->header.rcvTow[i] = extractByte(msg, i);
+        }
+        packetUBXRXMRAWX->header.week = extractInt(msg, 8);
+        packetUBXRXMRAWX->header.leapS = extractSignedChar(msg, 10);
+        packetUBXRXMRAWX->header.numMeas = extractByte(msg, 11);
+        packetUBXRXMRAWX->header.recStat.all = extractByte(msg, 12);
+        packetUBXRXMRAWX->header.version = extractByte(msg, 13);
+
+        for (uint8_t i = 0; (i < UBX_RXM_RAWX_MAX_BLOCKS) && (i < packetUBXRXMRAWX->header.numMeas)
+          && ((((uint16_t)i) * 32) < (msg->len - 16)); i++)
+        {
+          uint16_t offset = (((uint16_t)i) * 32) + 16;
+          for (uint8_t j = 0; j < 8; j++)
+          {
+            packetUBXRXMRAWX->blocks[i].prMes[j] = extractByte(msg, offset + j);
+            packetUBXRXMRAWX->blocks[i].cpMes[j] = extractByte(msg, offset + 8 + j);
+            if (j < 4)
+              packetUBXRXMRAWX->blocks[i].doMes[j] = extractByte(msg, offset + 16 + j);
+          }
+          packetUBXRXMRAWX->blocks[i].gnssId = extractByte(msg, offset + 20);
+          packetUBXRXMRAWX->blocks[i].svId = extractByte(msg, offset + 21);
+          packetUBXRXMRAWX->blocks[i].sigId = extractByte(msg, offset + 22);
+          packetUBXRXMRAWX->blocks[i].freqId = extractByte(msg, offset + 23);
+          packetUBXRXMRAWX->blocks[i].lockTime = extractInt(msg, offset + 24);
+          packetUBXRXMRAWX->blocks[i].cno = extractByte(msg, offset + 26);
+          packetUBXRXMRAWX->blocks[i].prStdev = extractByte(msg, offset + 27);
+          packetUBXRXMRAWX->blocks[i].cpStdev = extractByte(msg, offset + 28);
+          packetUBXRXMRAWX->blocks[i].doStdev = extractByte(msg, offset + 29);
+          packetUBXRXMRAWX->blocks[i].trkStat.all = extractByte(msg, offset + 30);
+        }
+
+        //Mark all datums as fresh (not read before)
+        packetUBXRXMRAWX->moduleQueried = true;
+      }
+    }
+    break;
+  case UBX_CLASS_CFG:
+    if (msg->id == UBX_CFG_RATE && msg->len == UBX_CFG_RATE_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXCFGRATE != NULL)
+      {
+        packetUBXCFGRATE->data.measRate = extractInt(msg, 0);
+        packetUBXCFGRATE->data.navRate = extractInt(msg, 2);
+        packetUBXCFGRATE->data.timeRef = extractInt(msg, 4);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    break;
+  case UBX_CLASS_TIM:
+    if (msg->id == UBX_TIM_TM2 && msg->len == UBX_TIM_TM2_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXTIMTM2 != NULL)
+      {
+        packetUBXTIMTM2->data.ch = extractByte(msg, 0);
+        packetUBXTIMTM2->data.flags.all = extractByte(msg, 1);
+        packetUBXTIMTM2->data.count = extractInt(msg, 2);
+        packetUBXTIMTM2->data.wnR = extractInt(msg, 4);
+        packetUBXTIMTM2->data.wnF = extractInt(msg, 6);
+        packetUBXTIMTM2->data.towMsR = extractLong(msg, 8);
+        packetUBXTIMTM2->data.towSubMsR = extractLong(msg, 12);
+        packetUBXTIMTM2->data.towMsF = extractLong(msg, 16);
+        packetUBXTIMTM2->data.towSubMsF = extractLong(msg, 20);
+        packetUBXTIMTM2->data.accEst = extractLong(msg, 24);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    break;
+  case UBX_CLASS_ESF:
+    if (msg->id == UBX_ESF_ALG && msg->len == UBX_ESF_ALG_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXESFALG != NULL)
+      {
+        packetUBXESFALG->data.iTOW = extractLong(msg, 0);
+        packetUBXESFALG->data.version = extractByte(msg, 4);
+        packetUBXESFALG->data.flags.all = extractByte(msg, 5);
+        packetUBXESFALG->data.error.all = extractByte(msg, 6);
+        packetUBXESFALG->data.yaw = extractLong(msg, 8);
+        packetUBXESFALG->data.pitch = extractSignedInt(msg, 12);
+        packetUBXESFALG->data.roll = extractSignedInt(msg, 14);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXESFALG->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_ESF_INS && msg->len == UBX_ESF_INS_LEN)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXESFINS != NULL)
+      {
+        packetUBXESFINS->data.bitfield0.all = extractLong(msg, 0);
+        packetUBXESFINS->data.iTOW = extractLong(msg, 8);
+        packetUBXESFINS->data.xAngRate = extractSignedLong(msg, 12);
+        packetUBXESFINS->data.yAngRate = extractSignedLong(msg, 16);
+        packetUBXESFINS->data.zAngRate = extractSignedLong(msg, 20);
+        packetUBXESFINS->data.xAccel = extractSignedLong(msg, 24);
+        packetUBXESFINS->data.yAccel = extractSignedLong(msg, 28);
+        packetUBXESFINS->data.zAccel = extractSignedLong(msg, 32);
+
+        //Mark all datums as fresh (not read before)
+        packetUBXESFINS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_ESF_MEAS)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXESFMEAS != NULL)
+      {
+        packetUBXESFMEAS->data.timeTag = extractLong(msg, 0);
+        packetUBXESFMEAS->data.flags.all = extractInt(msg, 4);
+        packetUBXESFMEAS->data.id = extractInt(msg, 6);
+        for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFMEAS->data.flags.bits.numMeas)
+          && ((i * 4) < (msg->len - 8)); i++)
+        {
+          packetUBXESFMEAS->data.data[i].data.all = extractLong(msg, 8 + (i * 4));
+        }
+        if (msg->len > (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4)))
+          packetUBXESFMEAS->data.calibTtag = extractLong(msg, 8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
+
+        //Mark all datums as fresh (not read before)
+        packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_ESF_RAW)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXESFRAW != NULL)
+      {
+        for (int i = 0; (i < DEF_NUM_SENS) && ((i * 8) < (msg->len - 4)); i++)
+        {
+          packetUBXESFRAW->data.data[i].data.all = extractLong(msg, 8 + (i * 8));
+          packetUBXESFRAW->data.data[i].sTag = extractLong(msg, 8 + (i * 8) + 4);
+        }
+
+        //Mark all datums as fresh (not read before)
+        packetUBXESFRAW->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    else if (msg->id == UBX_ESF_STATUS)
+    {
+      //Parse various byte fields into storage - but only if we have memory allocated for it
+      if (packetUBXESFSTATUS != NULL)
+      {
+        packetUBXESFSTATUS->data.iTOW = extractLong(msg, 0);
+        packetUBXESFSTATUS->data.version = extractByte(msg, 4);
+        packetUBXESFSTATUS->data.fusionMode = extractByte(msg, 12);
+        packetUBXESFSTATUS->data.numSens = extractByte(msg, 15);
+        for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFSTATUS->data.numSens)
+          && ((i * 4) < (msg->len - 16)); i++)
+        {
+          packetUBXESFSTATUS->data.status[i].sensStatus1.all = extractByte(msg, 16 + (i * 4) + 0);
+          packetUBXESFSTATUS->data.status[i].sensStatus2.all = extractByte(msg, 16 + (i * 4) + 1);
+          packetUBXESFSTATUS->data.status[i].freq = extractByte(msg, 16 + (i * 4) + 2);
+          packetUBXESFSTATUS->data.status[i].faults.all = extractByte(msg, 16 + (i * 4) + 3);
+        }
+
+        //Mark all datums as fresh (not read before)
+        packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+      }
+    }
+    break;
   case UBX_CLASS_HNR:
     if (msg->id == UBX_HNR_PVT && msg->len == UBX_HNR_PVT_LEN)
     {
@@ -1328,100 +1671,6 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXHNRINS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
       }
     }
-    break;
-    case UBX_CLASS_ESF:
-      if (msg->id == UBX_ESF_ALG && msg->len == UBX_ESF_ALG_LEN)
-      {
-        //Parse various byte fields into storage - but only if we have memory allocated for it
-        if (packetUBXESFALG != NULL)
-        {
-          packetUBXESFALG->data.iTOW = extractLong(msg, 0);
-          packetUBXESFALG->data.version = extractByte(msg, 4);
-          packetUBXESFALG->data.flags.all = extractByte(msg, 5);
-          packetUBXESFALG->data.error.all = extractByte(msg, 6);
-          packetUBXESFALG->data.yaw = extractLong(msg, 8);
-          packetUBXESFALG->data.pitch = extractSignedInt(msg, 12);
-          packetUBXESFALG->data.roll = extractSignedInt(msg, 14);
-
-          //Mark all datums as fresh (not read before)
-          packetUBXESFALG->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
-        }
-      }
-      else if (msg->id == UBX_ESF_INS && msg->len == UBX_ESF_INS_LEN)
-      {
-        //Parse various byte fields into storage - but only if we have memory allocated for it
-        if (packetUBXESFINS != NULL)
-        {
-          packetUBXESFINS->data.bitfield0.all = extractLong(msg, 0);
-          packetUBXESFINS->data.iTOW = extractLong(msg, 8);
-          packetUBXESFINS->data.xAngRate = extractSignedLong(msg, 12);
-          packetUBXESFINS->data.yAngRate = extractSignedLong(msg, 16);
-          packetUBXESFINS->data.zAngRate = extractSignedLong(msg, 20);
-          packetUBXESFINS->data.xAccel = extractSignedLong(msg, 24);
-          packetUBXESFINS->data.yAccel = extractSignedLong(msg, 28);
-          packetUBXESFINS->data.zAccel = extractSignedLong(msg, 32);
-
-          //Mark all datums as fresh (not read before)
-          packetUBXESFINS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
-        }
-      }
-      else if (msg->id == UBX_ESF_MEAS)
-      {
-        //Parse various byte fields into storage - but only if we have memory allocated for it
-        if (packetUBXESFMEAS != NULL)
-        {
-          packetUBXESFMEAS->data.timeTag = extractLong(msg, 0);
-          packetUBXESFMEAS->data.flags.all = extractInt(msg, 4);
-          packetUBXESFMEAS->data.id = extractInt(msg, 6);
-          for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFMEAS->data.flags.bits.numMeas)
-            && ((i * 4) < (msg->len - 8)); i++)
-          {
-            packetUBXESFMEAS->data.data[i].data.all = extractLong(msg, 8 + (i * 4));
-          }
-          if (msg->len > (8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4)))
-            packetUBXESFMEAS->data.calibTtag = extractLong(msg, 8 + (packetUBXESFMEAS->data.flags.bits.numMeas * 4));
-
-          //Mark all datums as fresh (not read before)
-          packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
-        }
-      }
-      else if (msg->id == UBX_ESF_RAW)
-      {
-        //Parse various byte fields into storage - but only if we have memory allocated for it
-        if (packetUBXESFRAW != NULL)
-        {
-          for (int i = 0; (i < DEF_NUM_SENS) && ((i * 8) < (msg->len - 4)); i++)
-          {
-            packetUBXESFRAW->data.data[i].data.all = extractLong(msg, 8 + (i * 8));
-            packetUBXESFRAW->data.data[i].sTag = extractLong(msg, 8 + (i * 8) + 4);
-          }
-
-          //Mark all datums as fresh (not read before)
-          packetUBXESFRAW->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
-        }
-      }
-      else if (msg->id == UBX_ESF_STATUS)
-      {
-        //Parse various byte fields into storage - but only if we have memory allocated for it
-        if (packetUBXESFSTATUS != NULL)
-        {
-          packetUBXESFSTATUS->data.iTOW = extractLong(msg, 0);
-          packetUBXESFSTATUS->data.version = extractByte(msg, 4);
-          packetUBXESFSTATUS->data.fusionMode = extractByte(msg, 12);
-          packetUBXESFSTATUS->data.numSens = extractByte(msg, 15);
-          for (int i = 0; (i < DEF_NUM_SENS) && (i < packetUBXESFSTATUS->data.numSens)
-            && ((i * 4) < (msg->len - 16)); i++)
-          {
-            packetUBXESFSTATUS->data.status[i].sensStatus1.all = extractByte(msg, 16 + (i * 4) + 0);
-            packetUBXESFSTATUS->data.status[i].sensStatus2.all = extractByte(msg, 16 + (i * 4) + 1);
-            packetUBXESFSTATUS->data.status[i].freq = extractByte(msg, 16 + (i * 4) + 2);
-            packetUBXESFSTATUS->data.status[i].faults.all = extractByte(msg, 16 + (i * 4) + 3);
-          }
-
-          //Mark all datums as fresh (not read before)
-          packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
-        }
-      }
     break;
   }
 }
