@@ -514,6 +514,15 @@ boolean SFE_UBLOX_GPS::checkAutomatic(uint8_t Class, uint8_t ID)
     {
       switch (ID)
       {
+        case UBX_NAV_POSECEF:
+          if (packetUBXNAVPOSECEF != NULL) result = true;
+        break;
+        case UBX_NAV_POSLLH:
+          if (packetUBXNAVPOSLLH != NULL) result = true;
+        break;
+        case UBX_NAV_STATUS:
+          if (packetUBXNAVSTATUS != NULL) result = true;
+        break;
         case UBX_NAV_DOP:
           if (packetUBXNAVDOP != NULL) result = true;
         break;
@@ -523,8 +532,26 @@ boolean SFE_UBLOX_GPS::checkAutomatic(uint8_t Class, uint8_t ID)
         case UBX_NAV_PVT:
           if (packetUBXNAVPVT != NULL) result = true;
         break;
+        case UBX_NAV_ODO:
+          if (packetUBXNAVODO != NULL) result = true;
+        break;
+        case UBX_NAV_VELECEF:
+          if (packetUBXNAVVELECEF != NULL) result = true;
+        break;
+        case UBX_NAV_VELNED:
+          if (packetUBXNAVVELNED != NULL) result = true;
+        break;
+        case UBX_NAV_HPPOSECEF:
+          if (packetUBXNAVHPPOSECEF != NULL) result = true;
+        break;
         case UBX_NAV_HPPOSLLH:
           if (packetUBXNAVHPPOSLLH != NULL) result = true;
+        break;
+        case UBX_NAV_TIMEUTC:
+          if (packetUBXNAVTIMEUTC != NULL) result = true;
+        break;
+        case UBX_NAV_CLOCK:
+          if (packetUBXNAVCLOCK != NULL) result = true;
         break;
         case UBX_NAV_SVIN:
           if (packetUBXNAVSVIN != NULL) result = true;
@@ -535,18 +562,35 @@ boolean SFE_UBLOX_GPS::checkAutomatic(uint8_t Class, uint8_t ID)
       }
     }
     break;
-    case UBX_CLASS_HNR:
+    case UBX_CLASS_RXM:
     {
       switch (ID)
       {
-        case UBX_HNR_PVT:
-          if (packetUBXHNRPVT != NULL) result = true;
+        case UBX_RXM_SFRBX:
+          if (packetUBXRXMSFRBX != NULL) result = true;
         break;
-        case UBX_HNR_ATT:
-          if (packetUBXHNRATT != NULL) result = true;
+        case UBX_RXM_RAWX:
+          if (packetUBXRXMRAWX != NULL) result = true;
         break;
-        case UBX_HNR_INS:
-          if (packetUBXHNRINS != NULL) result = true;
+      }
+    }
+    break;
+    case UBX_CLASS_CFG:
+    {
+      switch (ID)
+      {
+        case UBX_CFG_RATE:
+          if (packetUBXCFGRATE != NULL) result = true;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_TIM:
+    {
+      switch (ID)
+      {
+        case UBX_TIM_TM2:
+          if (packetUBXTIMTM2 != NULL) result = true;
         break;
       }
     }
@@ -569,6 +613,22 @@ boolean SFE_UBLOX_GPS::checkAutomatic(uint8_t Class, uint8_t ID)
         break;
         case UBX_ESF_STATUS:
           if (packetUBXESFSTATUS != NULL) result = true;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_HNR:
+    {
+      switch (ID)
+      {
+        case UBX_HNR_PVT:
+          if (packetUBXHNRPVT != NULL) result = true;
+        break;
+        case UBX_HNR_ATT:
+          if (packetUBXHNRATT != NULL) result = true;
+        break;
+        case UBX_HNR_INS:
+          if (packetUBXHNRINS != NULL) result = true;
         break;
       }
     }
