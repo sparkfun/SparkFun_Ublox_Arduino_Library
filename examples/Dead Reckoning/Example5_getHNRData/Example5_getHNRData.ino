@@ -63,28 +63,28 @@ void loop()
   if (myGPS.getHNRAtt(125) == true) // Request HNR Att data using a 125ms timeout
   {
     Serial.print(F("Roll: "));
-    Serial.print(myGPS.hnrAtt.roll);
+    Serial.print(myGPS.packetUBXHNRATT->data.roll);
     Serial.print(F(" Pitch: "));
-    Serial.print(myGPS.hnrAtt.pitch);
+    Serial.print(myGPS.packetUBXHNRATT->data.pitch);
     Serial.print(F(" Heading: "));
-    Serial.println(myGPS.hnrAtt.heading);
+    Serial.println(myGPS.packetUBXHNRATT->data.heading);
   }
   if (myGPS.getHNRDyn(125) == true) // Request HNR Dyn data using a 125ms timeout
   {
     Serial.print(F("xAccel: "));
-    Serial.print(myGPS.hnrVehDyn.xAccel);
+    Serial.print(myGPS.packetUBXHNRINS->data.xAccel);
     Serial.print(F(" yAccel: "));
-    Serial.print(myGPS.hnrVehDyn.yAccel);
+    Serial.print(myGPS.packetUBXHNRINS->data.yAccel);
     Serial.print(F(" zAccel: "));
-    Serial.println(myGPS.hnrVehDyn.zAccel);
+    Serial.println(myGPS.packetUBXHNRINS->data.zAccel);
   }
   if (myGPS.getHNRPVT(125) == true) // Request HNR PVT data using a 125ms timeout
   {
     Serial.print(F("ns: "));
-    Serial.print(myGPS.hnrPVT.nano);
+    Serial.print(myGPS.packetUBXHNRPVT->data.nano);
     Serial.print(F(" Lat: "));
-    Serial.print(myGPS.hnrPVT.lat);
+    Serial.print(myGPS.packetUBXHNRPVT->data.lat);
     Serial.print(F(" Lon: "));
-    Serial.println(myGPS.hnrPVT.lon);
+    Serial.println(myGPS.packetUBXHNRPVT->data.lon);
   }
 }

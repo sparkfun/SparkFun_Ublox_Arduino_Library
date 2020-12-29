@@ -59,6 +59,7 @@ void SFE_UBLOX_GPS::setPacketCfgPayloadSize(size_t payloadSize)
   {
     // Zero payloadSize? Dangerous! But we'll free the memory anyway...
     delete[] payloadCfg;
+    payloadCfg = NULL; // Redundant?
     packetCfg.payload = payloadCfg;
     if ((_printDebug == true) || (_printLimitedDebug == true))
       _debugSerial->println(F("setPacketCfgPayloadSize: Zero payloadSize! This will end _very_ badly..."));
@@ -553,6 +554,139 @@ boolean SFE_UBLOX_GPS::checkAutomatic(uint8_t Class, uint8_t ID)
   return (result);
 }
 
+//PRIVATE: Calculate how much RAM is needed to store the payload for a given automatic message
+uint16_t SFE_UBLOX_GPS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
+{
+  uint16_t maxSize = 0;
+  switch (Class)
+  {
+    case UBX_CLASS_NAV:
+    {
+      switch (ID)
+      {
+        case UBX_NAV_POSECEF:
+          maxSize = UBX_NAV_POSECEF_LEN;
+        break;
+        case UBX_NAV_POSLLH:
+          maxSize = UBX_NAV_POSLLH_LEN;
+        break;
+        case UBX_NAV_STATUS:
+          maxSize = UBX_NAV_STATUS_LEN;
+        break;
+        case UBX_NAV_DOP:
+          maxSize = UBX_NAV_DOP_LEN;
+        break;
+        case UBX_NAV_ATT:
+          maxSize = UBX_NAV_ATT_LEN;
+        break;
+        case UBX_NAV_PVT:
+          maxSize = UBX_NAV_PVT_LEN;
+        break;
+        case UBX_NAV_ODO:
+          maxSize = UBX_NAV_ODO_LEN;
+        break;
+        case UBX_NAV_VELECEF:
+          maxSize = UBX_NAV_VELECEF_LEN;
+        break;
+        case UBX_NAV_VELNED:
+          maxSize = UBX_NAV_VELNED_LEN;
+        break;
+        case UBX_NAV_HPPOSECEF:
+          maxSize = UBX_NAV_HPPOSECEF_LEN;
+        break;
+        case UBX_NAV_HPPOSLLH:
+          maxSize = UBX_NAV_HPPOSLLH_LEN;
+        break;
+        case UBX_NAV_TIMEUTC:
+          maxSize = UBX_NAV_TIMEUTC_LEN;
+        break;
+        case UBX_NAV_CLOCK:
+          maxSize = UBX_NAV_CLOCK_LEN;
+        break;
+        case UBX_NAV_SVIN:
+          maxSize = UBX_NAV_SVIN_LEN;
+        break;
+        case UBX_NAV_RELPOSNED:
+          maxSize = UBX_NAV_RELPOSNED_LEN_F9;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_RXM:
+    {
+      switch (ID)
+      {
+        case UBX_RXM_SFRBX:
+          maxSize = UBX_RXM_SFRBX_MAX_LEN;
+        break;
+        case UBX_RXM_RAWX:
+          maxSize = UBX_RXM_RAWX_MAX_LEN;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_CFG:
+    {
+      switch (ID)
+      {
+        case UBX_CFG_RATE:
+          maxSize = UBX_CFG_RATE_LEN;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_TIM:
+    {
+      switch (ID)
+      {
+        case UBX_TIM_TM2:
+          maxSize = UBX_TIM_TM2_LEN;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_ESF:
+    {
+      switch (ID)
+      {
+        case UBX_ESF_ALG:
+          maxSize = UBX_ESF_ALG_LEN;
+        break;
+        case UBX_ESF_INS:
+          maxSize = UBX_ESF_INS_LEN;
+        break;
+        case UBX_ESF_MEAS:
+          maxSize = UBX_ESF_MEAS_MAX_LEN;
+        break;
+        case UBX_ESF_RAW:
+          maxSize = UBX_ESF_RAW_MAX_LEN;
+        break;
+        case UBX_ESF_STATUS:
+          maxSize = UBX_ESF_STATUS_MAX_LEN;
+        break;
+      }
+    }
+    break;
+    case UBX_CLASS_HNR:
+    {
+      switch (ID)
+      {
+        case UBX_HNR_PVT:
+          maxSize = UBX_HNR_PVT_LEN;
+        break;
+        case UBX_HNR_ATT:
+          maxSize = UBX_HNR_ATT_LEN;
+        break;
+        case UBX_HNR_INS:
+          maxSize = UBX_HNR_INS_LEN;
+        break;
+      }
+    }
+    break;
+  }
+  return (maxSize);
+}
+
 //Processes NMEA and UBX binary sentences one byte at a time
 //Take a given byte and file it into the proper array
 void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
@@ -626,21 +760,56 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
         }
         //This is not an ACK and we do not have a complete class and ID match
-        //So let's check for an "automatic" message which has its own storage defined
+        //So let's check if this is an "automatic" message which has its own storage defined
         else if (checkAutomatic(packetBuf.cls, packetBuf.id))
         {
-          //This is not the message we were expecting but it has its own storage and so
-          //we start diverting data into incomingUBX (usually packetCfg) and process it anyway
-          activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
-          incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
-          incomingUBX->id = packetBuf.id;
-          incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
-          if (_printDebug == true)
+          //This is not the message we were expecting but it has its own storage and so we should process it anyway.
+          //We'll try to use packetAuto to buffer the message (so it can't overwrite anything in packetCfg).
+          //We need to allocate memory for the packetAuto payload (payloadAuto) - and delete it once
+          //reception is complete.
+          uint16_t maxPayload = getMaxPayloadSize(packetBuf.cls, packetBuf.id); // Calculate how much RAM we need
+          if (payloadAuto != NULL) // Check if memory is already allocated - this should be impossible!
           {
-            _debugSerial->print(F("process: incoming \"automatic\" message: Class: 0x"));
-            _debugSerial->print(packetBuf.cls, HEX);
-            _debugSerial->print(F(" ID: 0x"));
-            _debugSerial->println(packetBuf.id, HEX);
+            if (_printDebug == true)
+            {
+              _debugSerial->println(F("process: memory is already allocated for payloadAuto! Deleting..."));
+            }
+            delete[] payloadAuto;
+            payloadAuto = NULL; // Redundant?
+            packetAuto.payload = payloadAuto;
+          }
+          payloadAuto = new uint8_t[maxPayload]; // Allocate RAM for payloadAuto
+          packetAuto.payload = payloadAuto;
+          if (payloadAuto == NULL) // Check if the alloc failed
+          {
+            if (_printDebug == true)
+            {
+              _debugSerial->print(F("process: memory allocation failed for \"automatic\" message: Class: 0x"));
+              _debugSerial->print(packetBuf.cls, HEX);
+              _debugSerial->print(F(" ID: 0x"));
+              _debugSerial->println(packetBuf.id, HEX);
+              _debugSerial->println(F("process: \"automatic\" message could overwrite data"));
+            }
+            // The RAM allocation failed so fall back to using incomingUBX (usually packetCfg) even though we risk overwriting data
+            activePacketBuffer = SFE_UBLOX_PACKET_PACKETCFG;
+            incomingUBX->cls = packetBuf.cls; //Copy the class and ID into incomingUBX (usually packetCfg)
+            incomingUBX->id = packetBuf.id;
+            incomingUBX->counter = packetBuf.counter; //Copy over the .counter too
+          }
+          else
+          {
+            //The RAM allocation was successful so we start diverting data into packetAuto and process it
+            activePacketBuffer = SFE_UBLOX_PACKET_PACKETAUTO;
+            packetAuto.cls = packetBuf.cls; //Copy the class and ID into packetAuto
+            packetAuto.id = packetBuf.id;
+            packetAuto.counter = packetBuf.counter; //Copy over the .counter too
+            if (_printDebug == true)
+            {
+              _debugSerial->print(F("process: incoming \"automatic\" message: Class: 0x"));
+              _debugSerial->print(packetBuf.cls, HEX);
+              _debugSerial->print(F(" ID: 0x"));
+              _debugSerial->println(packetBuf.id, HEX);
+            }
           }
         }
         else
@@ -740,8 +909,10 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
       processUBX(incoming, &packetAck, requestedClass, requestedID);
     else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG)
       processUBX(incoming, incomingUBX, requestedClass, requestedID);
-    else // if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETBUF)
+    else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETBUF)
       processUBX(incoming, &packetBuf, requestedClass, requestedID);
+    else // if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
+      processUBX(incoming, &packetAuto, requestedClass, requestedID);
 
     //Finally, increment the frame counter
     ubxFrameCounter++;
@@ -829,15 +1000,20 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 
 //Given a character, file it away into the uxb packet structure
 //Set valid to VALID or NOT_VALID once sentence is completely received and passes or fails CRC
-//The payload portion of the packet can be 100s of bytes but the max array
-//size is packetCfgPayloadSize bytes. startingSpot can be set so we only record
-//a subset of bytes within a larger packet.
+//The payload portion of the packet can be 100s of bytes but the max array size is packetCfgPayloadSize bytes.
+//startingSpot can be set so we only record a subset of bytes within a larger packet.
 void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID)
 {
     //If incomingUBX is a user-defined custom packet, then the payload size could be different to packetCfgPayloadSize.
     //TO DO: update this to prevent an overrun when receiving an automatic message
     //       and the incomingUBX payload size is smaller than packetCfgPayloadSize.
-  size_t max_payload_size = (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG) ? packetCfgPayloadSize : 2;
+  size_t max_payload_size;
+  if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG)
+    max_payload_size = packetCfgPayloadSize;
+  else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
+    max_payload_size = getMaxPayloadSize(requestedClass, requestedID);
+  else
+    max_payload_size = 2;
   bool overrun = false;
 
   //Add all incoming bytes to the rolling checksum
@@ -994,6 +1170,15 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         _debugSerial->print(F(" Received: "));
         printPacket(incomingUBX);
       }
+    }
+
+    // Now that the packet is complete and has been processed, we need to delete the memory
+    // allocated for packetAuto
+    if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
+    {
+      delete[] payloadAuto;
+      payloadAuto = NULL; // Redundant?
+      packetAuto.payload = payloadAuto;
     }
   }
   else //Load this byte into the payload array

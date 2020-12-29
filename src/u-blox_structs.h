@@ -1304,6 +1304,8 @@ typedef struct
 
 // UBX-ESF-MEAS (0x10 0x02): External sensor fusion measurements
 // Note: length is variable
+const uint16_t UBX_ESF_MEAS_MAX_LEN = 8 + (4 * DEF_NUM_SENS) + 4;
+
 typedef struct
 {
   union
@@ -1370,6 +1372,8 @@ typedef struct
 
 // UBX-ESF-RAW (0x10 0x03): Raw sensor measurements
 // Note: length is variable
+const uint16_t UBX_ESF_RAW_MAX_LEN = 4 + (8 * DEF_NUM_SENS);
+
 typedef struct
 {
   union
@@ -1413,6 +1417,8 @@ typedef struct
 
 // UBX-ESF-STATUS (0x10 0x10): External sensor fusion status
 // Note: length is variable
+const uint16_t UBX_ESF_STATUS_MAX_LEN = 16 + (4 * DEF_NUM_SENS);
+
 typedef struct
 {
   union

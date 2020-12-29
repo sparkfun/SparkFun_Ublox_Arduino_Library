@@ -43,7 +43,7 @@ void setup()
 
   Wire.begin();
 
-  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
+  myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
@@ -69,28 +69,31 @@ void loop()
   if (usingAutoHNRAtt && (myGPS.getHNRAtt() == true)) // If setAutoHNRAtt was successful and new data is available
   {
     Serial.print(F("Roll: ")); // Print selected data
-    Serial.print(myGPS.hnrAtt.roll);
+    Serial.print(myGPS.packetUBXHNRATT->data.roll);
     Serial.print(F(" Pitch: "));
-    Serial.print(myGPS.hnrAtt.pitch);
+    Serial.print(myGPS.packetUBXHNRATT->data.pitch);
     Serial.print(F(" Heading: "));
-    Serial.println(myGPS.hnrAtt.heading);
+    Serial.println(myGPS.packetUBXHNRATT->data.heading);
+    myGPS.flushHNRATT(); // Mark data as stale
   }
   if (usingAutoHNRDyn && (myGPS.getHNRDyn() == true)) // If setAutoHNRDyn was successful and new data is available
   {
     Serial.print(F("xAccel: ")); // Print selected data
-    Serial.print(myGPS.hnrVehDyn.xAccel);
+    Serial.print(myGPS.packetUBXHNRINS->data.xAccel);
     Serial.print(F(" yAccel: "));
-    Serial.print(myGPS.hnrVehDyn.yAccel);
+    Serial.print(myGPS.packetUBXHNRINS->data.yAccel);
     Serial.print(F(" zAccel: "));
-    Serial.println(myGPS.hnrVehDyn.zAccel);
+    Serial.println(myGPS.packetUBXHNRINS->data.zAccel);
+    myGPS.flushHNRINS(); // Mark data as stale
   }
   if (usingAutoHNRPVT && (myGPS.getHNRPVT() == true)) // If setAutoHNRPVT was successful and new data is available
   {
     Serial.print(F("ns: ")); // Print selected data
-    Serial.print(myGPS.hnrPVT.nano);
+    Serial.print(myGPS.packetUBXHNRPVT->data.nano);
     Serial.print(F(" Lat: "));
-    Serial.print(myGPS.hnrPVT.lat);
+    Serial.print(myGPS.packetUBXHNRPVT->data.lat);
     Serial.print(F(" Lon: "));
-    Serial.println(myGPS.hnrPVT.lon);
+    Serial.println(myGPS.packetUBXHNRPVT->data.lon);
+    myGPS.flushHNRPVT(); // Mark data as stale
   }
 }
