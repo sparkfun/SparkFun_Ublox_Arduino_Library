@@ -23,7 +23,7 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GPS
 SFE_UBLOX_GPS myGPS;
 
 //#define USE_SERIAL1 // Uncomment this line to push the RTCM data from Serial1 to the module via I2C
