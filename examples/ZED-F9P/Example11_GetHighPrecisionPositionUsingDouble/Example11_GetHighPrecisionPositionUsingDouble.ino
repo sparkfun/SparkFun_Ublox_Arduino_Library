@@ -29,7 +29,7 @@
 #define myWire Wire // This will work on the Redboard Artemis and the Artemis Thing Plus using Qwiic
 //#define myWire Wire1 // Uncomment this line if you are using the extra SCL1/SDA1 pins (D17 and D16) on the Thing Plus
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GPS
 SFE_UBLOX_GPS myGPS;
 
 long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
