@@ -1,5 +1,5 @@
 /*
-	This is a library written for the Ublox ZED-F9P and NEO-M8P-2
+	This is a library written for the u-blox ZED-F9P and NEO-M8P-2
 	SparkFun sells these at its website: www.sparkfun.com
 	Do you like this library? Help support SparkFun. Buy a board!
 	https://www.sparkfun.com/products/15136
@@ -11,7 +11,7 @@
 	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
 
 	This library handles configuring and handling the responses
-	from a Ublox GPS module. Works with most modules from Ublox including
+	from a u-blox GPS module. Works with most modules from u-blox including
 	the Zed-F9P, NEO-M8P-2, NEO-M9N, ZOE-M8Q, SAM-M8Q, and many others.
 
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
@@ -250,7 +250,7 @@ int SFE_UBLOX_GPS::transferReadI2C(u8_t *buffer, u32_t num_bytes)
 	return err;
 }
 
-//Changes the serial baud rate of the Ublox module, can't return success/fail 'cause ACK from modem
+//Changes the serial baud rate of the u-blox module, can't return success/fail 'cause ACK from modem
 //is lost due to baud rate change
 void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t maxWait)
 {
@@ -287,7 +287,7 @@ void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t 
     }
 }
 
-//Changes the I2C address that the Ublox module responds to
+//Changes the I2C address that the u-blox module responds to
 //0x42 is the default but can be changed with this command
 bool SFE_UBLOX_GPS::setI2CAddress(uint8_t deviceAddress, uint16_t maxWait)
 {
@@ -364,10 +364,10 @@ bool SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass
             uint8_t lsb = read_buffer[1];
             if (lsb == 0xFF)
             {
-                //I believe this is a Ublox bug. Device should never present an 0xFF.
+                //I believe this is a u-blox bug. Device should never present an 0xFF.
                 if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
                 {
-                    printk("checkUbloxI2C: Ublox bug, length lsb is 0xFF\n");
+                    printk("checkUbloxI2C: u-blox bug, length lsb is 0xFF\n");
                 }
                 if (checksumFailurePin >= 0)
                 {
@@ -462,7 +462,7 @@ bool SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedClass
                         {
                             if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
                             {
-                                printk("checkUbloxU2C: Ublox error, module not ready with data\n");
+                                printk("checkUbloxU2C: u-blox error, module not ready with data\n");
                             }
                             k_msleep(5); //In logic analyzation, the module starting responding after 1.48ms
                             if (checksumFailurePin >= 0)
@@ -1614,7 +1614,7 @@ bool SFE_UBLOX_GPS::factoryDefault(uint16_t maxWait)
 
 //Given a group, ID and size, return the value of this config spot
 //The 32-bit key is put together from group/ID/size. See other getVal to send key directly.
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
 {
     //Create key
@@ -1634,7 +1634,7 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_
 //Given a key, return its value
 //This function takes a full 32-bit key
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
     packetCfg.cls = UBX_CLASS_CFG;
@@ -1693,7 +1693,7 @@ uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
 //Given a key, set a 16-bit value
 //This function takes a full 32-bit key
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
 {
     return setVal16(key, value, layer, maxWait);
@@ -1702,7 +1702,7 @@ uint8_t SFE_UBLOX_GPS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint1
 //Given a key, set a 16-bit value
 //This function takes a full 32-bit key
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
 {
     packetCfg.cls = UBX_CLASS_CFG;
@@ -1734,7 +1734,7 @@ uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uin
 //Given a key, set an 8-bit value
 //This function takes a full 32-bit key
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal8(uint32_t key, uint8_t value, uint8_t layer, uint16_t maxWait)
 {
     packetCfg.cls = UBX_CLASS_CFG;
@@ -1765,7 +1765,7 @@ uint8_t SFE_UBLOX_GPS::setVal8(uint32_t key, uint8_t value, uint8_t layer, uint1
 //Given a key, set a 32-bit value
 //This function takes a full 32-bit key
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal32(uint32_t key, uint32_t value, uint8_t layer, uint16_t maxWait)
 {
     packetCfg.cls = UBX_CLASS_CFG;
@@ -1799,7 +1799,7 @@ uint8_t SFE_UBLOX_GPS::setVal32(uint32_t key, uint32_t value, uint8_t layer, uin
 //Start defining a new UBX-CFG-VALSET ubxPacket
 //This function takes a full 32-bit key and 32-bit value
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::newCfgValset32(uint32_t key, uint32_t value, uint8_t layer)
 {
     packetCfg.cls = UBX_CLASS_CFG;
@@ -1833,7 +1833,7 @@ uint8_t SFE_UBLOX_GPS::newCfgValset32(uint32_t key, uint32_t value, uint8_t laye
 //Start defining a new UBX-CFG-VALSET ubxPacket
 //This function takes a full 32-bit key and 16-bit value
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::newCfgValset16(uint32_t key, uint16_t value, uint8_t layer)
 {
     packetCfg.cls = UBX_CLASS_CFG;
@@ -1865,7 +1865,7 @@ uint8_t SFE_UBLOX_GPS::newCfgValset16(uint32_t key, uint16_t value, uint8_t laye
 //Start defining a new UBX-CFG-VALSET ubxPacket
 //This function takes a full 32-bit key and 8-bit value
 //Default layer is BBR
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer)
 {
     packetCfg.cls = UBX_CLASS_CFG;
@@ -3150,7 +3150,7 @@ uint16_t SFE_UBLOX_GPS::getPDOP(uint16_t maxWait)
     return (pDOP);
 }
 
-//Get the current protocol version of the Ublox module we're communicating with
+//Get the current protocol version of the u-blox module we're communicating with
 //This is helpful when deciding if we should call the high-precision Lat/Long (HPPOSLLH) or the regular (POSLLH)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
 {
@@ -3159,7 +3159,7 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionHigh(uint16_t maxWait)
     return (versionHigh);
 }
 
-//Get the current protocol version of the Ublox module we're communicating with
+//Get the current protocol version of the u-blox module we're communicating with
 //This is helpful when deciding if we should call the high-precision Lat/Long (HPPOSLLH) or the regular (POSLLH)
 uint8_t SFE_UBLOX_GPS::getProtocolVersionLow(uint16_t maxWait)
 {
@@ -3168,7 +3168,7 @@ uint8_t SFE_UBLOX_GPS::getProtocolVersionLow(uint16_t maxWait)
     return (versionLow);
 }
 
-//Get the current protocol version of the Ublox module we're communicating with
+//Get the current protocol version of the u-blox module we're communicating with
 //This is helpful when deciding if we should call the high-precision Lat/Long (HPPOSLLH) or the regular (POSLLH)
 bool SFE_UBLOX_GPS::getProtocolVersion(uint16_t maxWait)
 {

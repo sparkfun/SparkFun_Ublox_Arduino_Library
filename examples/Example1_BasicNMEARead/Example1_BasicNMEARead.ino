@@ -1,12 +1,12 @@
 /*
-  Read NMEA sentences over I2C using Ublox module SAM-M8Q, NEO-M8P, ZED-F9P, etc
+  Read NMEA sentences over I2C using u-blox module SAM-M8Q, NEO-M8P, ZED-F9P, etc
   By: Nathan Seidle
   SparkFun Electronics
   Date: August 22nd, 2018
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example reads the NMEA setences from the Ublox module over I2c and outputs
+  This example reads the NMEA setences from the u-blox module over I2c and outputs
   them to the serial port
   
   Feel like supporting open source hardware?
@@ -29,13 +29,13 @@ SFE_UBLOX_GPS myGPS;
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("SparkFun Ublox Example");
+  Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
 
   if (myGPS.begin() == false)
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 

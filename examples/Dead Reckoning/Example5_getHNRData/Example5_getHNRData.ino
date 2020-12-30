@@ -29,7 +29,7 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_Ublox_GPS
+#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GPS
 SFE_UBLOX_GPS myGPS;
 
 void setup()
@@ -42,7 +42,7 @@ void setup()
 
   //myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("Warning! u-blox GPS did not begin correctly."));
     Serial.println(F("(This may be because the I2C port is busy with HNR messages.)"));

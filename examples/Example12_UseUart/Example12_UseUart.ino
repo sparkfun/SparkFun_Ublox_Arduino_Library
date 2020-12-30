@@ -27,19 +27,19 @@
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GPS
 SFE_UBLOX_GPS myGPS;
 
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(10, 11); // RX, TX. Pin 10 on Uno goes to TX pin on GPS module.
 
-long lastTime = 0; //Simple local timer. Limits amount of I2C traffic to Ublox module.
+long lastTime = 0; //Simple local timer. Limits amount of I2C traffic to u-blox module.
 
 void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println("SparkFun u-blox Example");
 
   //Assume that the U-Blox GPS is running at 9600 baud (the default) or at 38400 baud.
   //Loop until we're in sync and then ensure it's at 38400 baud.

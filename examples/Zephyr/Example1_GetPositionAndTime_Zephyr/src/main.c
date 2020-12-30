@@ -6,7 +6,7 @@
     License: MIT. See license file for more information but you can
     basically do whatever you want with this code.
 
-    This example reads the NMEA setences from the Ublox module over I2c and outputs
+    This example reads the NMEA setences from the u-blox module over I2c and outputs
     them to the serial port
 
     Open the serial monitor at 115200 baud to see the output
@@ -68,7 +68,7 @@ uint8_t init_i2c(void) {
 uint8_t init_gps(void) {
 	if (gps_begin(i2c_dev) != 0)
   	{
-    	printk("Ublox GPS init error!\n");
+    	printk("u-blox GPS init error!\n");
         return -1;
   	}
     return 0;
@@ -76,7 +76,7 @@ uint8_t init_gps(void) {
 
 
 void main(void) {
-	printk("Zephyr Ublox example\n");
+	printk("Zephyr u-blox example\n");
 
 	int err;
     err = init_gpio();
