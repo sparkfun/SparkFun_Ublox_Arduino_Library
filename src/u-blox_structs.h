@@ -51,10 +51,18 @@
 //Additional flags and pointers that need to be stored with each message type
 struct ubxAutomaticFlags
 {
-  boolean automatic; // Will this message be delivered and parsed "automatically" (without polling)
-  boolean implicitUpdate; // Is the update triggered by accessing stale data (=true) or by a call to checkUblox (=false)
-  boolean addToFileBuffer; // Should the raw UBX data be added to the file buffer?
-	//TO DO: Add any extras needed for the callbacks
+  union
+  {
+    uint8_t all;
+    struct
+    {
+      uint8_t automatic : 1; // Will this message be delivered and parsed "automatically" (without polling)
+      uint8_t implicitUpdate : 1; // Is the update triggered by accessing stale data (=true) or by a call to checkUblox (=false)
+      uint8_t addToFileBuffer : 1; // Should the raw UBX data be added to the file buffer?
+      uint8_t callbackCopyValid : 1; // Is the copy of the data struct used by the callback valid/fresh?
+    } bits;
+  } flags;
+  void (*callbackPointer)(); // This will contain the pointer to the callback function
 };
 
 // UBX-NAV-POSECEF (0x01 0x01): Position solution in ECEF

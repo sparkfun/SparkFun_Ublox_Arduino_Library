@@ -1403,6 +1403,46 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Mark all datums as fresh (not read before)
         packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0xFFFFFFFF;
         packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVPVTcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          packetUBXNAVPVTcopy->iTOW = extractLong(msg, 0);
+          packetUBXNAVPVTcopy->year = extractInt(msg, 4);
+          packetUBXNAVPVTcopy->month = extractByte(msg, 6);
+          packetUBXNAVPVTcopy->day = extractByte(msg, 7);
+          packetUBXNAVPVTcopy->hour = extractByte(msg, 8);
+          packetUBXNAVPVTcopy->min = extractByte(msg, 9);
+          packetUBXNAVPVTcopy->sec = extractByte(msg, 10);
+          packetUBXNAVPVTcopy->valid.all = extractByte(msg, 11);
+          packetUBXNAVPVTcopy->tAcc = extractLong(msg, 12);
+          packetUBXNAVPVTcopy->nano = extractSignedLong(msg, 16); //Includes milliseconds
+          packetUBXNAVPVTcopy->fixType = extractByte(msg, 20);
+          packetUBXNAVPVTcopy->flags.all = extractByte(msg, 21);
+          packetUBXNAVPVTcopy->flags2.all = extractByte(msg, 22);
+          packetUBXNAVPVTcopy->numSV = extractByte(msg, 23);
+          packetUBXNAVPVTcopy->lon = extractSignedLong(msg, 24);
+          packetUBXNAVPVTcopy->lat = extractSignedLong(msg, 28);
+          packetUBXNAVPVTcopy->height = extractSignedLong(msg, 32);
+          packetUBXNAVPVTcopy->hMSL = extractSignedLong(msg, 36);
+          packetUBXNAVPVTcopy->hAcc = extractLong(msg, 40);
+          packetUBXNAVPVTcopy->vAcc = extractLong(msg, 44);
+          packetUBXNAVPVTcopy->velN = extractSignedLong(msg, 48);
+          packetUBXNAVPVTcopy->velE = extractSignedLong(msg, 52);
+          packetUBXNAVPVTcopy->velD = extractSignedLong(msg, 56);
+          packetUBXNAVPVTcopy->gSpeed = extractSignedLong(msg, 60);
+          packetUBXNAVPVTcopy->headMot = extractSignedLong(msg, 64);
+          packetUBXNAVPVTcopy->sAcc = extractLong(msg, 68);
+          packetUBXNAVPVTcopy->headAcc = extractLong(msg, 72);
+          packetUBXNAVPVTcopy->pDOP = extractInt(msg, 76);
+          packetUBXNAVPVTcopy->flags3.all = extractByte(msg, 78);
+          packetUBXNAVPVTcopy->headVeh = extractSignedLong(msg, 84);
+          packetUBXNAVPVTcopy->magDec = extractSignedInt(msg, 88);
+          packetUBXNAVPVTcopy->magAcc = extractInt(msg, 90);
+
+          packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_ODO && msg->len == UBX_NAV_ODO_LEN)
@@ -2397,6 +2437,20 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
   }
 
   return (SFE_UBLOX_STATUS_TIMEOUT);
+}
+
+// Check if any callbacks are waiting to be processed
+void SFE_UBLOX_GPS::checkCallbacks(void)
+{
+  if ((packetUBXNAVPVTcopy != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVPVT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    if (_printDebug == true)
+      _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
+    packetUBXNAVPVT->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
 }
 
 // Push (e.g.) RTCM data directly to the module
@@ -3844,13 +3898,13 @@ boolean SFE_UBLOX_GPS::getNAVPOSECEF(uint16_t maxWait)
   if (packetUBXNAVPOSECEF == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVPOSECEF->automaticFlags.automatic && packetUBXNAVPOSECEF->automaticFlags.implicitUpdate)
+  if (packetUBXNAVPOSECEF->automaticFlags.flags.bits.automatic && packetUBXNAVPOSECEF->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_POSECEF);
     return packetUBXNAVPOSECEF->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVPOSECEF->automaticFlags.automatic && !packetUBXNAVPOSECEF->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVPOSECEF->automaticFlags.flags.bits.automatic && !packetUBXNAVPOSECEF->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -3904,8 +3958,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVPOSECEF(boolean enable, boolean implicitUpdate,
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVPOSECEF->automaticFlags.automatic = enable;
-    packetUBXNAVPOSECEF->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVPOSECEF->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVPOSECEF->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVPOSECEF->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -3919,11 +3973,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVPOSECEF(boolean enabled, boolean implicitUpd
   if (packetUBXNAVPOSECEF == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVPOSECEF->automaticFlags.automatic != enabled || packetUBXNAVPOSECEF->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVPOSECEF->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVPOSECEF->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVPOSECEF->automaticFlags.automatic = enabled;
-    packetUBXNAVPOSECEF->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVPOSECEF->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVPOSECEF->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -3938,9 +3992,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPOSECEF()
       _debugSerial->println(F("initPacketUBXNAVPOSECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVPOSECEF->automaticFlags.automatic = false;
-  packetUBXNAVPOSECEF->automaticFlags.implicitUpdate = false;
-  packetUBXNAVPOSECEF->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVPOSECEF->automaticFlags.flags.all = 0;
+  packetUBXNAVPOSECEF->automaticFlags.callbackPointer = NULL;
   packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -3965,13 +4018,13 @@ boolean SFE_UBLOX_GPS::getNAVPOSLLH(uint16_t maxWait)
   if (packetUBXNAVPOSLLH == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVPOSLLH->automaticFlags.automatic && packetUBXNAVPOSLLH->automaticFlags.implicitUpdate)
+  if (packetUBXNAVPOSLLH->automaticFlags.flags.bits.automatic && packetUBXNAVPOSLLH->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_POSLLH);
     return packetUBXNAVPOSLLH->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVPOSLLH->automaticFlags.automatic && !packetUBXNAVPOSLLH->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVPOSLLH->automaticFlags.flags.bits.automatic && !packetUBXNAVPOSLLH->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -4025,8 +4078,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVPOSLLH(boolean enable, boolean implicitUpdate, 
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVPOSLLH->automaticFlags.automatic = enable;
-    packetUBXNAVPOSLLH->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVPOSLLH->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVPOSLLH->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVPOSLLH->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -4040,11 +4093,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVPOSLLH(boolean enabled, boolean implicitUpda
   if (packetUBXNAVPOSLLH == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVPOSLLH->automaticFlags.automatic != enabled || packetUBXNAVPOSLLH->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVPOSLLH->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVPOSLLH->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVPOSLLH->automaticFlags.automatic = enabled;
-    packetUBXNAVPOSLLH->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVPOSLLH->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVPOSLLH->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4059,9 +4112,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPOSLLH()
       _debugSerial->println(F("initPacketUBXNAVPOSLLH: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVPOSLLH->automaticFlags.automatic = false;
-  packetUBXNAVPOSLLH->automaticFlags.implicitUpdate = false;
-  packetUBXNAVPOSLLH->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVPOSLLH->automaticFlags.flags.all = 0;
+  packetUBXNAVPOSLLH->automaticFlags.callbackPointer = NULL;
   packetUBXNAVPOSLLH->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4086,13 +4138,13 @@ boolean SFE_UBLOX_GPS::getNAVSTATUS(uint16_t maxWait)
   if (packetUBXNAVSTATUS == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVSTATUS->automaticFlags.automatic && packetUBXNAVSTATUS->automaticFlags.implicitUpdate)
+  if (packetUBXNAVSTATUS->automaticFlags.flags.bits.automatic && packetUBXNAVSTATUS->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_STATUS);
     return packetUBXNAVSTATUS->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVSTATUS->automaticFlags.automatic && !packetUBXNAVSTATUS->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVSTATUS->automaticFlags.flags.bits.automatic && !packetUBXNAVSTATUS->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -4146,8 +4198,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVSTATUS(boolean enable, boolean implicitUpdate, 
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVSTATUS->automaticFlags.automatic = enable;
-    packetUBXNAVSTATUS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVSTATUS->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVSTATUS->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -4161,11 +4213,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVSTATUS(boolean enabled, boolean implicitUpda
   if (packetUBXNAVSTATUS == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVSTATUS->automaticFlags.automatic != enabled || packetUBXNAVSTATUS->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVSTATUS->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVSTATUS->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVSTATUS->automaticFlags.automatic = enabled;
-    packetUBXNAVSTATUS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVSTATUS->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4180,9 +4232,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSTATUS()
       _debugSerial->println(F("initPacketUBXNAVSTATUS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVSTATUS->automaticFlags.automatic = false;
-  packetUBXNAVSTATUS->automaticFlags.implicitUpdate = false;
-  packetUBXNAVSTATUS->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVSTATUS->automaticFlags.flags.all = 0;
+  packetUBXNAVSTATUS->automaticFlags.callbackPointer = NULL;
   packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4207,7 +4258,7 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
   if (packetUBXNAVDOP == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVDOP->automaticFlags.automatic && packetUBXNAVDOP->automaticFlags.implicitUpdate)
+  if (packetUBXNAVDOP->automaticFlags.flags.bits.automatic && packetUBXNAVDOP->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -4217,7 +4268,7 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_DOP);
     return packetUBXNAVDOP->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVDOP->automaticFlags.automatic && !packetUBXNAVDOP->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVDOP->automaticFlags.flags.bits.automatic && !packetUBXNAVDOP->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -4289,8 +4340,8 @@ boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, boolean implicitUpdate, uint16
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVDOP->automaticFlags.automatic = enable;
-    packetUBXNAVDOP->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVDOP->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVDOP->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVDOP->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -4304,11 +4355,11 @@ boolean SFE_UBLOX_GPS::assumeAutoDOP(boolean enabled, boolean implicitUpdate)
   if (packetUBXNAVDOP == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVDOP->automaticFlags.automatic != enabled || packetUBXNAVDOP->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVDOP->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVDOP->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVDOP->automaticFlags.automatic = enabled;
-    packetUBXNAVDOP->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVDOP->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVDOP->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4323,9 +4374,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVDOP()
       _debugSerial->println(F("initPacketUBXNAVDOP: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVDOP->automaticFlags.automatic = false;
-  packetUBXNAVDOP->automaticFlags.implicitUpdate = false;
-  packetUBXNAVDOP->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVDOP->automaticFlags.flags.all = 0;
+  packetUBXNAVDOP->automaticFlags.callbackPointer = NULL;
   packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4349,13 +4399,13 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
   if (packetUBXNAVATT == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  if (packetUBXNAVATT->automaticFlags.automatic && packetUBXNAVATT->automaticFlags.implicitUpdate)
+  if (packetUBXNAVATT->automaticFlags.flags.bits.automatic && packetUBXNAVATT->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_ATT);
     return packetUBXNAVATT->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVATT->automaticFlags.automatic && !packetUBXNAVATT->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVATT->automaticFlags.flags.bits.automatic && !packetUBXNAVATT->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -4411,8 +4461,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVATT(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVATT->automaticFlags.automatic = enable;
-    packetUBXNAVATT->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVATT->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVATT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVATT->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -4426,11 +4476,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVATT(boolean enabled, boolean implicitUpdate)
   if (packetUBXNAVATT == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVATT->automaticFlags.automatic != enabled || packetUBXNAVATT->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVATT->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVATT->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVATT->automaticFlags.automatic = enabled;
-    packetUBXNAVATT->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVATT->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVATT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4445,9 +4495,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVATT()
       _debugSerial->println(F("initPacketUBXNAVATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVATT->automaticFlags.automatic = false;
-  packetUBXNAVATT->automaticFlags.implicitUpdate = false;
-  packetUBXNAVATT->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVATT->automaticFlags.flags.all = 0;
+  packetUBXNAVATT->automaticFlags.callbackPointer = NULL;
   packetUBXNAVATT->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4472,7 +4521,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
   if (packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVPVT->automaticFlags.automatic && packetUBXNAVPVT->automaticFlags.implicitUpdate)
+  if (packetUBXNAVPVT->automaticFlags.flags.bits.automatic && packetUBXNAVPVT->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -4482,7 +4531,7 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_PVT);
     return packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all;
   }
-  else if (packetUBXNAVPVT->automaticFlags.automatic && !packetUBXNAVPVT->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVPVT->automaticFlags.flags.bits.automatic && !packetUBXNAVPVT->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -4536,6 +4585,29 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
   return setAutoPVT(enable, true, maxWait);
 }
 
+//Enable automatic navigation message generation by the GPS. This changes the way getPVT works.
+//Point to the callback.
+boolean SFE_UBLOX_GPS::setAutoPVT(void (*callbackPointer)(), uint16_t maxWait)
+{
+  boolean result = setAutoPVT(true, true, maxWait);
+  if (!result)
+    return (result); // Bail if setAutoPVT failed
+
+  if (packetUBXNAVPVTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPVTcopy = new UBX_NAV_PVT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPVTcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoPVT (callbackPointer): PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVPVT->automaticFlags.callbackPointer = callbackPointer;
+}
+
 //Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
@@ -4555,8 +4627,8 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVPVT->automaticFlags.automatic = enable;
-    packetUBXNAVPVT->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVPVT->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVPVT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
   return ok;
@@ -4570,11 +4642,11 @@ boolean SFE_UBLOX_GPS::assumeAutoPVT(boolean enabled, boolean implicitUpdate)
   if (packetUBXNAVPVT == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVPVT->automaticFlags.automatic != enabled || packetUBXNAVPVT->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVPVT->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVPVT->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-      packetUBXNAVPVT->automaticFlags.automatic = enabled;
-      packetUBXNAVPVT->automaticFlags.implicitUpdate = implicitUpdate;
+      packetUBXNAVPVT->automaticFlags.flags.bits.automatic = enabled;
+      packetUBXNAVPVT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4589,12 +4661,11 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPVT()
       _debugSerial->println(F("initPacketUBXNAVPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVPVT->automaticFlags.automatic = false;
-  packetUBXNAVPVT->automaticFlags.implicitUpdate = false;
-  packetUBXNAVPVT->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVPVT->automaticFlags.flags.all = 0;
+  packetUBXNAVPVT->automaticFlags.callbackPointer = NULL;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
   packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
-return (true);
+  return (true);
 }
 
 //Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
@@ -4617,13 +4688,13 @@ boolean SFE_UBLOX_GPS::getNAVODO(uint16_t maxWait)
   if (packetUBXNAVODO == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVODO->automaticFlags.automatic && packetUBXNAVODO->automaticFlags.implicitUpdate)
+  if (packetUBXNAVODO->automaticFlags.flags.bits.automatic && packetUBXNAVODO->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_ODO);
     return packetUBXNAVODO->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVODO->automaticFlags.automatic && !packetUBXNAVODO->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVODO->automaticFlags.flags.bits.automatic && !packetUBXNAVODO->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -4677,8 +4748,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVODO(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVODO->automaticFlags.automatic = enable;
-    packetUBXNAVODO->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVODO->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVODO->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVODO->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -4692,11 +4763,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVODO(boolean enabled, boolean implicitUpdate)
   if (packetUBXNAVODO == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVODO->automaticFlags.automatic != enabled || packetUBXNAVODO->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVODO->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVODO->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVODO->automaticFlags.automatic = enabled;
-    packetUBXNAVODO->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVODO->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVODO->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4711,9 +4782,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVODO()
       _debugSerial->println(F("initPacketUBXNAVODO: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVODO->automaticFlags.automatic = false;
-  packetUBXNAVODO->automaticFlags.implicitUpdate = false;
-  packetUBXNAVODO->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVODO->automaticFlags.flags.all = 0;
+  packetUBXNAVODO->automaticFlags.callbackPointer = NULL;
   packetUBXNAVODO->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4737,13 +4807,13 @@ boolean SFE_UBLOX_GPS::getNAVVELECEF(uint16_t maxWait)
   if (packetUBXNAVVELECEF == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVVELECEF->automaticFlags.automatic && packetUBXNAVVELECEF->automaticFlags.implicitUpdate)
+  if (packetUBXNAVVELECEF->automaticFlags.flags.bits.automatic && packetUBXNAVVELECEF->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_VELECEF);
     return packetUBXNAVVELECEF->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVVELECEF->automaticFlags.automatic && !packetUBXNAVVELECEF->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVVELECEF->automaticFlags.flags.bits.automatic && !packetUBXNAVVELECEF->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -4797,8 +4867,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELECEF(boolean enable, boolean implicitUpdate,
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVVELECEF->automaticFlags.automatic = enable;
-    packetUBXNAVVELECEF->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVVELECEF->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVVELECEF->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVVELECEF->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -4812,11 +4882,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVVELECEF(boolean enabled, boolean implicitUpd
   if (packetUBXNAVVELECEF == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVVELECEF->automaticFlags.automatic != enabled || packetUBXNAVVELECEF->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVVELECEF->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVVELECEF->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVVELECEF->automaticFlags.automatic = enabled;
-    packetUBXNAVVELECEF->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVVELECEF->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVVELECEF->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4831,9 +4901,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELECEF()
       _debugSerial->println(F("initPacketUBXNAVVELECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVVELECEF->automaticFlags.automatic = false;
-  packetUBXNAVVELECEF->automaticFlags.implicitUpdate = false;
-  packetUBXNAVVELECEF->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVVELECEF->automaticFlags.flags.all = 0;
+  packetUBXNAVVELECEF->automaticFlags.callbackPointer = NULL;
   packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4857,13 +4926,13 @@ boolean SFE_UBLOX_GPS::getNAVVELNED(uint16_t maxWait)
   if (packetUBXNAVVELNED == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVVELNED->automaticFlags.automatic && packetUBXNAVVELNED->automaticFlags.implicitUpdate)
+  if (packetUBXNAVVELNED->automaticFlags.flags.bits.automatic && packetUBXNAVVELNED->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_VELNED);
     return packetUBXNAVVELNED->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVVELNED->automaticFlags.automatic && !packetUBXNAVVELNED->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVVELNED->automaticFlags.flags.bits.automatic && !packetUBXNAVVELNED->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -4917,8 +4986,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELNED(boolean enable, boolean implicitUpdate, 
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVVELNED->automaticFlags.automatic = enable;
-    packetUBXNAVVELNED->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVVELNED->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVVELNED->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVVELNED->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -4932,11 +5001,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVVELNED(boolean enabled, boolean implicitUpda
   if (packetUBXNAVVELNED == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVVELNED->automaticFlags.automatic != enabled || packetUBXNAVVELNED->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVVELNED->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVVELNED->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVVELNED->automaticFlags.automatic = enabled;
-    packetUBXNAVVELNED->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVVELNED->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVVELNED->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -4951,9 +5020,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELNED()
       _debugSerial->println(F("initPacketUBXNAVVELNED: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVVELNED->automaticFlags.automatic = false;
-  packetUBXNAVVELNED->automaticFlags.implicitUpdate = false;
-  packetUBXNAVVELNED->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVVELNED->automaticFlags.flags.all = 0;
+  packetUBXNAVVELNED->automaticFlags.callbackPointer = NULL;
   packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4977,13 +5045,13 @@ boolean SFE_UBLOX_GPS::getNAVHPPOSECEF(uint16_t maxWait)
   if (packetUBXNAVHPPOSECEF == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVHPPOSECEF->automaticFlags.automatic && packetUBXNAVHPPOSECEF->automaticFlags.implicitUpdate)
+  if (packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.automatic && packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_HPPOSECEF);
     return packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVHPPOSECEF->automaticFlags.automatic && !packetUBXNAVHPPOSECEF->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.automatic && !packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -5037,8 +5105,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEF(boolean enable, boolean implicitUpdat
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVHPPOSECEF->automaticFlags.automatic = enable;
-    packetUBXNAVHPPOSECEF->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -5052,11 +5120,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVHPPOSECEF(boolean enabled, boolean implicitU
   if (packetUBXNAVHPPOSECEF == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVHPPOSECEF->automaticFlags.automatic != enabled || packetUBXNAVHPPOSECEF->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVHPPOSECEF->automaticFlags.automatic = enabled;
-    packetUBXNAVHPPOSECEF->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -5071,9 +5139,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSECEF()
       _debugSerial->println(F("initPacketUBXNAVHPPOSECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVHPPOSECEF->automaticFlags.automatic = false;
-  packetUBXNAVHPPOSECEF->automaticFlags.implicitUpdate = false;
-  packetUBXNAVHPPOSECEF->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVHPPOSECEF->automaticFlags.flags.all = 0;
+  packetUBXNAVHPPOSECEF->automaticFlags.callbackPointer = NULL;
   packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5097,7 +5164,7 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
   if (packetUBXNAVHPPOSLLH == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVHPPOSLLH->automaticFlags.automatic && packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate)
+  if (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.automatic && packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -5107,7 +5174,7 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_HPPOSLLH);
     return packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVHPPOSLLH->automaticFlags.automatic && !packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.automatic && !packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -5179,8 +5246,8 @@ boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, u
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVHPPOSLLH->automaticFlags.automatic = enable;
-    packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -5194,11 +5261,11 @@ boolean SFE_UBLOX_GPS::assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdat
   if (packetUBXNAVHPPOSLLH == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVHPPOSLLH->automaticFlags.automatic != enabled || packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVHPPOSLLH->automaticFlags.automatic = enabled;
-    packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -5213,9 +5280,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSLLH()
       _debugSerial->println(F("initPacketUBXNAVHPPOSLLH: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVHPPOSLLH->automaticFlags.automatic = false;
-  packetUBXNAVHPPOSLLH->automaticFlags.implicitUpdate = false;
-  packetUBXNAVHPPOSLLH->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVHPPOSLLH->automaticFlags.flags.all = 0;
+  packetUBXNAVHPPOSLLH->automaticFlags.callbackPointer = NULL;
   packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5239,13 +5305,13 @@ boolean SFE_UBLOX_GPS::getNAVTIMEUTC(uint16_t maxWait)
   if (packetUBXNAVTIMEUTC == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVTIMEUTC->automaticFlags.automatic && packetUBXNAVTIMEUTC->automaticFlags.implicitUpdate)
+  if (packetUBXNAVTIMEUTC->automaticFlags.flags.bits.automatic && packetUBXNAVTIMEUTC->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_TIMEUTC);
     return packetUBXNAVTIMEUTC->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVTIMEUTC->automaticFlags.automatic && !packetUBXNAVTIMEUTC->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVTIMEUTC->automaticFlags.flags.bits.automatic && !packetUBXNAVTIMEUTC->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -5299,8 +5365,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVTIMEUTC(boolean enable, boolean implicitUpdate,
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVTIMEUTC->automaticFlags.automatic = enable;
-    packetUBXNAVTIMEUTC->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVTIMEUTC->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVTIMEUTC->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVTIMEUTC->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -5314,11 +5380,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVTIMEUTC(boolean enabled, boolean implicitUpd
   if (packetUBXNAVTIMEUTC == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXNAVTIMEUTC->automaticFlags.automatic != enabled || packetUBXNAVTIMEUTC->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVTIMEUTC->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVTIMEUTC->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVTIMEUTC->automaticFlags.automatic = enabled;
-    packetUBXNAVTIMEUTC->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVTIMEUTC->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVTIMEUTC->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -5333,9 +5399,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVTIMEUTC()
       _debugSerial->println(F("initPacketUBXNAVTIMEUTC: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVTIMEUTC->automaticFlags.automatic = false;
-  packetUBXNAVTIMEUTC->automaticFlags.implicitUpdate = false;
-  packetUBXNAVTIMEUTC->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVTIMEUTC->automaticFlags.flags.all = 0;
+  packetUBXNAVTIMEUTC->automaticFlags.callbackPointer = NULL;
   packetUBXNAVTIMEUTC->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5359,13 +5424,13 @@ boolean SFE_UBLOX_GPS::getNAVCLOCK(uint16_t maxWait)
   if (packetUBXNAVCLOCK == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVCLOCK->automaticFlags.automatic && packetUBXNAVCLOCK->automaticFlags.implicitUpdate)
+  if (packetUBXNAVCLOCK->automaticFlags.flags.bits.automatic && packetUBXNAVCLOCK->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_CLOCK);
     return packetUBXNAVCLOCK->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVCLOCK->automaticFlags.automatic && !packetUBXNAVCLOCK->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVCLOCK->automaticFlags.flags.bits.automatic && !packetUBXNAVCLOCK->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -5419,8 +5484,8 @@ boolean SFE_UBLOX_GPS::setAutoNAVCLOCK(boolean enable, boolean implicitUpdate, u
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVCLOCK->automaticFlags.automatic = enable;
-    packetUBXNAVCLOCK->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVCLOCK->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVCLOCK->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVCLOCK->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -5434,11 +5499,11 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVCLOCK(boolean enabled, boolean implicitUpdat
   if (packetUBXNAVCLOCK == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  boolean changes = packetUBXNAVCLOCK->automaticFlags.automatic != enabled || packetUBXNAVCLOCK->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVCLOCK->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVCLOCK->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVCLOCK->automaticFlags.automatic = enabled;
-    packetUBXNAVCLOCK->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVCLOCK->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVCLOCK->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -5453,9 +5518,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVCLOCK()
       _debugSerial->println(F("initPacketUBXNAVCLOCK: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVCLOCK->automaticFlags.automatic = false;
-  packetUBXNAVCLOCK->automaticFlags.implicitUpdate = false;
-  packetUBXNAVCLOCK->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVCLOCK->automaticFlags.flags.all = 0;
+  packetUBXNAVCLOCK->automaticFlags.callbackPointer = NULL;
   packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5511,9 +5575,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSVIN()
       _debugSerial->println(F("initPacketUBXNAVSVIN: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVSVIN->automaticFlags.automatic = false;
-  packetUBXNAVSVIN->automaticFlags.implicitUpdate = false;
-  packetUBXNAVSVIN->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVSVIN->automaticFlags.flags.all = 0;
+  packetUBXNAVSVIN->automaticFlags.callbackPointer = NULL;
   packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5531,13 +5594,13 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
   if (packetUBXNAVRELPOSNED == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXNAVRELPOSNED->automaticFlags.automatic && packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate)
+  if (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.automatic && packetUBXNAVRELPOSNED->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_NAV, UBX_NAV_RELPOSNED);
     return packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXNAVRELPOSNED->automaticFlags.automatic && !packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate)
+  else if (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.automatic && !packetUBXNAVRELPOSNED->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -5591,8 +5654,8 @@ boolean SFE_UBLOX_GPS::setAutoRELPOSNED(boolean enable, boolean implicitUpdate, 
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXNAVRELPOSNED->automaticFlags.automatic = enable;
-    packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVRELPOSNED->automaticFlags.flags.bits.automatic = enable;
+    packetUBXNAVRELPOSNED->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -5606,11 +5669,11 @@ boolean SFE_UBLOX_GPS::assumeAutoRELPOSNED(boolean enabled, boolean implicitUpda
   if (packetUBXNAVRELPOSNED == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  boolean changes = packetUBXNAVRELPOSNED->automaticFlags.automatic != enabled || packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXNAVRELPOSNED->automaticFlags.flags.bits.automatic != enabled || packetUBXNAVRELPOSNED->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXNAVRELPOSNED->automaticFlags.automatic = enabled;
-    packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXNAVRELPOSNED->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXNAVRELPOSNED->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -5625,9 +5688,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVRELPOSNED()
       _debugSerial->println(F("initPacketUBXNAVRELPOSNED: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXNAVRELPOSNED->automaticFlags.automatic = false;
-  packetUBXNAVRELPOSNED->automaticFlags.implicitUpdate = false;
-  packetUBXNAVRELPOSNED->automaticFlags.addToFileBuffer = false;
+  packetUBXNAVRELPOSNED->automaticFlags.flags.all = 0;
+  packetUBXNAVRELPOSNED->automaticFlags.callbackPointer = NULL;
   packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5651,13 +5713,13 @@ boolean SFE_UBLOX_GPS::getRXMSFRBX(uint16_t maxWait)
   if (packetUBXRXMSFRBX == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXRXMSFRBX->automaticFlags.automatic && packetUBXRXMSFRBX->automaticFlags.implicitUpdate)
+  if (packetUBXRXMSFRBX->automaticFlags.flags.bits.automatic && packetUBXRXMSFRBX->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_TIM, UBX_TIM_TM2);
     return packetUBXRXMSFRBX->moduleQueried;
   }
-  else if (packetUBXRXMSFRBX->automaticFlags.automatic && !packetUBXRXMSFRBX->automaticFlags.implicitUpdate)
+  else if (packetUBXRXMSFRBX->automaticFlags.flags.bits.automatic && !packetUBXRXMSFRBX->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -5711,8 +5773,8 @@ boolean SFE_UBLOX_GPS::setAutoRXMSFRBX(boolean enable, boolean implicitUpdate, u
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXRXMSFRBX->automaticFlags.automatic = enable;
-    packetUBXRXMSFRBX->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXRXMSFRBX->automaticFlags.flags.bits.automatic = enable;
+    packetUBXRXMSFRBX->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXRXMSFRBX->moduleQueried = false;
   return ok;
@@ -5726,11 +5788,11 @@ boolean SFE_UBLOX_GPS::assumeAutoRXMSFRBX(boolean enabled, boolean implicitUpdat
   if (packetUBXRXMSFRBX == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXRXMSFRBX->automaticFlags.automatic != enabled || packetUBXRXMSFRBX->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXRXMSFRBX->automaticFlags.flags.bits.automatic != enabled || packetUBXRXMSFRBX->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXRXMSFRBX->automaticFlags.automatic = enabled;
-    packetUBXRXMSFRBX->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXRXMSFRBX->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXRXMSFRBX->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -5745,9 +5807,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMSFRBX()
       _debugSerial->println(F("initPacketUBXRXMSFRBX: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXRXMSFRBX->automaticFlags.automatic = false;
-  packetUBXRXMSFRBX->automaticFlags.implicitUpdate = false;
-  packetUBXRXMSFRBX->automaticFlags.addToFileBuffer = false;
+  packetUBXRXMSFRBX->automaticFlags.flags.all = 0;
+  packetUBXRXMSFRBX->automaticFlags.callbackPointer = NULL;
   packetUBXRXMSFRBX->moduleQueried = false;
   return (true);
 }
@@ -5771,13 +5832,13 @@ boolean SFE_UBLOX_GPS::getRXMRAWX(uint16_t maxWait)
   if (packetUBXRXMRAWX == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXRXMRAWX->automaticFlags.automatic && packetUBXRXMRAWX->automaticFlags.implicitUpdate)
+  if (packetUBXRXMRAWX->automaticFlags.flags.bits.automatic && packetUBXRXMRAWX->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_TIM, UBX_TIM_TM2);
     return packetUBXRXMRAWX->moduleQueried;
   }
-  else if (packetUBXRXMRAWX->automaticFlags.automatic && !packetUBXRXMRAWX->automaticFlags.implicitUpdate)
+  else if (packetUBXRXMRAWX->automaticFlags.flags.bits.automatic && !packetUBXRXMRAWX->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -5831,8 +5892,8 @@ boolean SFE_UBLOX_GPS::setAutoRXMRAWX(boolean enable, boolean implicitUpdate, ui
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXRXMRAWX->automaticFlags.automatic = enable;
-    packetUBXRXMRAWX->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXRXMRAWX->automaticFlags.flags.bits.automatic = enable;
+    packetUBXRXMRAWX->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXRXMRAWX->moduleQueried = false;
   return ok;
@@ -5846,11 +5907,11 @@ boolean SFE_UBLOX_GPS::assumeAutoRXMRAWX(boolean enabled, boolean implicitUpdate
   if (packetUBXRXMRAWX == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXRXMRAWX->automaticFlags.automatic != enabled || packetUBXRXMRAWX->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXRXMRAWX->automaticFlags.flags.bits.automatic != enabled || packetUBXRXMRAWX->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXRXMRAWX->automaticFlags.automatic = enabled;
-    packetUBXRXMRAWX->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXRXMRAWX->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXRXMRAWX->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -5865,9 +5926,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMRAWX()
       _debugSerial->println(F("initPacketUBXRXMRAWX: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXRXMRAWX->automaticFlags.automatic = false;
-  packetUBXRXMRAWX->automaticFlags.implicitUpdate = false;
-  packetUBXRXMRAWX->automaticFlags.addToFileBuffer = false;
+  packetUBXRXMRAWX->automaticFlags.flags.all = 0;
+  packetUBXRXMRAWX->automaticFlags.callbackPointer = NULL;
   packetUBXRXMRAWX->moduleQueried = false;
   return (true);
 }
@@ -5892,13 +5952,13 @@ boolean SFE_UBLOX_GPS::getNavigationFrequencyInternal(uint16_t maxWait)
   if (packetUBXCFGRATE == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXCFGRATE->automaticFlags.automatic && packetUBXCFGRATE->automaticFlags.implicitUpdate)
+  if (packetUBXCFGRATE->automaticFlags.flags.bits.automatic && packetUBXCFGRATE->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_CFG, UBX_CFG_RATE);
     return packetUBXCFGRATE->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXCFGRATE->automaticFlags.automatic && !packetUBXCFGRATE->automaticFlags.implicitUpdate)
+  else if (packetUBXCFGRATE->automaticFlags.flags.bits.automatic && !packetUBXCFGRATE->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -5936,9 +5996,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXCFGRATE()
       _debugSerial->println(F("initPacketUBXCFGRATE: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXCFGRATE->automaticFlags.automatic = false;
-  packetUBXCFGRATE->automaticFlags.implicitUpdate = false;
-  packetUBXCFGRATE->automaticFlags.addToFileBuffer = false;
+  packetUBXCFGRATE->automaticFlags.flags.all = 0;
+  packetUBXCFGRATE->automaticFlags.callbackPointer = NULL;
   packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5951,13 +6010,13 @@ boolean SFE_UBLOX_GPS::getTIMTM2(uint16_t maxWait)
   if (packetUBXTIMTM2 == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXTIMTM2->automaticFlags.automatic && packetUBXTIMTM2->automaticFlags.implicitUpdate)
+  if (packetUBXTIMTM2->automaticFlags.flags.bits.automatic && packetUBXTIMTM2->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     checkUbloxInternal(&packetCfg, UBX_CLASS_TIM, UBX_TIM_TM2);
     return packetUBXTIMTM2->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXTIMTM2->automaticFlags.automatic && !packetUBXTIMTM2->automaticFlags.implicitUpdate)
+  else if (packetUBXTIMTM2->automaticFlags.flags.bits.automatic && !packetUBXTIMTM2->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     return (false);
@@ -6011,8 +6070,8 @@ boolean SFE_UBLOX_GPS::setAutoTIMTM2(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXTIMTM2->automaticFlags.automatic = enable;
-    packetUBXTIMTM2->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXTIMTM2->automaticFlags.flags.bits.automatic = enable;
+    packetUBXTIMTM2->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXTIMTM2->moduleQueried.moduleQueried.bits.all = false;
   return ok;
@@ -6026,11 +6085,11 @@ boolean SFE_UBLOX_GPS::assumeAutoTIMTM2(boolean enabled, boolean implicitUpdate)
   if (packetUBXTIMTM2 == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXTIMTM2->automaticFlags.automatic != enabled || packetUBXTIMTM2->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXTIMTM2->automaticFlags.flags.bits.automatic != enabled || packetUBXTIMTM2->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXTIMTM2->automaticFlags.automatic = enabled;
-    packetUBXTIMTM2->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXTIMTM2->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXTIMTM2->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -6045,9 +6104,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXTIMTM2()
       _debugSerial->println(F("initPacketUBXTIMTM2: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXTIMTM2->automaticFlags.automatic = false;
-  packetUBXTIMTM2->automaticFlags.implicitUpdate = false;
-  packetUBXTIMTM2->automaticFlags.addToFileBuffer = false;
+  packetUBXTIMTM2->automaticFlags.flags.all = 0;
+  packetUBXTIMTM2->automaticFlags.callbackPointer = NULL;
   packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6071,7 +6129,7 @@ boolean SFE_UBLOX_GPS::getEsfAlignment(uint16_t maxWait)
   if (packetUBXESFALG == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  if (packetUBXESFALG->automaticFlags.automatic && packetUBXESFALG->automaticFlags.implicitUpdate)
+  if (packetUBXESFALG->automaticFlags.flags.bits.automatic && packetUBXESFALG->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -6081,7 +6139,7 @@ boolean SFE_UBLOX_GPS::getEsfAlignment(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_ALG);
     return packetUBXESFALG->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXESFALG->automaticFlags.automatic && !packetUBXESFALG->automaticFlags.implicitUpdate)
+  else if (packetUBXESFALG->automaticFlags.flags.bits.automatic && !packetUBXESFALG->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -6155,8 +6213,8 @@ boolean SFE_UBLOX_GPS::setAutoESFALG(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXESFALG->automaticFlags.automatic = enable;
-    packetUBXESFALG->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFALG->automaticFlags.flags.bits.automatic = enable;
+    packetUBXESFALG->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXESFALG->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -6170,11 +6228,11 @@ boolean SFE_UBLOX_GPS::assumeAutoESFALG(boolean enabled, boolean implicitUpdate)
   if (packetUBXESFALG == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXESFALG->automaticFlags.automatic != enabled || packetUBXESFALG->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXESFALG->automaticFlags.flags.bits.automatic != enabled || packetUBXESFALG->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXESFALG->automaticFlags.automatic = enabled;
-    packetUBXESFALG->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFALG->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXESFALG->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -6189,9 +6247,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFALG()
       _debugSerial->println(F("initPacketUBXESFALG: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXESFALG->automaticFlags.automatic = false;
-  packetUBXESFALG->automaticFlags.implicitUpdate = false;
-  packetUBXESFALG->automaticFlags.addToFileBuffer = false;
+  packetUBXESFALG->automaticFlags.flags.all = 0;
+  packetUBXESFALG->automaticFlags.callbackPointer = NULL;
   packetUBXESFALG->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6215,7 +6272,7 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
   if (packetUBXESFSTATUS == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  if (packetUBXESFSTATUS->automaticFlags.automatic && packetUBXESFSTATUS->automaticFlags.implicitUpdate)
+  if (packetUBXESFSTATUS->automaticFlags.flags.bits.automatic && packetUBXESFSTATUS->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -6225,7 +6282,7 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_STATUS);
     return packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXESFSTATUS->automaticFlags.automatic && !packetUBXESFSTATUS->automaticFlags.implicitUpdate)
+  else if (packetUBXESFSTATUS->automaticFlags.flags.bits.automatic && !packetUBXESFSTATUS->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -6299,8 +6356,8 @@ boolean SFE_UBLOX_GPS::setAutoESFSTATUS(boolean enable, boolean implicitUpdate, 
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXESFSTATUS->automaticFlags.automatic = enable;
-    packetUBXESFSTATUS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFSTATUS->automaticFlags.flags.bits.automatic = enable;
+    packetUBXESFSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -6314,11 +6371,11 @@ boolean SFE_UBLOX_GPS::assumeAutoESFSTATUS(boolean enabled, boolean implicitUpda
   if (packetUBXESFSTATUS == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXESFSTATUS->automaticFlags.automatic != enabled || packetUBXESFSTATUS->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXESFSTATUS->automaticFlags.flags.bits.automatic != enabled || packetUBXESFSTATUS->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXESFSTATUS->automaticFlags.automatic = enabled;
-    packetUBXESFSTATUS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFSTATUS->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXESFSTATUS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -6333,9 +6390,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
       _debugSerial->println(F("initPacketUBXESFSTATUS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXESFSTATUS->automaticFlags.automatic = false;
-  packetUBXESFSTATUS->automaticFlags.implicitUpdate = false;
-  packetUBXESFSTATUS->automaticFlags.addToFileBuffer = false;
+  packetUBXESFSTATUS->automaticFlags.flags.all = 0;
+  packetUBXNAVSTATUS->automaticFlags.callbackPointer = NULL;
   packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6359,7 +6415,7 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   if (packetUBXESFINS == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  if (packetUBXESFINS->automaticFlags.automatic && packetUBXESFINS->automaticFlags.implicitUpdate)
+  if (packetUBXESFINS->automaticFlags.flags.bits.automatic && packetUBXESFINS->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -6369,7 +6425,7 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_INS);
     return packetUBXESFINS->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXESFINS->automaticFlags.automatic && !packetUBXESFINS->automaticFlags.implicitUpdate)
+  else if (packetUBXESFINS->automaticFlags.flags.bits.automatic && !packetUBXESFINS->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -6443,8 +6499,8 @@ boolean SFE_UBLOX_GPS::setAutoESFINS(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXESFINS->automaticFlags.automatic = enable;
-    packetUBXESFINS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFINS->automaticFlags.flags.bits.automatic = enable;
+    packetUBXESFINS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXESFINS->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -6458,11 +6514,11 @@ boolean SFE_UBLOX_GPS::assumeAutoESFINS(boolean enabled, boolean implicitUpdate)
   if (packetUBXESFINS == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXESFINS->automaticFlags.automatic != enabled || packetUBXESFINS->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXESFINS->automaticFlags.flags.bits.automatic != enabled || packetUBXESFINS->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXESFINS->automaticFlags.automatic = enabled;
-    packetUBXESFINS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFINS->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXESFINS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -6477,9 +6533,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFINS()
       _debugSerial->println(F("initPacketUBXESFINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXESFINS->automaticFlags.automatic = false;
-  packetUBXESFINS->automaticFlags.implicitUpdate = false;
-  packetUBXESFINS->automaticFlags.addToFileBuffer = false;
+  packetUBXESFINS->automaticFlags.flags.all = 0;
+  packetUBXESFINS->automaticFlags.callbackPointer = NULL;
   packetUBXESFINS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6503,7 +6558,7 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   if (packetUBXESFMEAS == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  if (packetUBXESFMEAS->automaticFlags.automatic && packetUBXESFMEAS->automaticFlags.implicitUpdate)
+  if (packetUBXESFMEAS->automaticFlags.flags.bits.automatic && packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -6513,7 +6568,7 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_MEAS);
     return packetUBXESFMEAS->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXESFMEAS->automaticFlags.automatic && !packetUBXESFMEAS->automaticFlags.implicitUpdate)
+  else if (packetUBXESFMEAS->automaticFlags.flags.bits.automatic && !packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -6587,8 +6642,8 @@ boolean SFE_UBLOX_GPS::setAutoESFMEAS(boolean enable, boolean implicitUpdate, ui
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXESFMEAS->automaticFlags.automatic = enable;
-    packetUBXESFMEAS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFMEAS->automaticFlags.flags.bits.automatic = enable;
+    packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXESFMEAS->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -6602,11 +6657,11 @@ boolean SFE_UBLOX_GPS::assumeAutoESFMEAS(boolean enabled, boolean implicitUpdate
   if (packetUBXESFMEAS == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXESFMEAS->automaticFlags.automatic != enabled || packetUBXESFMEAS->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXESFMEAS->automaticFlags.flags.bits.automatic != enabled || packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXESFMEAS->automaticFlags.automatic = enabled;
-    packetUBXESFMEAS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFMEAS->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXESFMEAS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -6621,9 +6676,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFMEAS()
       _debugSerial->println(F("initPacketUBXESFMEAS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXESFMEAS->automaticFlags.automatic = false;
-  packetUBXESFMEAS->automaticFlags.implicitUpdate = false;
-  packetUBXESFMEAS->automaticFlags.addToFileBuffer = false;
+  packetUBXESFMEAS->automaticFlags.flags.all = 0;
+  packetUBXESFMEAS->automaticFlags.callbackPointer = NULL;
   packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6647,7 +6701,7 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   if (packetUBXESFRAW == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  if (packetUBXESFRAW->automaticFlags.automatic && packetUBXESFRAW->automaticFlags.implicitUpdate)
+  if (packetUBXESFRAW->automaticFlags.flags.bits.automatic && packetUBXESFRAW->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -6657,7 +6711,7 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_ESF, UBX_ESF_RAW);
     return packetUBXESFRAW->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXESFRAW->automaticFlags.automatic && !packetUBXESFRAW->automaticFlags.implicitUpdate)
+  else if (packetUBXESFRAW->automaticFlags.flags.bits.automatic && !packetUBXESFRAW->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -6731,8 +6785,8 @@ boolean SFE_UBLOX_GPS::setAutoESFRAW(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXESFRAW->automaticFlags.automatic = enable;
-    packetUBXESFRAW->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFRAW->automaticFlags.flags.bits.automatic = enable;
+    packetUBXESFRAW->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXESFRAW->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -6746,11 +6800,11 @@ boolean SFE_UBLOX_GPS::assumeAutoESFRAW(boolean enabled, boolean implicitUpdate)
   if (packetUBXESFRAW == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXESFRAW->automaticFlags.automatic != enabled || packetUBXESFRAW->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXESFRAW->automaticFlags.flags.bits.automatic != enabled || packetUBXESFRAW->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXESFRAW->automaticFlags.automatic = enabled;
-    packetUBXESFRAW->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXESFRAW->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXESFRAW->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -6765,9 +6819,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFRAW()
       _debugSerial->println(F("initPacketUBXESFRAW: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXESFRAW->automaticFlags.automatic = false;
-  packetUBXESFRAW->automaticFlags.implicitUpdate = false;
-  packetUBXESFRAW->automaticFlags.addToFileBuffer = false;
+  packetUBXESFRAW->automaticFlags.flags.all = 0;
+  packetUBXESFRAW->automaticFlags.callbackPointer = NULL;
   packetUBXESFRAW->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6796,7 +6849,7 @@ boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
   if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXHNRATT->automaticFlags.automatic && packetUBXHNRATT->automaticFlags.implicitUpdate)
+  if (packetUBXHNRATT->automaticFlags.flags.bits.automatic && packetUBXHNRATT->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -6806,7 +6859,7 @@ boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_ATT);
     return packetUBXHNRATT->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXHNRATT->automaticFlags.automatic && !packetUBXHNRATT->automaticFlags.implicitUpdate)
+  else if (packetUBXHNRATT->automaticFlags.flags.bits.automatic && !packetUBXHNRATT->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -6880,8 +6933,8 @@ boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXHNRATT->automaticFlags.automatic = enable;
-    packetUBXHNRATT->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXHNRATT->automaticFlags.flags.bits.automatic = enable;
+    packetUBXHNRATT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXHNRATT->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -6895,11 +6948,11 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate)
   if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  boolean changes = packetUBXHNRATT->automaticFlags.automatic != enabled || packetUBXHNRATT->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXHNRATT->automaticFlags.flags.bits.automatic != enabled || packetUBXHNRATT->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXHNRATT->automaticFlags.automatic = enabled;
-    packetUBXHNRATT->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXHNRATT->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXHNRATT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -6914,9 +6967,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRATT()
       _debugSerial->println(F("initPacketUBXHNRATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXHNRATT->automaticFlags.automatic = false;
-  packetUBXHNRATT->automaticFlags.implicitUpdate = false;
-  packetUBXHNRATT->automaticFlags.addToFileBuffer = false;
+  packetUBXHNRATT->automaticFlags.flags.all = 0;
+  packetUBXHNRATT->automaticFlags.callbackPointer = NULL;
   packetUBXHNRATT->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6946,7 +6998,7 @@ boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
   if (packetUBXHNRINS == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  if (packetUBXHNRINS->automaticFlags.automatic && packetUBXHNRINS->automaticFlags.implicitUpdate)
+  if (packetUBXHNRINS->automaticFlags.flags.bits.automatic && packetUBXHNRINS->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -6956,7 +7008,7 @@ boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_INS);
     return packetUBXHNRINS->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXHNRINS->automaticFlags.automatic && !packetUBXHNRINS->automaticFlags.implicitUpdate)
+  else if (packetUBXHNRINS->automaticFlags.flags.bits.automatic && !packetUBXHNRINS->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -7030,8 +7082,8 @@ boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXHNRINS->automaticFlags.automatic = enable;
-    packetUBXHNRINS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXHNRINS->automaticFlags.flags.bits.automatic = enable;
+    packetUBXHNRINS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXHNRINS->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -7045,11 +7097,11 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate)
   if (packetUBXHNRINS == NULL) //Bail if the RAM allocation failed
     return (false);
 
-  boolean changes = packetUBXHNRINS->automaticFlags.automatic != enabled || packetUBXHNRINS->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXHNRINS->automaticFlags.flags.bits.automatic != enabled || packetUBXHNRINS->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXHNRINS->automaticFlags.automatic = enabled;
-    packetUBXHNRINS->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXHNRINS->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXHNRINS->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -7064,9 +7116,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRINS()
       _debugSerial->println(F("initPacketUBXHNRINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXHNRINS->automaticFlags.automatic = false;
-  packetUBXHNRINS->automaticFlags.implicitUpdate = false;
-  packetUBXHNRINS->automaticFlags.addToFileBuffer = false;
+  packetUBXHNRINS->automaticFlags.flags.all = 0;
+  packetUBXHNRINS->automaticFlags.callbackPointer = NULL;
   packetUBXHNRINS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7095,7 +7146,7 @@ boolean SFE_UBLOX_GPS::getHNRPVT(uint16_t maxWait)
   if (packetUBXHNRPVT == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  if (packetUBXHNRPVT->automaticFlags.automatic && packetUBXHNRPVT->automaticFlags.implicitUpdate)
+  if (packetUBXHNRPVT->automaticFlags.flags.bits.automatic && packetUBXHNRPVT->automaticFlags.flags.bits.implicitUpdate)
   {
     //The GPS is automatically reporting, we just check whether we got unread data
     // if (_printDebug == true)
@@ -7105,7 +7156,7 @@ boolean SFE_UBLOX_GPS::getHNRPVT(uint16_t maxWait)
     checkUbloxInternal(&packetCfg, UBX_CLASS_HNR, UBX_HNR_PVT);
     return packetUBXHNRPVT->moduleQueried.moduleQueried.bits.all;
   }
-  else if (packetUBXHNRPVT->automaticFlags.automatic && !packetUBXHNRPVT->automaticFlags.implicitUpdate)
+  else if (packetUBXHNRPVT->automaticFlags.flags.bits.automatic && !packetUBXHNRPVT->automaticFlags.flags.bits.implicitUpdate)
   {
     //Someone else has to call checkUblox for us...
     // if (_printDebug == true)
@@ -7179,8 +7230,8 @@ boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, boolean implicitUpdate, uin
   boolean ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXHNRPVT->automaticFlags.automatic = enable;
-    packetUBXHNRPVT->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXHNRPVT->automaticFlags.flags.bits.automatic = enable;
+    packetUBXHNRPVT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   packetUBXHNRPVT->moduleQueried.moduleQueried.bits.all = false; // Mark data as stale
   return ok;
@@ -7194,11 +7245,11 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRPVT(boolean enabled, boolean implicitUpdate)
   if (packetUBXHNRPVT == NULL) //Only attempt this if RAM allocation was successful
     return false;
 
-  boolean changes = packetUBXHNRPVT->automaticFlags.automatic != enabled || packetUBXHNRPVT->automaticFlags.implicitUpdate != implicitUpdate;
+  boolean changes = packetUBXHNRPVT->automaticFlags.flags.bits.automatic != enabled || packetUBXHNRPVT->automaticFlags.flags.bits.implicitUpdate != implicitUpdate;
   if (changes)
   {
-    packetUBXHNRPVT->automaticFlags.automatic = enabled;
-    packetUBXHNRPVT->automaticFlags.implicitUpdate = implicitUpdate;
+    packetUBXHNRPVT->automaticFlags.flags.bits.automatic = enabled;
+    packetUBXHNRPVT->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
   return changes;
 }
@@ -7213,9 +7264,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRPVT()
       _debugSerial->println(F("initPacketUBXHNRPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
-  packetUBXHNRPVT->automaticFlags.automatic = false;
-  packetUBXHNRPVT->automaticFlags.implicitUpdate = false;
-  packetUBXHNRPVT->automaticFlags.addToFileBuffer = false;
+  packetUBXHNRPVT->automaticFlags.flags.all = 0;
+  packetUBXHNRPVT->automaticFlags.callbackPointer = NULL;
   packetUBXHNRPVT->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
