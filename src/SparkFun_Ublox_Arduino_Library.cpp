@@ -3487,7 +3487,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getVal(uint32_t key, uint8_t layer, uint16_t m
 //Given a key, return its value
 //This function takes a full 32-bit key
 //Default layer is RAM
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::getVal8(uint32_t key, uint8_t layer, uint16_t maxWait)
 {
   if (getVal(key, layer, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
@@ -3512,7 +3512,7 @@ uint32_t SFE_UBLOX_GPS::getVal32(uint32_t key, uint8_t layer, uint16_t maxWait)
 
 //Given a group, ID and size, return the value of this config spot
 //The 32-bit key is put together from group/ID/size. See other getVal to send key directly.
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::getVal8(uint16_t group, uint16_t id, uint8_t size, uint8_t layer, uint16_t maxWait)
 {
   uint32_t key = createKey(group, id, size);
@@ -3532,7 +3532,7 @@ uint32_t SFE_UBLOX_GPS::getVal32(uint16_t group, uint16_t id, uint8_t size, uint
 //Given a key, set a 16-bit value
 //This function takes a full 32-bit key
 //Default layer is all: RAM+BBR+Flash
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
 {
   return setVal16(key, value, layer, maxWait);
@@ -3541,7 +3541,7 @@ uint8_t SFE_UBLOX_GPS::setVal(uint32_t key, uint16_t value, uint8_t layer, uint1
 //Given a key, set a 16-bit value
 //This function takes a full 32-bit key
 //Default layer is all: RAM+BBR+Flash
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
@@ -3573,7 +3573,7 @@ uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uin
 //Given a key, set an 8-bit value
 //This function takes a full 32-bit key
 //Default layer is all: RAM+BBR+Flash
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal8(uint32_t key, uint8_t value, uint8_t layer, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
@@ -3604,7 +3604,7 @@ uint8_t SFE_UBLOX_GPS::setVal8(uint32_t key, uint8_t value, uint8_t layer, uint1
 //Given a key, set a 32-bit value
 //This function takes a full 32-bit key
 //Default layer is all: RAM+BBR+Flash
-//Configuration of modern Ublox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
+//Configuration of modern u-blox modules is now done via getVal/setVal/delVal, ie protocol v27 and above found on ZED-F9P
 uint8_t SFE_UBLOX_GPS::setVal32(uint32_t key, uint32_t value, uint8_t layer, uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
