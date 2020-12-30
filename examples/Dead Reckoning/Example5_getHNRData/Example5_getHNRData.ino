@@ -55,6 +55,10 @@ void setup()
     Serial.println(F("setHNRNavigationRate was successful"));
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
+
+  myGPS.setAutoHNRAtt(false); //Make sure auto HNR attitude messages are disabled
+  myGPS.setAutoHNRDyn(false); //Make sure auto HNR vehicle dynamics messages are disabled
+  myGPS.setAutoHNRPVT(false); //Make sure auto HNR PVT messages are disabled
 }
 
 void loop()

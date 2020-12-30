@@ -43,7 +43,7 @@ void setup()
 
   Wire.begin();
 
-  myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
+  //myGPS.enableDebugging(); // Uncomment this line to enable debug messages on Serial
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
@@ -60,8 +60,16 @@ void setup()
     Serial.println(F("setHNRNavigationRate was NOT successful"));
     
   usingAutoHNRAtt = myGPS.setAutoHNRAtt(true); //Attempt to enable auto HNR attitude messages
+  if (usingAutoHNRAtt)
+    Serial.println(F("AutoHNRAtt successful"));
+  
   usingAutoHNRDyn = myGPS.setAutoHNRDyn(true); //Attempt to enable auto HNR vehicle dynamics messages  
+  if (usingAutoHNRDyn)
+    Serial.println(F("AutoHNRDyn successful"));
+  
   usingAutoHNRPVT = myGPS.setAutoHNRPVT(true); //Attempt to enable auto HNR PVT messages
+  if (usingAutoHNRPVT)
+    Serial.println(F("AutoHNRPVT successful"));
 }
 
 void loop()
