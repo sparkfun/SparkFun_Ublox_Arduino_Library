@@ -24,14 +24,14 @@
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
 void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example 17");
+  Serial.println("SparkFun u-blox Example 17");
 
   //Use any Serial port with at least a Rx Pin connected or a receive only version of SoftwareSerial here
   //Assume that the U-Blox GPS is running at 9600 baud (the default)

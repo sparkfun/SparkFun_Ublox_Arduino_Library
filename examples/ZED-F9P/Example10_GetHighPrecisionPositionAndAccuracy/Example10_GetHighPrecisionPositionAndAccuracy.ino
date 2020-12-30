@@ -23,10 +23,10 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
+long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
 void setup()
 {
@@ -37,9 +37,9 @@ void setup()
 
   //myGPS.enableDebugging(Serial);
 
-  if (myGPS.begin(Wire) == false) //Connect to the Ublox module using Wire port
+  if (myGPS.begin(Wire) == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 

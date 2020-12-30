@@ -1,6 +1,6 @@
 /*
-    This is an interface that connects the CPP Ublox library with the main C code.
-    Added to make it possible to run Ublox lib on Zephyr (NCS)
+    This is an interface that connects the CPP u-blox library with the main C code.
+    Added to make it possible to run u-blox lib on Zephyr (NCS)
 
     This port was made by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
 */
@@ -15,7 +15,7 @@
 
 
 SFE_UBLOX_GPS myGPS; // driver class instance
-long lastTime = 0;   // Simple local timer. Limits amount if I2C traffic to Ublox module.
+long lastTime = 0;   // Simple local timer. Limits amount if I2C traffic to u-blox module.
 
 // init GPIO checksumFailurePin and load GPIO device pointer to the driver
 uint8_t set_gpio_dev(struct device *gpio_dev, uint8_t enable_debug)

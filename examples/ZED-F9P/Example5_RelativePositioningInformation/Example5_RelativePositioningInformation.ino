@@ -1,5 +1,5 @@
 /*
-  Send UBX binary commands to enable RTCM sentences on Ublox ZED-F9P module
+  Send UBX binary commands to enable RTCM sentences on u-blox ZED-F9P module
   By: Nathan Seidle
   SparkFun Electronics
   Date: January 9th, 2019
@@ -23,7 +23,7 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
 //#define USE_SERIAL1 // Uncomment this line to push the RTCM data from Serial1 to the module via I2C
@@ -34,7 +34,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("Ublox Base station example");
+  Serial.println("u-blox Base station example");
 
 #ifdef USE_SERIAL1
   // If our board supports it, we can receive the RTCM data on Serial1
@@ -44,9 +44,9 @@ void setup()
   Wire.begin();
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 

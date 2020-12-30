@@ -1,5 +1,5 @@
 /*
-  Send UBX binary commands to enable RTCM sentences on Ublox NEO-M8P-2 module
+  Send UBX binary commands to enable RTCM sentences on u-blox NEO-M8P-2 module
   By: Nathan Seidle
   SparkFun Electronics
   Date: September 7th, 2018
@@ -39,7 +39,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("Ublox GPS I2C Test");
+  Serial.println("u-blox GPS I2C Test");
 
   Wire.begin();
 
@@ -54,7 +54,7 @@ void setup()
   myGPS.begin(Wire);
   if (myGPS.isConnected() == false)
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     lcd.setCursor(0, 1);
     lcd.print(F("No GPS detected"));
     while (1);
@@ -172,7 +172,7 @@ void loop()
   delay(250); //Don't pound too hard on the I2C bus
 }
 
-//This function gets called from the SparkFun Ublox Arduino Library.
+//This function gets called from the SparkFun u-blox Arduino Library.
 //As each RTCM byte comes in you can specify what to do with it
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)

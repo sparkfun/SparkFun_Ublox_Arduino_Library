@@ -7,9 +7,9 @@
   basically do whatever you want with this code.
 
   This example shows how to turn on/off the NMEA sentences being output
-  over UART1. We use the I2C interface on the Ublox module for configuration
+  over UART1. We use the I2C interface on the u-blox module for configuration
   but you won't see any output from this sketch. You'll need to hook up
-  a Serial Basic or other USB to Serial device to UART1 on your Ublox module
+  a Serial Basic or other USB to Serial device to UART1 on your u-blox module
   to see the output.
 
   This example turns off all sentences except for the GPGGA and GPVTG sentences.
@@ -24,7 +24,7 @@
   Plug a Qwiic cable into the GPS and a RedBoard
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
-  Hookup a Serial Basic (https://www.sparkfun.com/products/15096) to UART1 on the Ublox module. Open a terminal at 57600bps
+  Hookup a Serial Basic (https://www.sparkfun.com/products/15096) to UART1 on the u-blox module. Open a terminal at 57600bps
   and see GPGGA and GPVTG sentences.
 */
 #include <Wire.h> //Needed for I2C to GPS
@@ -43,7 +43,7 @@ void setup()
 
   if (myGPS.begin() == false)
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
@@ -66,7 +66,7 @@ void setup()
 
   myGPS.saveConfiguration(); //Save these settings to NVM
 
-  Serial.println(F("Messages configured. NMEA now being output over the UART1 port on the Ublox module at 57600bps."));
+  Serial.println(F("Messages configured. NMEA now being output over the UART1 port on the u-blox module at 57600bps."));
 }
 
 void loop()

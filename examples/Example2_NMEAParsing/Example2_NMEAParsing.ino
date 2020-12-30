@@ -1,5 +1,5 @@
 /*
-  Read NMEA sentences over I2C using Ublox module SAM-M8Q, NEO-M8P, etc
+  Read NMEA sentences over I2C using u-blox module SAM-M8Q, NEO-M8P, etc
   By: Nathan Seidle
   SparkFun Electronics
   Date: August 22nd, 2018
@@ -26,7 +26,7 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
 #include <MicroNMEA.h> //http://librarymanager/All#MicroNMEA
@@ -36,13 +36,13 @@ MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("SparkFun Ublox Example");
+  Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
 
   if (myGPS.begin() == false)
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 }
@@ -71,13 +71,13 @@ void loop()
   delay(250); //Don't pound too hard on the I2C bus
 }
 
-//This function gets called from the SparkFun Ublox Arduino Library
+//This function gets called from the SparkFun u-blox Arduino Library
 //As each NMEA character comes in you can specify what to do with it
 //Useful for passing to other libraries like tinyGPS, MicroNMEA, or even
 //a buffer, radio, etc.
 void SFE_UBLOX_GPS::processNMEA(char incoming)
 {
-  //Take the incoming char from the Ublox I2C port and pass it on to the MicroNMEA lib
+  //Take the incoming char from the u-blox I2C port and pass it on to the MicroNMEA lib
   //for sentence cracking
   nmea.process(incoming);
 }

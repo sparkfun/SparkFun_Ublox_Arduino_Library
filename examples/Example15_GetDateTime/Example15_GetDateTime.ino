@@ -1,12 +1,12 @@
 /*
-  Getting time and date using Ublox commands
+  Getting time and date using u-blox commands
   By: davidallenmann
   SparkFun Electronics
   Date: April 16th, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to query a Ublox module for the current time and date. We also
+  This example shows how to query a u-blox module for the current time and date. We also
   turn off the NMEA output on the I2C port. This decreases the amount of I2C traffic
   dramatically.
 
@@ -26,23 +26,23 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to Ublox module.
+long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
 
 void setup()
 {
   Serial.begin(115200);
   while (!Serial)
     ; //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
 
-  if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }

@@ -34,7 +34,7 @@
 WiFiClient client;
 
 #include <Wire.h> //Needed for I2C to GPS
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
 //Basic Connection settings to RTK2Go NTRIP Caster - See secrets for mount specific credentials

@@ -1,12 +1,12 @@
 /*
-  Change the I2C address of a Ublox module using I2C
+  Change the I2C address of a u-blox module using I2C
   By: Nathan Seidle
   SparkFun Electronics
   Date: January 3rd, 2019
   License: MIT. See license file for more information but you can
   basically do whatever you want with this code.
 
-  This example shows how to change the I2C address of a Ublox module
+  This example shows how to change the I2C address of a u-blox module
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -22,7 +22,7 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
 long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
@@ -31,11 +31,11 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
 
-  byte oldAddress = 0x42; //The default address for Ublox modules is 0x42
+  byte oldAddress = 0x42; //The default address for u-blox modules is 0x42
   byte newAddress = 0x3F; //Address you want to change to. Valid is 0x08 to 0x77.
 
   while (Serial.available()) Serial.read(); //Trash any incoming chars
@@ -43,7 +43,7 @@ void setup()
   Serial.println(newAddress, HEX);
   while (Serial.available() == false) ; //Wait for user to send character
   
-  if (myGPS.begin(Wire, oldAddress) == true) //Connect to the Ublox module using Wire port and the old address
+  if (myGPS.begin(Wire, oldAddress) == true) //Connect to the u-blox module using Wire port and the old address
   {
     Serial.print("GPS found at address 0x");
     Serial.println(oldAddress, HEX);

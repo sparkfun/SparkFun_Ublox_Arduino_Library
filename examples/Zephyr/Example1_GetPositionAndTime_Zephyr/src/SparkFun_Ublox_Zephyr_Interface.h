@@ -1,6 +1,6 @@
 /*
-    This is an interface that connects the CPP Ublox library with the main C code.
-    Added to make it possible to run Ublox lib on Zephyr (NCS)
+    This is an interface that connects the CPP u-blox library with the main C code.
+    Added to make it possible to run u-blox lib on Zephyr (NCS)
 
     This port was made by Vid Rajtmajer <vid@irnas.eu>, www.irnas.eu
 */
