@@ -49,7 +49,6 @@ In terms of RAM, you may find that your total RAM use is lower using v2 compared
 
 In v2.0, the full list of messages which can be processed and logged automatically is:
 - UBX-NAV-POSECEF (0x01 0x01): Position solution in ECEF
-- UBX-NAV-POSLLH (0x01 0x02): Geodetic position solution
 - UBX-NAV-STATUS (0x01 0x03): Receiver navigation status
 - UBX-NAV-DOP (0x01 0x04): Dilution of precision
 - UBX-NAV-ATT (0x01 0x05): Attitude solution (**only with ADR or UDR products**)
@@ -74,6 +73,10 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-HNR-PVT (0x28 0x00): High rate output of PVT solution (**only with ADR or UDR products**)
 - UBX-HNR-ATT (0x28 0x01): Attitude solution (**only with ADR or UDR products**)
 - UBX-HNR-INS (0x28 0x02): Vehicle dynamics information (**only with ADR or UDR products**)
+
+Notes:
+- UBX-NAV-POSLLH is not supported as UBX-NAV-PVT contains the same information
+- UBX-NAV-TIMEUTC is not supported as UBX-NAV-PVT contains the same information
 
 Migrating your code to v2.0
 ===========================================================
