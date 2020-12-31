@@ -44,7 +44,7 @@ Version 2 of the library does things differently. Whilst of course trying to kee
 
 In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _new_ fails) then a debug error message is generated.
 
-"Auto" Messages
+"Auto" messages
 ===========================================================
 
 In v2.0, the full list of messages which can be processed and logged automatically is:
@@ -58,7 +58,6 @@ In v2.0, the full list of messages which can be processed and logged automatical
 - UBX-NAV-VELNED (0x01 0x12): Velocity solution in NED frame
 - UBX-NAV-HPPOSECEF (0x01 0x13): High precision position solution in ECEF
 - UBX-NAV-HPPOSLLH (0x01 0x14): High precision geodetic position solution
-- UBX-NAV-TIMEUTC (0x01 0x21): UTC time solution
 - UBX-NAV-CLOCK (0x01 0x22): Clock solution
 - UBX-NAV-SVIN (0x01 0x3B): Survey-in data (**only with High Precision GNSS products**)
 - UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame (**only with High Precision GNSS products**)
