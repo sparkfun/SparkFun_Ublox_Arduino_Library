@@ -460,6 +460,8 @@ public:
 	//serialPort needs to be perviously initialized to correct baud rate
 	boolean begin(Stream &serialPort); //Returns true if module is detected
 
+	void setI2CpollingWait(uint8_t newPollingWait_ms); // Allow the user to change the I2C polling wait if required
+
 	//Control the size of the internal I2C transaction amount
 	void setI2CTransactionSize(uint8_t bufferSize);
 	uint8_t getI2CTransactionSize(void);

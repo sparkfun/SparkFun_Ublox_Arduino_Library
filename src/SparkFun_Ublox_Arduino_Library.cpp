@@ -145,6 +145,15 @@ boolean SFE_UBLOX_GPS::begin(Stream &serialPort)
   return (connected);
 }
 
+// Allow the user to change I2C polling wait (the minimum interval between I2C data requests - to avoid pounding the bus)
+// i2cPollingWait defaults to 100ms and is adjusted automatically when setNavigationFrequency()
+// or setHNRNavigationRate() are called. But if the user is using callbacks, it might be advantageous
+// to be able to set the polling wait manually.
+void SFE_UBLOX_GPS::setI2CpollingWait(uint8_t newPollingWait_ms)
+{
+  i2cPollingWait = newPollingWait_ms;
+}
+
 //Sets the global size for I2C transactions
 //Most platforms use 32 bytes (the default) but this allows users to increase the transaction
 //size if the platform supports it
