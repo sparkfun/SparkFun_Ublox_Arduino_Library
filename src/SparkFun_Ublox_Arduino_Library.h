@@ -611,6 +611,9 @@ public:
 	boolean setDynamicModel(dynModel newDynamicModel = DYN_MODEL_PORTABLE, uint16_t maxWait = defaultMaxWait);
 	uint8_t getDynamicModel(uint16_t maxWait = defaultMaxWait); // Get the dynamic model - returns 255 if the sendCommand fails
 
+	//Reset the odometer
+	boolean resetOdometer(uint16_t maxWait = defaultMaxWait); // Reset the odometer
+
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
 	//It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.

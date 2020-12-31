@@ -3770,6 +3770,17 @@ uint8_t SFE_UBLOX_GPS::getDynamicModel(uint16_t maxWait)
   return (payloadCfg[2]); // Return the dynamic model
 }
 
+//Reset the odometer
+boolean SFE_UBLOX_GPS::resetOdometer(uint16_t maxWait = defaultMaxWait)
+{
+  packetCfg.cls = UBX_CLASS_NAV;
+  packetCfg.id = UBX_NAV_RESETODO;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+}
+
 // CONFIGURATION INTERFACE (protocol v27 and above)
 
 //Form 32-bit key from group/id/size
