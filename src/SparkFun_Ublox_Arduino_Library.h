@@ -1130,6 +1130,10 @@ private:
 	uint8_t rollingChecksumB; //Rolls forward as we receive incoming bytes. Checked against the last two A/B checksum bytes
 
 	uint16_t rtcmLen = 0;
+
+	// Flag to prevent reentry into checkCallbacks
+	// Prevent badness if the user accidentally calls checkCallbacks from inside a callback
+	boolean checkCallbacksReentrant = false;
 };
 
 #endif

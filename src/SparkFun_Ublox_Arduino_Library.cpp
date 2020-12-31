@@ -2506,6 +2506,11 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForNoACKResponse(ubxPacket *outgoingUBX, u
 // Check if any callbacks are waiting to be processed
 void SFE_UBLOX_GPS::checkCallbacks(void)
 {
+  if (checkCallbacksReentrant == true) // Check for reentry (i.e. checkCallbacks has been called from inside a callback)
+    return;
+
+  checkCallbacksReentrant = true;
+
   if ((packetUBXNAVPVTcopy != NULL) // If RAM has been allocated for the copy of the data
     && (packetUBXNAVPVT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
@@ -2545,6 +2550,8 @@ void SFE_UBLOX_GPS::checkCallbacks(void)
     packetUBXHNRPVT->automaticFlags.callbackPointer(); // Call the callback
     packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
+
+  checkCallbacksReentrant = false;
 }
 
 // Push (e.g.) RTCM data directly to the module
