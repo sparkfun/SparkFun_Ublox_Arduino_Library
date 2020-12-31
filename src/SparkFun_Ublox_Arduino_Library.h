@@ -9,7 +9,8 @@
 	https://www.sparkfun.com/products/15193
 	https://www.sparkfun.com/products/15210
 
-	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+	Original version by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+	v2.0 rework by Paul Clark @ SparkFun Electronics, December 31st, 2020
 
 	This library handles configuring and handling the responses
 	from a u-blox GPS module. Works with most modules from u-blox including
@@ -18,7 +19,7 @@
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
 
 	Development environment specifics:
-	Arduino IDE 1.8.5
+	Arduino IDE 1.8.13
 
 	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
 	The MIT License (MIT)
@@ -683,7 +684,7 @@ public:
 	boolean getPVT(uint16_t maxWait = defaultMaxWait);	//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-	boolean setAutoPVT(void (*callbackPointer)(), uint16_t maxWait = defaultMaxWait); //Enable automatic PVT reports at the navigation frequency. Data is accessed via the callback.
+	boolean setAutoPVTcallback(void (*callbackPointer)(), uint16_t maxWait = defaultMaxWait); //Enable automatic PVT reports at the navigation frequency. Data is accessed from the callback.
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and PVT is send cyclically already
 	boolean initPacketUBXNAVPVT(); // Allocate RAM for packetUBXNAVPVT and initialize it
 	void flushPVT(); //Mark all the PVT data as read/stale

@@ -9,7 +9,8 @@
 	https://www.sparkfun.com/products/15193
 	https://www.sparkfun.com/products/15210
 
-	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+  Original version by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+	v2.0 rework by Paul Clark @ SparkFun Electronics, December 31st, 2020
 
 	This library handles configuring and handling the responses
 	from a u-blox GPS module. Works with most modules from u-blox including
@@ -18,7 +19,7 @@
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
 
 	Development environment specifics:
-	Arduino IDE 1.8.5
+	Arduino IDE 1.8.13
 
 	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
 	The MIT License (MIT)
@@ -4585,29 +4586,6 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
   return setAutoPVT(enable, true, maxWait);
 }
 
-//Enable automatic navigation message generation by the GPS. This changes the way getPVT works.
-//Point to the callback.
-boolean SFE_UBLOX_GPS::setAutoPVT(void (*callbackPointer)(), uint16_t maxWait)
-{
-  boolean result = setAutoPVT(true, true, maxWait);
-  if (!result)
-    return (result); // Bail if setAutoPVT failed
-
-  if (packetUBXNAVPVTcopy == NULL) //Check if RAM has been allocated for the callback copy
-  {
-    packetUBXNAVPVTcopy = new UBX_NAV_PVT_data_t; //Allocate RAM for the main struct
-  }
-
-  if (packetUBXNAVPVTcopy == NULL)
-  {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
-      _debugSerial->println(F("setAutoPVT (callbackPointer): PANIC! RAM allocation failed!"));
-    return (false);
-  }
-
-  packetUBXNAVPVT->automaticFlags.callbackPointer = callbackPointer;
-}
-
 //Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
@@ -4632,6 +4610,31 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   }
   packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
   return ok;
+}
+
+//Enable automatic navigation message generation by the GPS. This changes the way getPVT works.
+//Data is passed to the callback in packetUBXNAVPVTcopy.
+boolean SFE_UBLOX_GPS::setAutoPVTcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoPVT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAutoPVT failed
+
+  if (packetUBXNAVPVTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPVTcopy = new UBX_NAV_PVT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPVTcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoPVTcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVPVT->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
 }
 
 //In case no config access to the GPS is possible and PVT is send cyclically already

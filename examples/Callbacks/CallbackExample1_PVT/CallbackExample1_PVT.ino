@@ -7,7 +7,7 @@
   basically do whatever you want with this code.
 
   This example shows how to configure the u-blox GPS to send navigation reports automatically
-  and access the data via a callback.
+  and access the data via a callback. No more polling!
 
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
@@ -26,30 +26,38 @@
 #include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GPS
 SFE_UBLOX_GPS myGPS;
 
-void printPVTdata() // Define the callback for NAV PVT
+void printPVTdata() // Callback: printPVTdata will be called when new NAV PVT data arrives
 {
     Serial.println();
 
-    Serial.print(F("Time: "));
-    uint8_t hms = myGPS.packetUBXNAVPVTcopy->hour;
-    if (hms < 10) Serial.print(F("0")); Serial.print(hms); Serial.print(F(":"));
-    hms = myGPS.packetUBXNAVPVTcopy->min;
-    if (hms < 10) Serial.print(F("0")); Serial.print(hms); Serial.print(F(":"));
-    hms = myGPS.packetUBXNAVPVTcopy->sec;
-    if (hms < 10) Serial.print(F("0")); Serial.print(hms); Serial.print(F("."));
-    unsigned long millisecs = myGPS.packetUBXNAVPVTcopy->iTOW % 1000;
+    Serial.print(F("Time: ")); // Print the time
+    uint8_t hms = myGPS.packetUBXNAVPVTcopy->hour; // Print the hours
+    if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
+    Serial.print(hms);
+    Serial.print(F(":"));
+    hms = myGPS.packetUBXNAVPVTcopy->min; // Print the minutes
+    if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
+    Serial.print(hms);
+    Serial.print(F(":"));
+    hms = myGPS.packetUBXNAVPVTcopy->sec; // Print the seconds
+    if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
+    Serial.print(hms);
+    Serial.print(F("."));
+    unsigned long millisecs = myGPS.packetUBXNAVPVTcopy->iTOW % 1000; // Print the milliseconds
+    if (millisecs < 100) Serial.print(F("0")); // Print the trailing zeros correctly
+    if (millisecs < 10) Serial.print(F("0"));
     Serial.print(millisecs);
     
-    long latitude = myGPS.packetUBXNAVPVTcopy->lat;
+    long latitude = myGPS.packetUBXNAVPVTcopy->lat; // Print the latitude
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.packetUBXNAVPVTcopy->lon;
+    long longitude = myGPS.packetUBXNAVPVTcopy->lon; // Print the longitude
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
     
-    long altitude = myGPS.packetUBXNAVPVTcopy->hMSL;
+    long altitude = myGPS.packetUBXNAVPVTcopy->hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
     Serial.println(F(" (mm)"));  
@@ -76,7 +84,7 @@ void setup()
   
   myGPS.setNavigationFrequency(2); //Produce two solutions per second
   
-  myGPS.setAutoPVT(printPVTdata); // Enable automatic PVT messages with callback
+  myGPS.setAutoPVTcallback(printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 }
 
 void loop()

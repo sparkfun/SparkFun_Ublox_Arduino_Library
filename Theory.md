@@ -15,20 +15,23 @@ This library was originally written to use the I<sup>2</sup>C interface but Seri
 How data is processed by this library
 ===========================================================
 
-In Version 1 of this library, we tried to minimize memory usage by being very careful about how much RAM we allocated to UBX packet storage and processing. We used only three buffers or containers to store the incoming data: **packetBuf** (packetBuffer); **packetCfg** (packetConfiguration); and **packetAck** (packetAcknowledge). Once data was received and validated, it would be copied out of **packetCfg** and into 'global' variables with names like ```gpsSecond``` or ```latitude```. We also introduced the concept of _Polling vs. Auto-Reporting_ where messages like PVT (Position, Velocity, Time) could be generated and parsed "automatically". This meant that functions like ```getLatitude``` could be non-blocking, returning the most recent data and requesting fresh data when necessary. But it also meant that _polled_ messages could be _overwritten_ (in **packetCfg**) by any _auto-reported_ messages. The library dealt with this successfully, but it was a headache.
+In Version 1 of this library, we tried to minimize memory usage by being very careful about how much RAM we allocated to UBX packet storage and processing. We used only three buffers or containers to store the incoming data: **packetBuf** (packetBuffer); **packetCfg** (packetConfiguration); and **packetAck** (packetAcknowledge). Incoming packets were stored in **packetBuf** initially and then diverted into **packetAck** or **packetCfg** as necessary. Once data was received and validated, it would be copied out of **packetCfg** and into 'global' variables with names like ```gpsSecond``` or ```latitude```. We also introduced the concept of _Polling vs. Auto-Reporting_ where messages like PVT (Position, Velocity, Time) could be generated and parsed "automatically". This meant that functions like ```getLatitude``` could be non-blocking, returning the most recent data and requesting fresh data when necessary. But it also meant that _polled_ messages could be _overwritten_ (in **packetCfg**) by any _auto-reported_ messages. The library dealt with this successfully, but it was a headache.
 
 Version 1 had two main drawbacks. As time went on:
 - the RAM use increased as we had to add new 'global' storage for each new data type
 - the number of messages which needed "auto" processing through **packetCfg** became complex, requiring significant code changes each time a new "auto" message was added. (We started with NAV-PVT. Then came NAV-HPPOSLLH and NAV-DOP. Things got complicated when HNR-ATT, HNR-INS and HNR-PVT were added to the mix.)
 
 Version 2 of the library does things differently. Whilst of course trying to keep the library backward-compatible as much as possible, we have taken a fresh approach:
+- We have added **packetAuto** which is used to temporarily buffer expected auto-reported messages and prevents data from being overwritten in **packetCfg**.
+  - The payload for **packetAuto** is allocated dynamically in RAM and deleted after use.
+  - If insufficient RAM is available, the code falls back to using **packetCfg** to buffer the data instead.
 - The library no longer uses 'global' (permanently-allocated) storage for the GNSS data. Instead:
-  - Each message type has a **typedef struct** defined which matches the format of the UBX message. (_typedef structs_ are just definitions, they don't occupy memory.)
-  - The struct allows each data field (latitude, longitude, etc.) to be read simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct.
-  - Storage for that message is only _allocated_ in RAM if/when required. The allocation is done using _malloc_ via a pointer to the struct.
+  - Each message type has a **typedef struct** defined which matches the format of the UBX message. (_typedef structs_ are just definitions, they don't occupy memory.) You can find the definitions in _u-blox_structs.h_.
+  - The struct allows each data field (latitude, longitude, etc.) to be read simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct. The field names are as defined in the u-blox interface description.
+  - Storage for that message is only _allocated_ in RAM if/when required. The allocation is done using _new_ via a pointer to the struct.
 - _Any_ message can be "auto" if required, but can be polled too.
-- An optional _callback_ can be associated with the arrival of each message type. A simple scheduler triggers the callbacks once I<sup>2</sup>C/Serial data reception is complete.
-  - This means that your code no longer needs to wait for the arrival of a message, you are able to request (e.g.) PVT and your callback is called once the data arrives.
+- An optional _callback_ can be associated with the arrival of each message type. A simple scheduler ```checkCallbacks``` triggers the callbacks once I<sup>2</sup>C/Serial data reception is complete.
+  - This means that your code no longer needs to wait for the arrival of a message, you are able to request (e.g.) PVT or HNR data and your callback is called once the data arrives.
   - The callbacks are not re-entrant.
   - The callback receives a _copy_ of the data, so data reception and processing can continue while the callback is executing. Data integrity is preserved.
 - Incoming data can be copied to a separate buffer to allow automatic writing to a file on SD card, which will be useful for (e.g.) RAWX logging.
@@ -39,18 +42,57 @@ Version 2 of the library does things differently. Whilst of course trying to kee
   - User-defined code does the actual writing of data from the linear buffer to the SD card. The u-blox GNSS library itself does not perform the writing and so is not tied to any particular SD library.
   - The logged files can be played back and analyzed with (e.g.) u-center or RTKLIB.
 
-In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _alloc_ fails) then an error is generated.
+In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _new_ fails) then a debug error message is generated.
+
+"Auto" Messages
+===========================================================
+
+In v2.0, the full list of messages which can be processed and logged automatically is:
+- UBX-NAV-POSECEF (0x01 0x01): Position solution in ECEF
+- UBX-NAV-POSLLH (0x01 0x02): Geodetic position solution
+- UBX-NAV-STATUS (0x01 0x03): Receiver navigation status
+- UBX-NAV-DOP (0x01 0x04): Dilution of precision
+- UBX-NAV-ATT (0x01 0x05): Attitude solution (**only with ADR or UDR products**)
+- UBX-NAV-PVT (0x01 0x07): Navigation position velocity time solution
+- UBX-NAV-ODO (0x01 0x09): Odometer solution
+- UBX-NAV-VELECEF (0x01 0x11): Velocity solution in ECEF
+- UBX-NAV-VELNED (0x01 0x12): Velocity solution in NED frame
+- UBX-NAV-HPPOSECEF (0x01 0x13): High precision position solution in ECEF
+- UBX-NAV-HPPOSLLH (0x01 0x14): High precision geodetic position solution
+- UBX-NAV-TIMEUTC (0x01 0x21): UTC time solution
+- UBX-NAV-CLOCK (0x01 0x22): Clock solution
+- UBX-NAV-SVIN (0x01 0x3B): Survey-in data (**only with High Precision GNSS products**)
+- UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame (**only with High Precision GNSS products**)
+- UBX-RXM-SFRBX (0x02 0x13): Broadcast navigation data subframe
+- UBX-RXM-RAWX (0x02 0x15): Multi-GNSS raw measurement data (**only with ADR or High Precision GNSS or Time Sync products**)
+- UBX-TIM-TM2 (0x0D 0x03): Time mark data
+- UBX-ESF-ALG (0x10 0x14): IMU alignment information (**only with ADR or UDR products**)
+- UBX-ESF-INS (0x10 0x15): Vehicle dynamics information (**only with ADR or UDR products**)
+- UBX-ESF-MEAS (0x10 0x02): External sensor fusion measurements (**only with ADR or UDR products**)
+- UBX-ESF-RAW (0x10 0x03): Raw sensor measurements (**only with ADR or UDR products**)
+- UBX-ESF-STATUS (0x10 0x10): External sensor fusion status (**only with ADR or UDR products**)
+- UBX-HNR-PVT (0x28 0x00): High rate output of PVT solution (**only with ADR or UDR products**)
+- UBX-HNR-ATT (0x28 0x01): Attitude solution (**only with ADR or UDR products**)
+- UBX-HNR-INS (0x28 0x02): Vehicle dynamics information (**only with ADR or UDR products**)
 
 Migrating your code to v2.0
 ===========================================================
 
-- NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.relPosN (etc.) as (int32_t)cm.
-  - Helper functions (getRelPosN, getRelPosE, getRelPosD) provide backward-compatibility
-- NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.accN (etc.) as (uint32_t)mm*0.1.
-  - Helper functions (getRelPosAccN, getRelPosAccE, getRelPosAccD) provide backward-compatibility
+The biggest change in v2.0 is that data is now stored in a _struct_ which matches the u-blox interface description for that message. For example:
+- In v1, the NAV PVT (Position Velocity Time) latitude and longitude were stored in 'global' _int32_t_ variables called ```latitude``` and ```longitude```
+- In v2.0, the data is now stored in UBX_NAV_PVT_t *packetUBXNAVPVT
+  - ```myGPS.latitude``` becomes ```myGPS.packetUBXNAVPVT->data.lat```
+  - ```myGPS.longitude``` becomes ```myGPS.packetUBXNAVPVT->data.lon```
+- The helper functions ```myGPS.getLatitude()``` and ```myGPS.getLongitude()``` are still available and work in the same way.
+
+Other changes include:
+- In v1, NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.relPosN (etc.) as (int32_t)cm.
+  - New helper functions (getRelPosN, getRelPosE, getRelPosD) provide backward-compatibility
+- In v1, NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.accN (etc.) as (uint32_t)mm*0.1.
+  - New helper functions (getRelPosAccN, getRelPosAccE, getRelPosAccD) provide backward-compatibility
 - getSurveyStatus now returns data via UBX_NAV_SVIN_t *packetUBXNAVSVIN
   - svin.active is replaced with (boolean)packetUBXNAVSVIN->data.active
   - svin.valid is replaced with (boolean)packetUBXNAVSVIN->data.valid
   - svin.observationTime is replaced with packetUBXNAVSVIN->data.dur and is now uint32_t (not uint16_t)
   - svin.MeanAccuracy is replaced with packetUBXNAVSVIN->data.meanAcc and is now uint32_t * 0.1mm (not float * m)
-  - Helper functions (getSurveyInActive, getSurveyInValid, getSurveyInObservationTime, getSurveyInMeanAccuracy) provide backward-compatibility
+  - New helper functions (getSurveyInActive, getSurveyInValid, getSurveyInObservationTime, getSurveyInMeanAccuracy) provide backward-compatibility

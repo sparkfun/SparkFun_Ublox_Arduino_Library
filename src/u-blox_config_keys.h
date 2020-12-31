@@ -9,7 +9,8 @@
 	https://www.sparkfun.com/products/15193
 	https://www.sparkfun.com/products/15210
 
-	Written by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+  Original version by Nathan Seidle @ SparkFun Electronics, September 6th, 2018
+	v2.0 rework by Paul Clark @ SparkFun Electronics, December 31st, 2020
 
 	This library handles configuring and handling the responses
 	from a u-blox GPS module. Works with most modules from u-blox including
@@ -18,7 +19,7 @@
 	https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library
 
 	Development environment specifics:
-	Arduino IDE 1.8.5
+	Arduino IDE 1.8.13
 
 	SparkFun code, firmware, and software is released under the MIT License(http://opensource.org/licenses/MIT).
 	The MIT License (MIT)
