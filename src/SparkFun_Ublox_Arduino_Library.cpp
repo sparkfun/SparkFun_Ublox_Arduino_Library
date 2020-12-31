@@ -1279,6 +1279,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVPOSECEFcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVPOSECEF->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVPOSECEFcopy->iTOW, &packetUBXNAVPOSECEF->data.iTOW, sizeof(UBX_NAV_POSECEF_data_t));
+          packetUBXNAVPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_STATUS && msg->len == UBX_NAV_STATUS_LEN)
@@ -1296,6 +1304,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVSTATUScopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVSTATUS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVSTATUScopy->iTOW, &packetUBXNAVSTATUS->data.iTOW, sizeof(UBX_NAV_STATUS_data_t));
+          packetUBXNAVSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_DOP && msg->len == UBX_NAV_DOP_LEN)
@@ -1314,6 +1330,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVDOPcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVDOP->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVDOPcopy->iTOW, &packetUBXNAVDOP->data.iTOW, sizeof(UBX_NAV_DOP_data_t));
+          packetUBXNAVDOP->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_ATT && msg->len == UBX_NAV_ATT_LEN)
@@ -1332,6 +1356,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVATT->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVATTcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVATTcopy->iTOW, &packetUBXNAVATT->data.iTOW, sizeof(UBX_NAV_ATT_data_t));
+          packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_PVT && msg->len == UBX_NAV_PVT_LEN)
@@ -1380,39 +1412,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         if ((packetUBXNAVPVTcopy != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          packetUBXNAVPVTcopy->iTOW = extractLong(msg, 0);
-          packetUBXNAVPVTcopy->year = extractInt(msg, 4);
-          packetUBXNAVPVTcopy->month = extractByte(msg, 6);
-          packetUBXNAVPVTcopy->day = extractByte(msg, 7);
-          packetUBXNAVPVTcopy->hour = extractByte(msg, 8);
-          packetUBXNAVPVTcopy->min = extractByte(msg, 9);
-          packetUBXNAVPVTcopy->sec = extractByte(msg, 10);
-          packetUBXNAVPVTcopy->valid.all = extractByte(msg, 11);
-          packetUBXNAVPVTcopy->tAcc = extractLong(msg, 12);
-          packetUBXNAVPVTcopy->nano = extractSignedLong(msg, 16); //Includes milliseconds
-          packetUBXNAVPVTcopy->fixType = extractByte(msg, 20);
-          packetUBXNAVPVTcopy->flags.all = extractByte(msg, 21);
-          packetUBXNAVPVTcopy->flags2.all = extractByte(msg, 22);
-          packetUBXNAVPVTcopy->numSV = extractByte(msg, 23);
-          packetUBXNAVPVTcopy->lon = extractSignedLong(msg, 24);
-          packetUBXNAVPVTcopy->lat = extractSignedLong(msg, 28);
-          packetUBXNAVPVTcopy->height = extractSignedLong(msg, 32);
-          packetUBXNAVPVTcopy->hMSL = extractSignedLong(msg, 36);
-          packetUBXNAVPVTcopy->hAcc = extractLong(msg, 40);
-          packetUBXNAVPVTcopy->vAcc = extractLong(msg, 44);
-          packetUBXNAVPVTcopy->velN = extractSignedLong(msg, 48);
-          packetUBXNAVPVTcopy->velE = extractSignedLong(msg, 52);
-          packetUBXNAVPVTcopy->velD = extractSignedLong(msg, 56);
-          packetUBXNAVPVTcopy->gSpeed = extractSignedLong(msg, 60);
-          packetUBXNAVPVTcopy->headMot = extractSignedLong(msg, 64);
-          packetUBXNAVPVTcopy->sAcc = extractLong(msg, 68);
-          packetUBXNAVPVTcopy->headAcc = extractLong(msg, 72);
-          packetUBXNAVPVTcopy->pDOP = extractInt(msg, 76);
-          packetUBXNAVPVTcopy->flags3.all = extractByte(msg, 78);
-          packetUBXNAVPVTcopy->headVeh = extractSignedLong(msg, 84);
-          packetUBXNAVPVTcopy->magDec = extractSignedInt(msg, 88);
-          packetUBXNAVPVTcopy->magAcc = extractInt(msg, 90);
-
+          memcpy(&packetUBXNAVPVTcopy->iTOW, &packetUBXNAVPVT->data.iTOW, sizeof(UBX_NAV_PVT_data_t));
           packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
       }
@@ -1430,6 +1430,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVODO->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVODOcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVODO->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVODOcopy->version, &packetUBXNAVODO->data.version, sizeof(UBX_NAV_ODO_data_t));
+          packetUBXNAVODO->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_VELECEF && msg->len == UBX_NAV_VELECEF_LEN)
@@ -1445,6 +1453,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVVELECEFcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVVELECEF->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVVELECEFcopy->iTOW, &packetUBXNAVVELECEF->data.iTOW, sizeof(UBX_NAV_VELECEF_data_t));
+          packetUBXNAVVELECEF->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_VELNED && msg->len == UBX_NAV_VELNED_LEN)
@@ -1464,6 +1480,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVVELNEDcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVVELNED->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVVELNEDcopy->iTOW, &packetUBXNAVVELNED->data.iTOW, sizeof(UBX_NAV_VELNED_data_t));
+          packetUBXNAVVELNED->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_HPPOSECEF && msg->len == UBX_NAV_HPPOSECEF_LEN)
@@ -1484,6 +1508,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVHPPOSECEFcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVHPPOSECEFcopy->version, &packetUBXNAVHPPOSECEF->data.version, sizeof(UBX_NAV_HPPOSECEF_data_t));
+          packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_HPPOSLLH && msg->len == UBX_NAV_HPPOSLLH_LEN)
@@ -1507,6 +1539,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVHPPOSLLHcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVHPPOSLLHcopy->version, &packetUBXNAVHPPOSLLH->data.version, sizeof(UBX_NAV_HPPOSLLH_data_t));
+          packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_CLOCK && msg->len == UBX_NAV_CLOCK_LEN)
@@ -1522,6 +1562,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVCLOCKcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVCLOCKcopy->iTOW, &packetUBXNAVCLOCK->data.iTOW, sizeof(UBX_NAV_CLOCK_data_t));
+          packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_NAV_SVIN && msg->len == UBX_NAV_SVIN_LEN)
@@ -1598,6 +1646,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXNAVRELPOSNEDcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXNAVRELPOSNEDcopy->version, &packetUBXNAVRELPOSNED->data.version, sizeof(UBX_NAV_RELPOSNED_data_t));
+          packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     break;
@@ -1625,6 +1681,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXRXMSFRBX->moduleQueried = true;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXRXMSFRBXcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXRXMSFRBXcopy->gnssId, &packetUBXRXMSFRBX->data.gnssId, sizeof(UBX_RXM_SFRBX_data_t));
+          packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_RXM_RAWX)
@@ -1668,6 +1732,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXRXMRAWX->moduleQueried = true;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXRXMRAWXcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXRXMRAWXcopy->header.rcvTow[0], &packetUBXRXMRAWX->data.header.rcvTow[0], sizeof(UBX_RXM_RAWX_data_t));
+          packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     break;
@@ -1705,6 +1777,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXTIMTM2copy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXTIMTM2copy->ch, &packetUBXTIMTM2->data.ch, sizeof(UBX_TIM_TM2_data_t));
+          packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     break;
@@ -1724,6 +1804,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXESFALG->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXESFALGcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXESFALG->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXESFALGcopy->iTOW, &packetUBXESFALG->data.iTOW, sizeof(UBX_ESF_ALG_data_t));
+          packetUBXESFALG->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_ESF_INS && msg->len == UBX_ESF_INS_LEN)
@@ -1742,6 +1830,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXESFINS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXESFINScopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXESFINS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXESFINScopy->bitfield0.all, &packetUBXESFINS->data.bitfield0.all, sizeof(UBX_ESF_INS_data_t));
+          packetUBXESFINS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_ESF_MEAS)
@@ -1762,6 +1858,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXESFMEAScopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXESFMEAS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXESFMEAScopy->timeTag, &packetUBXESFMEAS->data.timeTag, sizeof(UBX_ESF_MEAS_data_t));
+          packetUBXESFMEAS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_ESF_RAW)
@@ -1777,6 +1881,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXESFRAW->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXESFRAWcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXESFRAW->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXESFRAWcopy->data[0].data.all, &packetUBXESFRAW->data.data[0].data.all, sizeof(UBX_ESF_RAW_data_t));
+          packetUBXESFRAW->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_ESF_STATUS)
@@ -1799,6 +1911,14 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXESFSTATUScopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXESFSTATUS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          memcpy(&packetUBXESFSTATUScopy->iTOW, &packetUBXESFSTATUS->data.iTOW, sizeof(UBX_ESF_STATUS_data_t));
+          packetUBXESFSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     break;
@@ -1839,30 +1959,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         if ((packetUBXHNRPVTcopy != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          packetUBXHNRPVTcopy->iTOW = extractLong(msg, 0);
-          packetUBXHNRPVTcopy->year = extractInt(msg, 4);
-          packetUBXHNRPVTcopy->month = extractByte(msg, 6);
-          packetUBXHNRPVTcopy->day = extractByte(msg, 7);
-          packetUBXHNRPVTcopy->hour = extractByte(msg, 8);
-          packetUBXHNRPVTcopy->min = extractByte(msg, 9);
-          packetUBXHNRPVTcopy->sec = extractByte(msg, 10);
-          packetUBXHNRPVTcopy->valid.all = extractByte(msg, 11);
-          packetUBXHNRPVTcopy->nano = extractSignedLong(msg, 12);
-          packetUBXHNRPVTcopy->gpsFix = extractByte(msg, 16);
-          packetUBXHNRPVTcopy->flags.all = extractByte(msg, 17);
-          packetUBXHNRPVTcopy->lon = extractSignedLong(msg, 20);
-          packetUBXHNRPVTcopy->lat = extractSignedLong(msg, 24);
-          packetUBXHNRPVTcopy->height = extractSignedLong(msg, 28);
-          packetUBXHNRPVTcopy->hMSL = extractSignedLong(msg, 32);
-          packetUBXHNRPVTcopy->gSpeed = extractSignedLong(msg, 36);
-          packetUBXHNRPVTcopy->speed = extractSignedLong(msg, 40);
-          packetUBXHNRPVTcopy->headMot = extractSignedLong(msg, 44);
-          packetUBXHNRPVTcopy->headVeh = extractSignedLong(msg, 48);
-          packetUBXHNRPVTcopy->hAcc = extractLong(msg, 52);
-          packetUBXHNRPVTcopy->vAcc = extractLong(msg, 56);
-          packetUBXHNRPVTcopy->sAcc = extractLong(msg, 60);
-          packetUBXHNRPVTcopy->headAcc = extractLong(msg, 64);
-
+          memcpy(&packetUBXHNRPVTcopy->iTOW, &packetUBXHNRPVT->data.iTOW, sizeof(UBX_HNR_PVT_data_t));
           packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
       }
@@ -1888,15 +1985,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         if ((packetUBXHNRATTcopy != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          packetUBXHNRATTcopy->iTOW = extractLong(msg, 0);
-          packetUBXHNRATTcopy->version = extractByte(msg, 4);
-          packetUBXHNRATTcopy->roll = extractSignedLong(msg, 8);
-          packetUBXHNRATTcopy->pitch = extractSignedLong(msg, 12);
-          packetUBXHNRATTcopy->heading = extractSignedLong(msg, 16);
-          packetUBXHNRATTcopy->accRoll = extractLong(msg, 20);
-          packetUBXHNRATTcopy->accPitch = extractLong(msg, 24);
-          packetUBXHNRATTcopy->accHeading = extractLong(msg, 28);
-
+          memcpy(&packetUBXHNRATTcopy->iTOW, &packetUBXHNRATT->data.iTOW, sizeof(UBX_HNR_ATT_data_t));
           packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
       }
@@ -1922,15 +2011,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         if ((packetUBXHNRINScopy != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          packetUBXHNRINScopy->bitfield0.all = extractLong(msg, 0);
-          packetUBXHNRINScopy->iTOW = extractLong(msg, 8);
-          packetUBXHNRINScopy->xAngRate = extractSignedLong(msg, 12);
-          packetUBXHNRINScopy->yAngRate = extractSignedLong(msg, 16);
-          packetUBXHNRINScopy->zAngRate = extractSignedLong(msg, 20);
-          packetUBXHNRINScopy->xAccel = extractSignedLong(msg, 24);
-          packetUBXHNRINScopy->yAccel = extractSignedLong(msg, 28);
-          packetUBXHNRINScopy->zAccel = extractSignedLong(msg, 32);
-
+          memcpy(&packetUBXHNRINScopy->bitfield0.all, &packetUBXHNRINS->data.bitfield0.all, sizeof(UBX_HNR_INS_data_t));
           packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid = true;
         }
       }
