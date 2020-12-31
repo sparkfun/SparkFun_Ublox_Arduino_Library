@@ -1684,35 +1684,35 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
       {
         for (uint8_t i = 0; i < 8; i++)
         {
-          packetUBXRXMRAWX->header.rcvTow[i] = extractByte(msg, i);
+          packetUBXRXMRAWX->data.header.rcvTow[i] = extractByte(msg, i);
         }
-        packetUBXRXMRAWX->header.week = extractInt(msg, 8);
-        packetUBXRXMRAWX->header.leapS = extractSignedChar(msg, 10);
-        packetUBXRXMRAWX->header.numMeas = extractByte(msg, 11);
-        packetUBXRXMRAWX->header.recStat.all = extractByte(msg, 12);
-        packetUBXRXMRAWX->header.version = extractByte(msg, 13);
+        packetUBXRXMRAWX->data.header.week = extractInt(msg, 8);
+        packetUBXRXMRAWX->data.header.leapS = extractSignedChar(msg, 10);
+        packetUBXRXMRAWX->data.header.numMeas = extractByte(msg, 11);
+        packetUBXRXMRAWX->data.header.recStat.all = extractByte(msg, 12);
+        packetUBXRXMRAWX->data.header.version = extractByte(msg, 13);
 
-        for (uint8_t i = 0; (i < UBX_RXM_RAWX_MAX_BLOCKS) && (i < packetUBXRXMRAWX->header.numMeas)
+        for (uint8_t i = 0; (i < UBX_RXM_RAWX_MAX_BLOCKS) && (i < packetUBXRXMRAWX->data.header.numMeas)
           && ((((uint16_t)i) * 32) < (msg->len - 16)); i++)
         {
           uint16_t offset = (((uint16_t)i) * 32) + 16;
           for (uint8_t j = 0; j < 8; j++)
           {
-            packetUBXRXMRAWX->blocks[i].prMes[j] = extractByte(msg, offset + j);
-            packetUBXRXMRAWX->blocks[i].cpMes[j] = extractByte(msg, offset + 8 + j);
+            packetUBXRXMRAWX->data.blocks[i].prMes[j] = extractByte(msg, offset + j);
+            packetUBXRXMRAWX->data.blocks[i].cpMes[j] = extractByte(msg, offset + 8 + j);
             if (j < 4)
-              packetUBXRXMRAWX->blocks[i].doMes[j] = extractByte(msg, offset + 16 + j);
+              packetUBXRXMRAWX->data.blocks[i].doMes[j] = extractByte(msg, offset + 16 + j);
           }
-          packetUBXRXMRAWX->blocks[i].gnssId = extractByte(msg, offset + 20);
-          packetUBXRXMRAWX->blocks[i].svId = extractByte(msg, offset + 21);
-          packetUBXRXMRAWX->blocks[i].sigId = extractByte(msg, offset + 22);
-          packetUBXRXMRAWX->blocks[i].freqId = extractByte(msg, offset + 23);
-          packetUBXRXMRAWX->blocks[i].lockTime = extractInt(msg, offset + 24);
-          packetUBXRXMRAWX->blocks[i].cno = extractByte(msg, offset + 26);
-          packetUBXRXMRAWX->blocks[i].prStdev = extractByte(msg, offset + 27);
-          packetUBXRXMRAWX->blocks[i].cpStdev = extractByte(msg, offset + 28);
-          packetUBXRXMRAWX->blocks[i].doStdev = extractByte(msg, offset + 29);
-          packetUBXRXMRAWX->blocks[i].trkStat.all = extractByte(msg, offset + 30);
+          packetUBXRXMRAWX->data.blocks[i].gnssId = extractByte(msg, offset + 20);
+          packetUBXRXMRAWX->data.blocks[i].svId = extractByte(msg, offset + 21);
+          packetUBXRXMRAWX->data.blocks[i].sigId = extractByte(msg, offset + 22);
+          packetUBXRXMRAWX->data.blocks[i].freqId = extractByte(msg, offset + 23);
+          packetUBXRXMRAWX->data.blocks[i].lockTime = extractInt(msg, offset + 24);
+          packetUBXRXMRAWX->data.blocks[i].cno = extractByte(msg, offset + 26);
+          packetUBXRXMRAWX->data.blocks[i].prStdev = extractByte(msg, offset + 27);
+          packetUBXRXMRAWX->data.blocks[i].cpStdev = extractByte(msg, offset + 28);
+          packetUBXRXMRAWX->data.blocks[i].doStdev = extractByte(msg, offset + 29);
+          packetUBXRXMRAWX->data.blocks[i].trkStat.all = extractByte(msg, offset + 30);
         }
 
         //Mark all datums as fresh (not read before)
@@ -1883,6 +1883,37 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXHNRPVT->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXHNRPVTcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          packetUBXHNRPVTcopy->iTOW = extractLong(msg, 0);
+          packetUBXHNRPVTcopy->year = extractInt(msg, 4);
+          packetUBXHNRPVTcopy->month = extractByte(msg, 6);
+          packetUBXHNRPVTcopy->day = extractByte(msg, 7);
+          packetUBXHNRPVTcopy->hour = extractByte(msg, 8);
+          packetUBXHNRPVTcopy->min = extractByte(msg, 9);
+          packetUBXHNRPVTcopy->sec = extractByte(msg, 10);
+          packetUBXHNRPVTcopy->valid.all = extractByte(msg, 11);
+          packetUBXHNRPVTcopy->nano = extractSignedLong(msg, 12);
+          packetUBXHNRPVTcopy->gpsFix = extractByte(msg, 16);
+          packetUBXHNRPVTcopy->flags.all = extractByte(msg, 17);
+          packetUBXHNRPVTcopy->lon = extractSignedLong(msg, 20);
+          packetUBXHNRPVTcopy->lat = extractSignedLong(msg, 24);
+          packetUBXHNRPVTcopy->height = extractSignedLong(msg, 28);
+          packetUBXHNRPVTcopy->hMSL = extractSignedLong(msg, 32);
+          packetUBXHNRPVTcopy->gSpeed = extractSignedLong(msg, 36);
+          packetUBXHNRPVTcopy->speed = extractSignedLong(msg, 40);
+          packetUBXHNRPVTcopy->headMot = extractSignedLong(msg, 44);
+          packetUBXHNRPVTcopy->headVeh = extractSignedLong(msg, 48);
+          packetUBXHNRPVTcopy->hAcc = extractLong(msg, 52);
+          packetUBXHNRPVTcopy->vAcc = extractLong(msg, 56);
+          packetUBXHNRPVTcopy->sAcc = extractLong(msg, 60);
+          packetUBXHNRPVTcopy->headAcc = extractLong(msg, 64);
+
+          packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_HNR_ATT && msg->len == UBX_HNR_ATT_LEN)
@@ -1901,6 +1932,22 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXHNRATT->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXHNRATTcopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          packetUBXHNRATTcopy->iTOW = extractLong(msg, 0);
+          packetUBXHNRATTcopy->version = extractByte(msg, 4);
+          packetUBXHNRATTcopy->roll = extractSignedLong(msg, 8);
+          packetUBXHNRATTcopy->pitch = extractSignedLong(msg, 12);
+          packetUBXHNRATTcopy->heading = extractSignedLong(msg, 16);
+          packetUBXHNRATTcopy->accRoll = extractLong(msg, 20);
+          packetUBXHNRATTcopy->accPitch = extractLong(msg, 24);
+          packetUBXHNRATTcopy->accHeading = extractLong(msg, 28);
+
+          packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     else if (msg->id == UBX_HNR_INS && msg->len == UBX_HNR_INS_LEN)
@@ -1919,6 +1966,22 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
 
         //Mark all datums as fresh (not read before)
         packetUBXHNRINS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
+
+        //Check if we need to copy the data for the callback
+        if ((packetUBXHNRINScopy != NULL) // If RAM has been allocated for the copy of the data
+          && (packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
+        {
+          packetUBXHNRINScopy->bitfield0.all = extractLong(msg, 0);
+          packetUBXHNRINScopy->iTOW = extractLong(msg, 8);
+          packetUBXHNRINScopy->xAngRate = extractSignedLong(msg, 12);
+          packetUBXHNRINScopy->yAngRate = extractSignedLong(msg, 16);
+          packetUBXHNRINScopy->zAngRate = extractSignedLong(msg, 20);
+          packetUBXHNRINScopy->xAccel = extractSignedLong(msg, 24);
+          packetUBXHNRINScopy->yAccel = extractSignedLong(msg, 28);
+          packetUBXHNRINScopy->zAccel = extractSignedLong(msg, 32);
+
+          packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
       }
     }
     break;
@@ -2451,6 +2514,36 @@ void SFE_UBLOX_GPS::checkCallbacks(void)
       _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
     packetUBXNAVPVT->automaticFlags.callbackPointer(); // Call the callback
     packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXHNRATTcopy != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXHNRATT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for HNR ATT"));
+    packetUBXHNRATT->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXHNRINScopy != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXHNRINS->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for HNR INS"));
+    packetUBXHNRINS->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXHNRPVTcopy != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXHNRPVT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for HNR PVT"));
+    packetUBXHNRPVT->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 }
 
@@ -3933,14 +4026,14 @@ boolean SFE_UBLOX_GPS::getNAVPOSECEF(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getPOSECEF
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPOSECEF
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVPOSECEF(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVPOSECEF(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getPOSECEF
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPOSECEF
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVPOSECEF(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -3966,7 +4059,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVPOSECEF(boolean enable, boolean implicitUpdate,
   return ok;
 }
 
-//In case no config access to the GPS is possible and POSECEF is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVPOSECEFcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVPOSECEFcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVPOSECEF(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVPOSECEFcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPOSECEFcopy = new UBX_NAV_POSECEF_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPOSECEFcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVPOSECEFcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVPOSECEF->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and POSECEF is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVPOSECEF(boolean enabled, boolean implicitUpdate)
 {
@@ -4053,14 +4171,14 @@ boolean SFE_UBLOX_GPS::getNAVPOSLLH(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getPOSLLH
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPOSLLH
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVPOSLLH(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVPOSLLH(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getPOSLLH
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPOSLLH
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVPOSLLH(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4086,7 +4204,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVPOSLLH(boolean enable, boolean implicitUpdate, 
   return ok;
 }
 
-//In case no config access to the GPS is possible and POSLLH is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVPOSLLHcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVPOSLLHcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVPOSLLH(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVPOSLLHcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVPOSLLHcopy = new UBX_NAV_POSLLH_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVPOSLLHcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVPOSLLHcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVPOSLLH->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and POSLLH is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVPOSLLH(boolean enabled, boolean implicitUpdate)
 {
@@ -4173,14 +4316,14 @@ boolean SFE_UBLOX_GPS::getNAVSTATUS(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getSTATUS
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getSTATUS
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVSTATUS(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVSTATUS(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getSTATUS
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getSTATUS
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVSTATUS(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4206,7 +4349,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVSTATUS(boolean enable, boolean implicitUpdate, 
   return ok;
 }
 
-//In case no config access to the GPS is possible and STATUS is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVSTATUScopy.
+boolean SFE_UBLOX_GPS::setAutoNAVSTATUScallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVSTATUS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVSTATUScopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVSTATUScopy = new UBX_NAV_STATUS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVSTATUScopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVSTATUScallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVSTATUS->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and STATUS is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVSTATUS(boolean enabled, boolean implicitUpdate)
 {
@@ -4315,14 +4483,14 @@ boolean SFE_UBLOX_GPS::getDOP(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getDOP
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getDOP
 //works.
 boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, uint16_t maxWait)
 {
   return setAutoDOP(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getDOP
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getDOP
 //works.
 boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4348,7 +4516,32 @@ boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, boolean implicitUpdate, uint16
   return ok;
 }
 
-//In case no config access to the GPS is possible and DOP is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVDOPcopy.
+boolean SFE_UBLOX_GPS::setAutoDOPcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoDOP(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVDOPcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVDOPcopy = new UBX_NAV_DOP_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVDOPcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoDOPcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVDOP->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and DOP is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoDOP(boolean enabled, boolean implicitUpdate)
 {
@@ -4436,14 +4629,14 @@ boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic NAV ATT message generation by the GPS. This changes the way getVehAtt
+//Enable or disable automatic NAV ATT message generation by the GNSS. This changes the way getVehAtt
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVATT(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVATT(enable, true, maxWait);
 }
 
-//Enable or disable automatic NAV ATT attitude message generation by the GPS. This changes the way getVehAtt
+//Enable or disable automatic NAV ATT attitude message generation by the GNSS. This changes the way getVehAtt
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVATT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4469,7 +4662,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVATT(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and NAV ATT attitude is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVATTcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVATTcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVATT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVATTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVATTcopy = new UBX_NAV_ATT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVATTcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVATTcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVATT->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and NAV ATT attitude is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVATT(boolean enabled, boolean implicitUpdate)
 {
@@ -4579,14 +4797,14 @@ boolean SFE_UBLOX_GPS::getPVT(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, uint16_t maxWait)
 {
   return setAutoPVT(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getPVT
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4612,7 +4830,7 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
   return ok;
 }
 
-//Enable automatic navigation message generation by the GPS. This changes the way getPVT works.
+//Enable automatic navigation message generation by the GNSS. This changes the way getPVT works.
 //Data is passed to the callback in packetUBXNAVPVTcopy.
 boolean SFE_UBLOX_GPS::setAutoPVTcallback(void (*callbackPointer)(), uint16_t maxWait)
 {
@@ -4637,7 +4855,7 @@ boolean SFE_UBLOX_GPS::setAutoPVTcallback(void (*callbackPointer)(), uint16_t ma
   return (true);
 }
 
-//In case no config access to the GPS is possible and PVT is send cyclically already
+//In case no config access to the GNSS is possible and PVT is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoPVT(boolean enabled, boolean implicitUpdate)
 {
@@ -4725,14 +4943,14 @@ boolean SFE_UBLOX_GPS::getNAVODO(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getODO
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getODO
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVODO(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVODO(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getODO
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getODO
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVODO(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4758,7 +4976,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVODO(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and ODO is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVODOcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVODOcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVODO(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVODOcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVODOcopy = new UBX_NAV_ODO_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVODOcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVODOcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVODO->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and ODO is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVODO(boolean enabled, boolean implicitUpdate)
 {
@@ -4844,14 +5087,14 @@ boolean SFE_UBLOX_GPS::getNAVVELECEF(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getVELECEF
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getVELECEF
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVVELECEF(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVVELECEF(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getVELECEF
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getVELECEF
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVVELECEF(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4877,7 +5120,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELECEF(boolean enable, boolean implicitUpdate,
   return ok;
 }
 
-//In case no config access to the GPS is possible and VELECEF is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVVELECEFcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVVELECEFcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVVELECEF(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVVELECEFcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVVELECEFcopy = new UBX_NAV_VELECEF_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVVELECEFcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVVELECEFcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVVELECEF->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and VELECEF is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVVELECEF(boolean enabled, boolean implicitUpdate)
 {
@@ -4963,14 +5231,14 @@ boolean SFE_UBLOX_GPS::getNAVVELNED(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getVELNED
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getVELNED
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVVELNED(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVVELNED(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getVELNED
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getVELNED
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVVELNED(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -4996,7 +5264,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELNED(boolean enable, boolean implicitUpdate, 
   return ok;
 }
 
-//In case no config access to the GPS is possible and VELNED is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVVELNEDcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVVELNEDcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVVELNED(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVVELNEDcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVVELNEDcopy = new UBX_NAV_VELNED_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVVELNEDcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVVELNEDcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVVELNED->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and VELNED is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVVELNED(boolean enabled, boolean implicitUpdate)
 {
@@ -5082,14 +5375,14 @@ boolean SFE_UBLOX_GPS::getNAVHPPOSECEF(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSECEF
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getHPPOSECEF
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEF(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVHPPOSECEF(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSECEF
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getHPPOSECEF
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEF(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -5115,7 +5408,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEF(boolean enable, boolean implicitUpdat
   return ok;
 }
 
-//In case no config access to the GPS is possible and HPPOSECEF is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVHPPOSECEFcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEFcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVHPPOSECEF(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVHPPOSECEFcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVHPPOSECEFcopy = new UBX_NAV_HPPOSECEF_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVHPPOSECEFcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVHPPOSECEFcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVHPPOSECEF->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HPPOSECEF is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVHPPOSECEF(boolean enabled, boolean implicitUpdate)
 {
@@ -5223,14 +5541,14 @@ boolean SFE_UBLOX_GPS::getHPPOSLLH(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSLLH
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getHPPOSLLH
 //works.
 boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, uint16_t maxWait)
 {
   return setAutoHPPOSLLH(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getHPPOSLLH
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getHPPOSLLH
 //works.
 boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -5256,7 +5574,32 @@ boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, u
   return ok;
 }
 
-//In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVHPPOSLLHcopy.
+boolean SFE_UBLOX_GPS::setAutoHPPOSLLHcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoHPPOSLLH(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVHPPOSLLHcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVHPPOSLLHcopy = new UBX_NAV_HPPOSLLH_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVHPPOSLLHcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoHPPOSLLHcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVHPPOSLLH->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HPPOSLLH is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdate)
 {
@@ -5342,14 +5685,14 @@ boolean SFE_UBLOX_GPS::getNAVTIMEUTC(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getTIMEUTC
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getTIMEUTC
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVTIMEUTC(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVTIMEUTC(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getTIMEUTC
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getTIMEUTC
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVTIMEUTC(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -5375,7 +5718,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVTIMEUTC(boolean enable, boolean implicitUpdate,
   return ok;
 }
 
-//In case no config access to the GPS is possible and TIMEUTC is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVTIMEUTCcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVTIMEUTCcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVTIMEUTC(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVTIMEUTCcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVTIMEUTCcopy = new UBX_NAV_TIMEUTC_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVTIMEUTCcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVTIMEUTCcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVTIMEUTC->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and TIMEUTC is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVTIMEUTC(boolean enabled, boolean implicitUpdate)
 {
@@ -5461,14 +5829,14 @@ boolean SFE_UBLOX_GPS::getNAVCLOCK(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic CLOCK message generation by the GPS. This changes the way getNAVCLOCK
+//Enable or disable automatic CLOCK message generation by the GNSS. This changes the way getNAVCLOCK
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVCLOCK(boolean enable, uint16_t maxWait)
 {
   return setAutoNAVCLOCK(enable, true, maxWait);
 }
 
-//Enable or disable automatic CLOCK attitude message generation by the GPS. This changes the way getNAVCLOCK
+//Enable or disable automatic CLOCK attitude message generation by the GNSS. This changes the way getNAVCLOCK
 //works.
 boolean SFE_UBLOX_GPS::setAutoNAVCLOCK(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -5494,7 +5862,32 @@ boolean SFE_UBLOX_GPS::setAutoNAVCLOCK(boolean enable, boolean implicitUpdate, u
   return ok;
 }
 
-//In case no config access to the GPS is possible and HNR attitude is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVCLOCKcopy.
+boolean SFE_UBLOX_GPS::setAutoNAVCLOCKcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoNAVCLOCK(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVCLOCKcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVCLOCKcopy = new UBX_NAV_CLOCK_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVCLOCKcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoNAVCLOCKcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVCLOCK->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoNAVCLOCK(boolean enabled, boolean implicitUpdate)
 {
@@ -5631,14 +6024,14 @@ boolean SFE_UBLOX_GPS::getRELPOSNED(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic RELPOSNED message generation by the GPS. This changes the way getRELPOSNED
+//Enable or disable automatic RELPOSNED message generation by the GNSS. This changes the way getRELPOSNED
 //works.
 boolean SFE_UBLOX_GPS::setAutoRELPOSNED(boolean enable, uint16_t maxWait)
 {
   return setAutoRELPOSNED(enable, true, maxWait);
 }
 
-//Enable or disable automatic HNR attitude message generation by the GPS. This changes the way getRELPOSNED
+//Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getRELPOSNED
 //works.
 boolean SFE_UBLOX_GPS::setAutoRELPOSNED(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -5664,7 +6057,32 @@ boolean SFE_UBLOX_GPS::setAutoRELPOSNED(boolean enable, boolean implicitUpdate, 
   return ok;
 }
 
-//In case no config access to the GPS is possible and HNR attitude is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXNAVRELPOSNEDcopy.
+boolean SFE_UBLOX_GPS::setAutoRELPOSNEDcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoRELPOSNED(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXNAVRELPOSNEDcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXNAVRELPOSNEDcopy = new UBX_NAV_RELPOSNED_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXNAVRELPOSNEDcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoRELPOSNEDcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXNAVRELPOSNED->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoRELPOSNED(boolean enabled, boolean implicitUpdate)
 {
@@ -5750,14 +6168,14 @@ boolean SFE_UBLOX_GPS::getRXMSFRBX(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getRXMSFRBX
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getRXMSFRBX
 //works.
 boolean SFE_UBLOX_GPS::setAutoRXMSFRBX(boolean enable, uint16_t maxWait)
 {
   return setAutoRXMSFRBX(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getRXMSFRBX
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getRXMSFRBX
 //works.
 boolean SFE_UBLOX_GPS::setAutoRXMSFRBX(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -5783,7 +6201,32 @@ boolean SFE_UBLOX_GPS::setAutoRXMSFRBX(boolean enable, boolean implicitUpdate, u
   return ok;
 }
 
-//In case no config access to the GPS is possible and VELNED is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXRXMSFRBXcopy.
+boolean SFE_UBLOX_GPS::setAutoRXMSFRBXcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoRXMSFRBX(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXRXMSFRBXcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMSFRBXcopy = new UBX_RXM_SFRBX_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMSFRBXcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoRXMSFRBXcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXRXMSFRBX->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and SFRBX is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoRXMSFRBX(boolean enabled, boolean implicitUpdate)
 {
@@ -5869,14 +6312,14 @@ boolean SFE_UBLOX_GPS::getRXMRAWX(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getRXMRAWX
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getRXMRAWX
 //works.
 boolean SFE_UBLOX_GPS::setAutoRXMRAWX(boolean enable, uint16_t maxWait)
 {
   return setAutoRXMRAWX(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getRXMRAWX
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getRXMRAWX
 //works.
 boolean SFE_UBLOX_GPS::setAutoRXMRAWX(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -5902,7 +6345,32 @@ boolean SFE_UBLOX_GPS::setAutoRXMRAWX(boolean enable, boolean implicitUpdate, ui
   return ok;
 }
 
-//In case no config access to the GPS is possible and VELNED is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXRXMRAWXcopy.
+boolean SFE_UBLOX_GPS::setAutoRXMRAWXcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoRXMRAWX(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXRXMRAWXcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXRXMRAWXcopy = new UBX_RXM_RAWX_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXRXMRAWXcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoRXMRAWXcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXRXMRAWX->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and VELNED is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoRXMRAWX(boolean enabled, boolean implicitUpdate)
 {
@@ -6047,14 +6515,14 @@ boolean SFE_UBLOX_GPS::getTIMTM2(uint16_t maxWait)
   }
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getTIMTM2
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getTIMTM2
 //works.
 boolean SFE_UBLOX_GPS::setAutoTIMTM2(boolean enable, uint16_t maxWait)
 {
   return setAutoTIMTM2(enable, true, maxWait);
 }
 
-//Enable or disable automatic navigation message generation by the GPS. This changes the way getTIMTM2
+//Enable or disable automatic navigation message generation by the GNSS. This changes the way getTIMTM2
 //works.
 boolean SFE_UBLOX_GPS::setAutoTIMTM2(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -6080,7 +6548,32 @@ boolean SFE_UBLOX_GPS::setAutoTIMTM2(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and VELNED is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXTIMTM2copy.
+boolean SFE_UBLOX_GPS::setAutoTIMTM2callback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoTIMTM2(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXTIMTM2copy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXTIMTM2copy = new UBX_TIM_TM2_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXTIMTM2copy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoTIMTM2callback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXTIMTM2->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and VELNED is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoTIMTM2(boolean enabled, boolean implicitUpdate)
 {
@@ -6190,14 +6683,14 @@ boolean SFE_UBLOX_GPS::getEsfAlignment(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic ESF ALG message generation by the GPS. This changes the way getEsfAlignment
+//Enable or disable automatic ESF ALG message generation by the GNSS. This changes the way getEsfAlignment
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFALG(boolean enable, uint16_t maxWait)
 {
   return setAutoESFALG(enable, true, maxWait);
 }
 
-//Enable or disable automatic ESF ALG message generation by the GPS. This changes the way getEsfAlignment
+//Enable or disable automatic ESF ALG message generation by the GNSS. This changes the way getEsfAlignment
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFALG(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -6223,7 +6716,32 @@ boolean SFE_UBLOX_GPS::setAutoESFALG(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and ESF ALG is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXESFALGcopy.
+boolean SFE_UBLOX_GPS::setAutoESFALGcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoESFALG(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFALGcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFALGcopy = new UBX_ESF_ALG_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFALGcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoESFALGcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXESFALG->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and ESF ALG is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoESFALG(boolean enabled, boolean implicitUpdate)
 {
@@ -6333,14 +6851,14 @@ boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic ESF STATUS message generation by the GPS. This changes the way getESFInfo
+//Enable or disable automatic ESF STATUS message generation by the GNSS. This changes the way getESFInfo
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFSTATUS(boolean enable, uint16_t maxWait)
 {
   return setAutoESFSTATUS(enable, true, maxWait);
 }
 
-//Enable or disable automatic ESF STATUS message generation by the GPS. This changes the way getESFInfo
+//Enable or disable automatic ESF STATUS message generation by the GNSS. This changes the way getESFInfo
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFSTATUS(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -6366,7 +6884,32 @@ boolean SFE_UBLOX_GPS::setAutoESFSTATUS(boolean enable, boolean implicitUpdate, 
   return ok;
 }
 
-//In case no config access to the GPS is possible and ESF STATUS is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXESFSTATUScopy.
+boolean SFE_UBLOX_GPS::setAutoESFSTATUScallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoESFSTATUS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFSTATUScopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFSTATUScopy = new UBX_ESF_STATUS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFSTATUScopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoESFSTATUScallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXESFSTATUS->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and ESF STATUS is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoESFSTATUS(boolean enabled, boolean implicitUpdate)
 {
@@ -6476,14 +7019,14 @@ boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic ESF INS message generation by the GPS. This changes the way getESFIns
+//Enable or disable automatic ESF INS message generation by the GNSS. This changes the way getESFIns
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFINS(boolean enable, uint16_t maxWait)
 {
   return setAutoESFINS(enable, true, maxWait);
 }
 
-//Enable or disable automatic ESF INS message generation by the GPS. This changes the way getESFIns
+//Enable or disable automatic ESF INS message generation by the GNSS. This changes the way getESFIns
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFINS(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -6509,7 +7052,32 @@ boolean SFE_UBLOX_GPS::setAutoESFINS(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and ESF INS is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXESFINScopy.
+boolean SFE_UBLOX_GPS::setAutoESFINScallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoESFINS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFINScopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFINScopy = new UBX_ESF_INS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFINScopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoESFINScallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXESFINS->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and ESF INS is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoESFINS(boolean enabled, boolean implicitUpdate)
 {
@@ -6619,14 +7187,14 @@ boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic ESF MEAS message generation by the GPS. This changes the way getESFDataInfo
+//Enable or disable automatic ESF MEAS message generation by the GNSS. This changes the way getESFDataInfo
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFMEAS(boolean enable, uint16_t maxWait)
 {
   return setAutoESFMEAS(enable, true, maxWait);
 }
 
-//Enable or disable automatic ESF MEAS message generation by the GPS. This changes the way getESFDataInfo
+//Enable or disable automatic ESF MEAS message generation by the GNSS. This changes the way getESFDataInfo
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFMEAS(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -6652,7 +7220,32 @@ boolean SFE_UBLOX_GPS::setAutoESFMEAS(boolean enable, boolean implicitUpdate, ui
   return ok;
 }
 
-//In case no config access to the GPS is possible and ESF MEAS is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXESFMEAScopy.
+boolean SFE_UBLOX_GPS::setAutoESFMEAScallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoESFMEAS(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFMEAScopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFMEAScopy = new UBX_ESF_MEAS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFMEAScopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoESFMEAScallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXESFMEAS->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and ESF MEAS is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoESFMEAS(boolean enabled, boolean implicitUpdate)
 {
@@ -6762,14 +7355,14 @@ boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic ESF RAW message generation by the GPS. This changes the way getESFRawDataInfo
+//Enable or disable automatic ESF RAW message generation by the GNSS. This changes the way getESFRawDataInfo
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFRAW(boolean enable, uint16_t maxWait)
 {
   return setAutoESFRAW(enable, true, maxWait);
 }
 
-//Enable or disable automatic ESF RAW message generation by the GPS. This changes the way getESFRawDataInfo
+//Enable or disable automatic ESF RAW message generation by the GNSS. This changes the way getESFRawDataInfo
 //works.
 boolean SFE_UBLOX_GPS::setAutoESFRAW(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -6795,7 +7388,32 @@ boolean SFE_UBLOX_GPS::setAutoESFRAW(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and ESF RAW is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXESFRAWcopy.
+boolean SFE_UBLOX_GPS::setAutoESFRAWcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoESFRAW(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXESFRAWcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXESFRAWcopy = new UBX_ESF_RAW_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXESFRAWcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoESFRAWcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXESFRAW->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and ESF RAW is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoESFRAW(boolean enabled, boolean implicitUpdate)
 {
@@ -6910,14 +7528,14 @@ boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic HNR attitude message generation by the GPS. This changes the way getHNRAtt
+//Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getHNRAtt
 //works.
 boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, uint16_t maxWait)
 {
   return setAutoHNRAtt(enable, true, maxWait);
 }
 
-//Enable or disable automatic HNR attitude message generation by the GPS. This changes the way getHNRAtt
+//Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getHNRAtt
 //works.
 boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -6943,7 +7561,32 @@ boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and HNR attitude is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXHNRATTcopy.
+boolean SFE_UBLOX_GPS::setAutoHNRAttcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoHNRAtt(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXHNRATTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXHNRATTcopy = new UBX_HNR_ATT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXHNRATTcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoHNRAttcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXHNRATT->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate)
 {
@@ -7059,14 +7702,14 @@ boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic HNR vehicle dynamics message generation by the GPS. This changes the way getHNRDyn
+//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRDyn
 //works.
 boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, uint16_t maxWait)
 {
   return setAutoHNRDyn(enable, true, maxWait);
 }
 
-//Enable or disable automatic HNR vehicle dynamics message generation by the GPS. This changes the way getHNRDyn
+//Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRDyn
 //works.
 boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -7092,7 +7735,32 @@ boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and HNR vehicle dynamics is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXHNRINScopy.
+boolean SFE_UBLOX_GPS::setAutoHNRDyncallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoHNRDyn(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXHNRINScopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXHNRINScopy = new UBX_HNR_INS_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXHNRINScopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoHNRDyncallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXHNRINS->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HNR vehicle dynamics is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate)
 {
@@ -7207,14 +7875,14 @@ boolean SFE_UBLOX_GPS::getHNRPVT(uint16_t maxWait)
   return (false); // Trap. We should never get here...
 }
 
-//Enable or disable automatic HNR PVT message generation by the GPS. This changes the way getHNRPVT
+//Enable or disable automatic HNR PVT message generation by the GNSS. This changes the way getHNRPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, uint16_t maxWait)
 {
   return setAutoHNRPVT(enable, true, maxWait);
 }
 
-//Enable or disable automatic HNR PVT message generation by the GPS. This changes the way getHNRPVT
+//Enable or disable automatic HNR PVT message generation by the GNSS. This changes the way getHNRPVT
 //works.
 boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
@@ -7240,7 +7908,32 @@ boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, boolean implicitUpdate, uin
   return ok;
 }
 
-//In case no config access to the GPS is possible and HNR PVT is send cyclically already
+//Enable automatic navigation message generation by the GNSS.
+//Data is passed to the callback in packetUBXHNRPVTcopy.
+boolean SFE_UBLOX_GPS::setAutoHNRPVTcallback(void (*callbackPointer)(), uint16_t maxWait)
+{
+  // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
+  boolean result = setAutoHNRPVT(true, false, maxWait);
+  if (!result)
+    return (result); // Bail if setAuto failed
+
+  if (packetUBXHNRPVTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  {
+    packetUBXHNRPVTcopy = new UBX_HNR_PVT_data_t; //Allocate RAM for the main struct
+  }
+
+  if (packetUBXHNRPVTcopy == NULL)
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true))
+      _debugSerial->println(F("setAutoHNRPVTcallback: PANIC! RAM allocation failed!"));
+    return (false);
+  }
+
+  packetUBXHNRPVT->automaticFlags.callbackPointer = callbackPointer;
+  return (true);
+}
+
+//In case no config access to the GNSS is possible and HNR PVT is send cyclically already
 //set config to suitable parameters
 boolean SFE_UBLOX_GPS::assumeAutoHNRPVT(boolean enabled, boolean implicitUpdate)
 {

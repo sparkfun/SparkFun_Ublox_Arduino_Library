@@ -23,10 +23,12 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GPS
+#include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
-void printPVTdata() // Callback: printPVTdata will be called when new NAV PVT data arrives
+// Callback: printPVTdata will be called when new NAV PVT data arrives
+// See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t *packetUBXNAVPVTcopy
+void printPVTdata()
 {
     Serial.println();
 
@@ -67,7 +69,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("SparkFun Ublox Example");
+  Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
 

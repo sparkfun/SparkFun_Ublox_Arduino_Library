@@ -1065,9 +1065,14 @@ typedef struct
 
 typedef struct
 {
-	ubxAutomaticFlags automaticFlags;
   UBX_RXM_RAWX_header_t header;
   UBX_RXM_RAWX_block_t blocks[UBX_RXM_RAWX_MAX_BLOCKS];
+} UBX_RXM_RAWX_data_t;
+
+typedef struct
+{
+	ubxAutomaticFlags automaticFlags;
+  UBX_RXM_RAWX_data_t data;
   boolean moduleQueried;
 } UBX_RXM_RAWX_t;
 
