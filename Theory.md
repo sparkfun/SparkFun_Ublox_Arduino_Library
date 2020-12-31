@@ -1,7 +1,7 @@
-How I2C (aka DDC) communication works with a uBlox module
+How I2C (aka DDC) communication works with a u-blox module
 ===========================================================
 
-When the user calls one of the methods the library will poll the Ublox module for new data.
+When the user calls one of the methods the library will poll the u-blox module for new data.
 
 * Wait for a minimum of 25 ms between polls (configured dynamically when update rate is set)
 * Write 0xFD to module
@@ -17,9 +17,9 @@ How data is processed by this library
 
 A method will call **sendCommand()**. This will begin waiting for a response with either **waitForACKResponse()** or **waitForNoACKResponse()** depending on the command we have sent (CFG commands generate an ACK where others like PVT do not).
 
-Once **waitForACKResponse()** or **waitForNoACKResponse()** is called the library will start checking the ublox module for new bytes. These bytes may be part of a NMEA sentence, an RTCM sentence, or a UBX packet. The library will file each byte into the appropriate container. Once a given sentence or packet is complete, the appropriate processUBX(), processNMEA() will be called. These functions deal with specific processing for each type.
+Once **waitForACKResponse()** or **waitForNoACKResponse()** is called the library will start checking the u-blox module for new bytes. These bytes may be part of a NMEA sentence, an RTCM sentence, or a UBX packet. The library will file each byte into the appropriate container. Once a given sentence or packet is complete, the appropriate processUBX(), processNMEA() will be called. These functions deal with specific processing for each type.
 
-Note: When interfacing to a ublox module over I2C **checkUbloxI2C()** will read all bytes currently sitting in the I2C buffer. This may pick up multiple UBX packets. For example, an ACK for a VALSET may be mixed in with an **AutoPVT** response. We cannot tell **checkUbloxI2C()** to stop once a given ACK is found because we run the risk of leaving unprocessed bytes in the I2C buffer and losing them. We don't have this issue with **checkUbloxSerial()**.
+Note: When interfacing to a u-blox module over I2C **checkUbloxI2C()** will read all bytes currently sitting in the I2C buffer. This may pick up multiple UBX packets. For example, an ACK for a VALSET may be mixed in with an **AutoPVT** response. We cannot tell **checkUbloxI2C()** to stop once a given ACK is found because we run the risk of leaving unprocessed bytes in the I2C buffer and losing them. We don't have this issue with **checkUbloxSerial()**.
 
 **processUBX()** will check the CRC of the UBX packet. If validated, the packet will be marked as valid. Once a packet is marked as valid then **processUBXpacket()** is called to extract the contents. This is most commonly used to get the position, velocity, and time (PVT) out of the packet but is also used to check the nature of an ACK packet.
 

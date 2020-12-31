@@ -20,7 +20,7 @@ SparkFun u-blox Arduino Library
 
 U-blox makes some incredible GPS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of u-blox devices over I2C (called DDC by u-blox) and Serial. The UBX protocol is supported over both I2C and serial, and is a much easier and lighterweight interface to a GPS module. Stop parsing NMEA data! And simply ask for the datums you need.
 
-This library can be installed via the Arduino Library manager. Search for **SparkFun Ublox**.
+This library can be installed via the Arduino Library manager. Search for **SparkFun u-blox GNSS**.
 
 Although not an integrated part of the library, you will find an example of how to communicate with the older series 6 and 7 modules in the [examples folder](./examples/Series_6_7).
 
@@ -58,7 +58,7 @@ Thanks to:
 
 Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
 
-Need a library for the Ublox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
+Need a library for the u-blox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
 Contributing
 --------------
