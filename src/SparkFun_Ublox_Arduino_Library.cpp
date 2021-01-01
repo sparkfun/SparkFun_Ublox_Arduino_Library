@@ -111,6 +111,9 @@ boolean SFE_UBLOX_GPS::begin(TwoWire &wirePort, uint8_t deviceAddress)
   if (packetCfgPayloadSize == 0)
     setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
 
+  //New in v2.0: allocate memory for the file buffer - if required. (The user should have called setFileBufferSize already)
+  createFileBuffer();
+
   // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
   boolean connected = isConnected();
 
@@ -132,6 +135,9 @@ boolean SFE_UBLOX_GPS::begin(Stream &serialPort)
   //New in v2.0: allocate memory for the packetCfg payload here - if required. (The user may have called setPacketCfgPayloadSize already)
   if (packetCfgPayloadSize == 0)
     setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE);
+
+  //New in v2.0: allocate memory for the file buffer - if required. (The user should have called setFileBufferSize already)
+  createFileBuffer();
 
   // Call isConnected up to three times - tests on the NEO-M8U show the CFG RATE poll occasionally being ignored
   boolean connected = isConnected();
@@ -1296,6 +1302,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXNAVPOSECEFcopy->iTOW, &packetUBXNAVPOSECEF->data.iTOW, sizeof(UBX_NAV_POSECEF_data_t));
           packetUBXNAVPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVPOSECEF->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_NAV_STATUS && msg->len == UBX_NAV_STATUS_LEN)
@@ -1320,6 +1332,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXNAVSTATUScopy->iTOW, &packetUBXNAVSTATUS->data.iTOW, sizeof(UBX_NAV_STATUS_data_t));
           packetUBXNAVSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVSTATUS->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1347,6 +1365,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXNAVDOPcopy->iTOW, &packetUBXNAVDOP->data.iTOW, sizeof(UBX_NAV_DOP_data_t));
           packetUBXNAVDOP->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVDOP->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_NAV_ATT && msg->len == UBX_NAV_ATT_LEN)
@@ -1372,6 +1396,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXNAVATTcopy->iTOW, &packetUBXNAVATT->data.iTOW, sizeof(UBX_NAV_ATT_data_t));
           packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVATT->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1424,6 +1454,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXNAVPVTcopy->iTOW, &packetUBXNAVPVT->data.iTOW, sizeof(UBX_NAV_PVT_data_t));
           packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVPVT->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_NAV_ODO && msg->len == UBX_NAV_ODO_LEN)
@@ -1447,6 +1483,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXNAVODOcopy->version, &packetUBXNAVODO->data.version, sizeof(UBX_NAV_ODO_data_t));
           packetUBXNAVODO->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVODO->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_NAV_VELECEF && msg->len == UBX_NAV_VELECEF_LEN)
@@ -1469,6 +1511,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXNAVVELECEFcopy->iTOW, &packetUBXNAVVELECEF->data.iTOW, sizeof(UBX_NAV_VELECEF_data_t));
           packetUBXNAVVELECEF->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVVELECEF->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1497,6 +1545,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXNAVVELNEDcopy->iTOW, &packetUBXNAVVELNED->data.iTOW, sizeof(UBX_NAV_VELNED_data_t));
           packetUBXNAVVELNED->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVVELNED->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_NAV_HPPOSECEF && msg->len == UBX_NAV_HPPOSECEF_LEN)
@@ -1524,6 +1578,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXNAVHPPOSECEFcopy->version, &packetUBXNAVHPPOSECEF->data.version, sizeof(UBX_NAV_HPPOSECEF_data_t));
           packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1556,6 +1616,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXNAVHPPOSLLHcopy->version, &packetUBXNAVHPPOSLLH->data.version, sizeof(UBX_NAV_HPPOSLLH_data_t));
           packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_NAV_CLOCK && msg->len == UBX_NAV_CLOCK_LEN)
@@ -1578,6 +1644,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXNAVCLOCKcopy->iTOW, &packetUBXNAVCLOCK->data.iTOW, sizeof(UBX_NAV_CLOCK_data_t));
           packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVCLOCK->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1620,7 +1692,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVRELPOSNED->data.relPosE = extractSignedLong(msg, 12);
         packetUBXNAVRELPOSNED->data.relPosD = extractSignedLong(msg, 16);
 
-        if (packetCfg.len == UBX_NAV_RELPOSNED_LEN)
+        if (msg->len == UBX_NAV_RELPOSNED_LEN)
         {
           // The M8 version does not contain relPosLength or relPosHeading
           packetUBXNAVRELPOSNED->data.relPosLength = 0;
@@ -1663,6 +1735,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXNAVRELPOSNEDcopy->version, &packetUBXNAVRELPOSNED->data.version, sizeof(UBX_NAV_RELPOSNED_data_t));
           packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     break;
@@ -1697,6 +1775,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXRXMSFRBXcopy->gnssId, &packetUBXRXMSFRBX->data.gnssId, sizeof(UBX_RXM_SFRBX_data_t));
           packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXRXMSFRBX->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1749,6 +1833,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXRXMRAWXcopy->header.rcvTow[0], &packetUBXRXMRAWX->data.header.rcvTow[0], sizeof(UBX_RXM_RAWX_data_t));
           packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXRXMRAWX->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     break;
@@ -1794,6 +1884,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXTIMTM2copy->ch, &packetUBXTIMTM2->data.ch, sizeof(UBX_TIM_TM2_data_t));
           packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXTIMTM2->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     break;
@@ -1821,6 +1917,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXESFALGcopy->iTOW, &packetUBXESFALG->data.iTOW, sizeof(UBX_ESF_ALG_data_t));
           packetUBXESFALG->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXESFALG->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_ESF_INS && msg->len == UBX_ESF_INS_LEN)
@@ -1846,6 +1948,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXESFINScopy->bitfield0.all, &packetUBXESFINS->data.bitfield0.all, sizeof(UBX_ESF_INS_data_t));
           packetUBXESFINS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXESFINS->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1875,6 +1983,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXESFMEAScopy->timeTag, &packetUBXESFMEAS->data.timeTag, sizeof(UBX_ESF_MEAS_data_t));
           packetUBXESFMEAS->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXESFMEAS->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_ESF_RAW)
@@ -1897,6 +2011,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXESFRAWcopy->data[0].data.all, &packetUBXESFRAW->data.data[0].data.all, sizeof(UBX_ESF_RAW_data_t));
           packetUBXESFRAW->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXESFRAW->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1927,6 +2047,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXESFSTATUScopy->iTOW, &packetUBXESFSTATUS->data.iTOW, sizeof(UBX_ESF_STATUS_data_t));
           packetUBXESFSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXESFSTATUS->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -1971,6 +2097,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXHNRPVTcopy->iTOW, &packetUBXHNRPVT->data.iTOW, sizeof(UBX_HNR_PVT_data_t));
           packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXHNRPVT->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_HNR_ATT && msg->len == UBX_HNR_ATT_LEN)
@@ -1997,6 +2129,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           memcpy(&packetUBXHNRATTcopy->iTOW, &packetUBXHNRATT->data.iTOW, sizeof(UBX_HNR_ATT_data_t));
           packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXHNRATT->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
+        }
       }
     }
     else if (msg->id == UBX_HNR_INS && msg->len == UBX_HNR_INS_LEN)
@@ -2022,6 +2160,12 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         {
           memcpy(&packetUBXHNRINScopy->bitfield0.all, &packetUBXHNRINS->data.bitfield0.all, sizeof(UBX_HNR_INS_data_t));
           packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid = true;
+        }
+
+        //Check if we need to copy the data into the file buffer
+        if (packetUBXHNRINS->automaticFlags.flags.bits.addToFileBuffer)
+        {
+          storeFileBytes(msg->payload, msg->len);
         }
       }
     }
@@ -2811,6 +2955,157 @@ boolean SFE_UBLOX_GPS::pushRawData(uint8_t *dataBytes, size_t numDataBytes)
 
     return (bytesWrittenTotal == numDataBytes);
   }
+}
+
+// Support for data logging
+
+//Set the file buffer size. This must be called _before_ .begin
+void SFE_UBLOX_GPS::setFileBufferSize(uint16_t bufferSize)
+{
+  fileBufferSize = bufferSize;
+}
+
+// Extract numBytes of data from the file buffer. Copy it to destination.
+// It is the user's responsibility to ensure destination is large enough.
+// Returns the number of bytes extracted - which may be less than numBytes.
+uint16_t SFE_UBLOX_GPS::extractFileBufferData(uint8_t *destination, uint16_t numBytes)
+{
+  // Check how many bytes are available in the buffer
+  uint16_t bytesAvailable = fileBufferSpaceUsed();
+  if (numBytes > bytesAvailable) // Limit numBytes if required
+    numBytes = bytesAvailable;
+
+  // Start copying at fileBufferTail. Wrap-around if required.
+  uint16_t bytesBeforeWrapAround = fileBufferSize - fileBufferTail; // How much space is available 'above' Tail?
+  if (bytesBeforeWrapAround > numBytes) // Will we need to wrap-around?
+  {
+    bytesBeforeWrapAround = numBytes; // We need to wrap-around
+  }
+  memcpy(destination, &ubxFileBuffer[fileBufferTail], bytesBeforeWrapAround); // Copy the data out of the buffer
+
+  // Is there any data leftover which we need to copy from the 'bottom' of the buffer?
+  uint16_t bytesLeftToCopy = numBytes - bytesBeforeWrapAround; // Calculate if there are any bytes left to copy
+  if (bytesLeftToCopy > 0) // If there are bytes left to copy
+  {
+    memcpy(&destination[bytesBeforeWrapAround], &ubxFileBuffer[0], bytesLeftToCopy); // Copy the remaining data out of the buffer
+    fileBufferTail = bytesLeftToCopy; // Update Tail. The next byte to be read will be read from here.
+  }
+  else
+  {
+    fileBufferTail += numBytes; // Only update Tail. The next byte to be read will be read from here.
+  }
+
+  return (numBytes); // Return the number of bytes extracted
+}
+
+// Returns the number of bytes available in file buffer which are waiting to be read
+uint16_t SFE_UBLOX_GPS::fileBufferAvailable(void)
+{
+  return (fileBufferSpaceUsed());
+}
+
+// Returns the maximum number of bytes which the file buffer contained.
+// Handy for checking the buffer is large enough to handle all the incoming data.
+uint16_t SFE_UBLOX_GPS::getMaxFileBufferAvail(void)
+{
+  return (fileBufferMaxAvail);
+}
+
+// PRIVATE: Create the file buffer. Called by .begin
+boolean SFE_UBLOX_GPS::createFileBuffer(void)
+{
+  if (fileBufferSize == 0) // Bail if the user has not called setFileBufferSize
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("createFileBuffer: fileBufferSize is zero!"));
+    }
+    return(false);
+  }
+
+  ubxFileBuffer = new uint8_t[fileBufferSize]; // Allocate RAM for the buffer
+
+  if (ubxFileBuffer == NULL) // Check if the new (alloc) was successful
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("createFileBuffer: RAM alloc failed!"));
+    }
+    return(false);
+  }
+
+  fileBufferHead = 0; // Initialize head and tail
+  fileBufferTail = 0;
+
+  return (true);
+}
+
+// PRIVATE: Check how much space is available in the buffer
+uint16_t SFE_UBLOX_GPS::fileBufferSpaceAvailable(void)
+{
+  return (fileBufferSize - fileBufferSpaceUsed());
+}
+
+// PRIVATE: Check how much space is used in the buffer
+uint16_t SFE_UBLOX_GPS::fileBufferSpaceUsed(void)
+{
+  if (fileBufferHead >= fileBufferTail) // Check if wrap-around has occurred
+  {
+    // Wrap-around has not occurred so do a simple subtraction
+    return (fileBufferHead - fileBufferTail);
+  }
+  else
+  {
+    // Wrap-around has occurred so do a simple subtraction but add in the fileBufferSize
+    return ((uint16_t)(((uint32_t)fileBufferHead + (uint32_t)fileBufferSize) - (uint32_t)fileBufferTail));
+  }
+}
+
+// PRIVATE: Add theBytes to the file buffer
+boolean SFE_UBLOX_GPS::storeFileBytes(uint8_t *theBytes, uint16_t numBytes)
+{
+  // First, check that the file buffer has been created
+  if ((ubxFileBuffer == NULL) || (fileBufferSize == 0))
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("storeFileBytes: file buffer not available!"));
+    }
+    return(false);
+  }
+
+  // Now, check if there is enough space in the buffer for all of the data
+  if (numBytes > fileBufferSpaceAvailable())
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("storeFileBytes: insufficient space available!"));
+    }
+    return(false);
+  }
+
+  // There is room for all the data in the buffer so copy the data into the buffer
+  // Start writing at fileBufferHead. Wrap-around if required.
+  uint16_t bytesBeforeWrapAround = fileBufferSize - fileBufferHead; // How much space is available 'above' Head?
+  if (bytesBeforeWrapAround > numBytes) // Is there enough room for all the data?
+  {
+    bytesBeforeWrapAround = numBytes; // There is enough room for all the data
+  }
+  memcpy(&ubxFileBuffer[fileBufferHead], theBytes, bytesBeforeWrapAround); // Copy the data into the buffer
+
+  // Is there any data leftover which we need to copy to the 'bottom' of the buffer?
+  uint16_t bytesLeftToCopy = numBytes - bytesBeforeWrapAround; // Calculate if there are any bytes left to copy
+  if (bytesLeftToCopy > 0) // If there are bytes left to copy
+  {
+    memcpy(&ubxFileBuffer[0], &theBytes[bytesBeforeWrapAround], bytesLeftToCopy); // Copy the remaining data into the buffer
+    fileBufferHead = bytesLeftToCopy; // Update Head. The next byte written will be written here.
+  }
+  else
+  {
+    fileBufferHead += numBytes; // Only update Head. The next byte written will be written here.
+  }
+
+  return (true);
 }
 
 //=-=-=-=-=-=-=-= Specific commands =-=-=-=-=-=-=-==-=-=-=-=-=-=-=
@@ -3780,7 +4075,7 @@ uint8_t SFE_UBLOX_GPS::getDynamicModel(uint16_t maxWait)
 }
 
 //Reset the odometer
-boolean SFE_UBLOX_GPS::resetOdometer(uint16_t maxWait = defaultMaxWait)
+boolean SFE_UBLOX_GPS::resetOdometer(uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_NAV;
   packetCfg.id = UBX_NAV_RESETODO;
@@ -4350,12 +4645,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPOSECEF()
 //or if there are no helper functions and the user wants to request fresh data
 void SFE_UBLOX_GPS::flushNAVPOSECEF()
 {
-  if (packetUBXNAVPOSECEF == NULL) initPacketUBXNAVPOSECEF(); //Check that RAM has been allocated for the POSECEF data
-  if (packetUBXNAVPOSECEF == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVPOSECEF == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVPOSECEF(boolean enabled)
+{
+  if (packetUBXNAVPOSECEF == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPOSECEF->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV STATUS automatic support
@@ -4495,12 +4793,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSTATUS()
 //or if there are no helper functions and the user wants to request fresh data
 void SFE_UBLOX_GPS::flushNAVSTATUS()
 {
-  if (packetUBXNAVSTATUS == NULL) initPacketUBXNAVSTATUS(); //Check that RAM has been allocated for the STATUS data
-  if (packetUBXNAVSTATUS == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVSTATUS(boolean enabled)
+{
+  if (packetUBXNAVSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVSTATUS->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** DOP automatic support
@@ -4661,12 +4962,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVDOP()
 //Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
 void SFE_UBLOX_GPS::flushDOP()
 {
-  if (packetUBXNAVDOP == NULL) initPacketUBXNAVDOP(); //Check that RAM has been allocated for the DOP data
-  if (packetUBXNAVDOP == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVDOP == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0; //Mark all DOPs as stale (read before)
+}
 
-  //Mark all DOPs as stale (read before)
-  packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVDOP(boolean enabled)
+{
+  if (packetUBXNAVDOP == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVDOP->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** VEH ATT automatic support
@@ -4807,12 +5111,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVATT()
 //Mark all the DOP data as read/stale. This is handy to get data alignment after CRC failure
 void SFE_UBLOX_GPS::flushNAVATT()
 {
-  if (packetUBXNAVATT == NULL) initPacketUBXNAVATT(); //Check that RAM has been allocated for the ESF RAW data
-  if (packetUBXNAVATT == NULL) //Only attempt this if RAM allocation was successful
-    return false;
+  if (packetUBXNAVATT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVATT->moduleQueried.moduleQueried.all = 0; //Mark all DOPs as stale (read before)
+}
 
-  //Mark all DOPs as stale (read before)
-  packetUBXNAVATT->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVATT(boolean enabled)
+{
+  if (packetUBXNAVATT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVATT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** PVT automatic support
@@ -4976,13 +5283,16 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPVT()
 //Mark all the PVT data as read/stale. This is handy to get data alignment after CRC failure
 void SFE_UBLOX_GPS::flushPVT()
 {
-  if (packetUBXNAVPVT == NULL) initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
-  if (packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
-    return (false);
-
-  //Mark all datums as stale (read before)
-  packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
+  if (packetUBXNAVPVT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0; //Mark all datums as stale (read before)
   packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
+}
+
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVPVT(boolean enabled)
+{
+  if (packetUBXNAVPVT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVPVT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV ODO automatic support
@@ -5121,12 +5431,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVODO()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushNAVODO()
 {
-  if (packetUBXNAVODO == NULL) initPacketUBXNAVODO(); //Check that RAM has been allocated for the ODO data
-  if (packetUBXNAVODO == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVODO == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVODO->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVODO->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVODO(boolean enabled)
+{
+  if (packetUBXNAVODO == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVODO->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV VELECEF automatic support
@@ -5265,12 +5578,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELECEF()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushNAVVELECEF()
 {
-  if (packetUBXNAVVELECEF == NULL) initPacketUBXNAVVELECEF(); //Check that RAM has been allocated for the VELECEF data
-  if (packetUBXNAVVELECEF == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVVELECEF == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVVELECEF(boolean enabled)
+{
+  if (packetUBXNAVVELECEF == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVVELECEF->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV VELNED automatic support
@@ -5409,12 +5725,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELNED()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushNAVVELNED()
 {
-  if (packetUBXNAVVELNED == NULL) initPacketUBXNAVVELNED(); //Check that RAM has been allocated for the VELNED data
-  if (packetUBXNAVVELNED == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVVELNED == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!
+  packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVVELNED(boolean enabled)
+{
+  if (packetUBXNAVVELNED == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVVELNED->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV HPPOSECEF automatic support
@@ -5553,12 +5872,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSECEF()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushNAVHPPOSECEF()
 {
-  if (packetUBXNAVHPPOSECEF == NULL) initPacketUBXNAVHPPOSECEF(); //Check that RAM has been allocated for the HPPOSECEF data
-  if (packetUBXNAVHPPOSECEF == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVHPPOSECEF == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVHPPOSECEF(boolean enabled)
+{
+  if (packetUBXNAVHPPOSECEF == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV HPPOSLLH automatic support
@@ -5719,12 +6041,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSLLH()
 //Mark all the HPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure
 void SFE_UBLOX_GPS::flushHPPOSLLH()
 {
-  if (packetUBXNAVHPPOSLLH == NULL) initPacketUBXNAVHPPOSLLH(); //Check that RAM has been allocated for the HPPOSLLH data
-  if (packetUBXNAVHPPOSLLH == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVHPPOSLLH == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!
+  packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0;   //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVHPPOSLLH(boolean enabled)
+{
+  if (packetUBXNAVHPPOSLLH == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV CLOCK automatic support
@@ -5863,12 +6188,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVCLOCK()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushNAVCLOCK()
 {
-  if (packetUBXNAVCLOCK == NULL) initPacketUBXNAVCLOCK(); //Check that RAM has been allocated for the data
-  if (packetUBXNAVCLOCK == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVCLOCK == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVCLOCK(boolean enabled)
+{
+  if (packetUBXNAVCLOCK == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVCLOCK->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** NAV SVIN automatic support
@@ -6058,12 +6386,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVRELPOSNED()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushNAVRELPOSNED()
 {
-  if (packetUBXNAVRELPOSNED == NULL) initPacketUBXNAVRELPOSNED(); //Check that RAM has been allocated for the RELPOSNED data
-  if (packetUBXNAVRELPOSNED == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXNAVRELPOSNED == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logNAVRELPOSNED(boolean enabled)
+{
+  if (packetUBXNAVRELPOSNED == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXNAVRELPOSNED->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** RXM SFRBX automatic support
@@ -6202,12 +6533,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMSFRBX()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushRXMSFRBX()
 {
-  if (packetUBXRXMSFRBX == NULL) initPacketUBXRXMSFRBX(); //Check that RAM has been allocated for the TM2 data
-  if (packetUBXRXMSFRBX == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXRXMSFRBX == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXRXMSFRBX->moduleQueried = false; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXRXMSFRBX->moduleQueried = false;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logRXMSFRBX(boolean enabled)
+{
+  if (packetUBXRXMSFRBX == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXRXMSFRBX->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** RXM RAWX automatic support
@@ -6346,12 +6680,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMRAWX()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushRXMRAWX()
 {
-  if (packetUBXRXMRAWX == NULL) initPacketUBXRXMRAWX(); //Check that RAM has been allocated for the TM2 data
-  if (packetUBXRXMRAWX == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXRXMRAWX == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXRXMRAWX->moduleQueried = false; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXRXMRAWX->moduleQueried = false;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logRXMRAWX(boolean enabled)
+{
+  if (packetUBXRXMRAWX == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXRXMRAWX->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** CFG automatic support
@@ -6549,12 +6886,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXTIMTM2()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushTIMTM2()
 {
-  if (packetUBXTIMTM2 == NULL) initPacketUBXTIMTM2(); //Check that RAM has been allocated for the TM2 data
-  if (packetUBXTIMTM2 == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXTIMTM2 == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logTIMTM2(boolean enabled)
+{
+  if (packetUBXTIMTM2 == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXTIMTM2->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** ESF ALG automatic support
@@ -6717,12 +7057,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFALG()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushESFALG()
 {
-  if (packetUBXESFALG == NULL) initPacketUBXESFALG(); //Check that RAM has been allocated for the ESF alignment data
-  if (packetUBXESFALG == NULL) //Only attempt this if RAM allocation was successful
-    return false;
+  if (packetUBXESFALG == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFALG->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXESFALG->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logESFALG(boolean enabled)
+{
+  if (packetUBXESFALG == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFALG->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** ESF STATUS automatic support
@@ -6885,12 +7228,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushESFSTATUS()
 {
-  if (packetUBXESFSTATUS == NULL) initPacketUBXESFSTATUS(); //Check that RAM has been allocated for the ESF status data
-  if (packetUBXESFSTATUS == NULL) //Only attempt this if RAM allocation was successful
-    return false;
+  if (packetUBXESFSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logESFSTATUS(boolean enabled)
+{
+  if (packetUBXESFSTATUS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFSTATUS->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** ESF INS automatic support
@@ -7053,12 +7399,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFINS()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushESFINS()
 {
-  if (packetUBXESFINS == NULL) initPacketUBXESFINS(); //Check that RAM has been allocated for the ESF INS data
-  if (packetUBXESFINS == NULL) //Only attempt this if RAM allocation was successful
-    return false;
+  if (packetUBXESFINS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFINS->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXESFINS->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logESFINS(boolean enabled)
+{
+  if (packetUBXESFINS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFINS->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** ESF MEAS automatic support
@@ -7221,12 +7570,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFMEAS()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushESFMEAS()
 {
-  if (packetUBXESFMEAS == NULL) initPacketUBXESFMEAS(); //Check that RAM has been allocated for the ESF MEAS data
-  if (packetUBXESFMEAS == NULL) //Only attempt this if RAM allocation was successful
-    return false;
+  if (packetUBXESFMEAS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logESFMEAS(boolean enabled)
+{
+  if (packetUBXESFMEAS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFMEAS->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** ESF RAW automatic support
@@ -7389,12 +7741,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFRAW()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushESFRAW()
 {
-  if (packetUBXESFRAW == NULL) initPacketUBXESFRAW(); //Check that RAM has been allocated for the ESF RAW data
-  if (packetUBXESFRAW == NULL) //Only attempt this if RAM allocation was successful
-    return false;
+  if (packetUBXESFRAW == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFRAW->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXESFRAW->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logESFRAW(boolean enabled)
+{
+  if (packetUBXESFRAW == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXESFRAW->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** HNR ATT automatic support
@@ -7562,14 +7917,17 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRATT()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushHNRATT()
 {
-  if (packetUBXHNRATT == NULL) initPacketUBXHNRATT(); //Check that RAM has been allocated for the data
-  if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
-    return (false);
-
-  //Mark all datums as stale (read before)
-  packetUBXHNRATT->moduleQueried.moduleQueried.all = 0;
+  if (packetUBXHNRATT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXHNRATT->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
 }
 
+
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logHNRATT(boolean enabled)
+{
+  if (packetUBXHNRATT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXHNRATT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
+}
 
 // ***** HNR DYN automatic support
 
@@ -7736,12 +8094,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRINS()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushHNRINS()
 {
-  if (packetUBXHNRINS == NULL) initPacketUBXHNRINS(); //Check that RAM has been allocated for the data
-  if (packetUBXHNRINS == NULL) //Bail if the RAM allocation failed
-    return (false);
+  if (packetUBXHNRINS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXHNRINS->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXHNRINS->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logHNRINS(boolean enabled)
+{
+  if (packetUBXHNRINS == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXHNRINS->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** HNR PVT automatic support
@@ -7909,12 +8270,15 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRPVT()
 //Mark all the data as read/stale
 void SFE_UBLOX_GPS::flushHNRPVT()
 {
-  if (packetUBXHNRPVT == NULL) initPacketUBXHNRPVT(); //Check that RAM has been allocated for the PVT data
-  if (packetUBXHNRPVT == NULL) //Only attempt this if RAM allocation was successful
-    return false;
+  if (packetUBXHNRPVT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXHNRPVT->moduleQueried.moduleQueried.all = 0; //Mark all datums as stale (read before)
+}
 
-  //Mark all datums as stale (read before)
-  packetUBXHNRPVT->moduleQueried.moduleQueried.all = 0;
+//Log this data in file buffer
+void SFE_UBLOX_GPS::logHNRPVT(boolean enabled)
+{
+  if (packetUBXHNRPVT == NULL) return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
+  packetUBXHNRPVT->automaticFlags.flags.bits.addToFileBuffer = (uint8_t)enabled;
 }
 
 // ***** CFG RATE Helper Functions

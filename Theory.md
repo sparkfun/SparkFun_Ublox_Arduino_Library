@@ -33,7 +33,7 @@ Version 2 of the library does things differently. Whilst of course trying to kee
 - An optional _callback_ can be associated with the arrival of each message type. A simple scheduler ```checkCallbacks``` triggers the callbacks once I<sup>2</sup>C/Serial data reception is complete.
   - This means that your code no longer needs to wait for the arrival of a message, you are able to request (e.g.) PVT or HNR data and your callback is called once the data arrives.
   - The callbacks are not re-entrant.
-  - The callback receives a _copy_ of the data, so data reception and processing can continue while the callback is executing. Data integrity is preserved.
+  - The callback receives a _copy_ of the data, so data reception and processing can continue while the callback is executing. Data integrity is preserved. You can call ```checkUblox()``` from inside a callback if needed.
 - Incoming data can be copied to a separate buffer to allow automatic writing to a file on SD card, which will be useful for (e.g.) RAWX logging.
   - Data is stored in a RingBuffer, the size of which can be set by calling ```setFileBufferSize``` _before_ ```.begin```.
   - The default buffer size is zero - to save memory.

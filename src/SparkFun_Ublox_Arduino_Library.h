@@ -540,6 +540,12 @@ public:
 	// Warning: this function does not check that the data is valid. It is the user's responsibility to ensure the data is valid before pushing.
 	boolean pushRawData(uint8_t *dataBytes, size_t numDataBytes);
 
+	// Support for data logging
+	void setFileBufferSize(uint16_t bufferSize); // Set the size of the file buffer. This must be called _before_ .begin.
+	uint16_t extractFileBufferData(uint8_t *destination, uint16_t numBytes); // Extract numBytes of data from the file buffer. Copy it to destination. It is the user's responsibility to ensure destination is large enough.
+	uint16_t fileBufferAvailable(void); // Returns the number of bytes available in file buffer which are waiting to be read
+	uint16_t getMaxFileBufferAvail(void); // Returns the maximum number of bytes which the file buffer contained. Handy for checking the buffer is large enough to handle all the incoming data.
+
 	// Specific commands
 
 	//Port configurations
@@ -658,6 +664,7 @@ public:
 	boolean assumeAutoNAVPOSECEF(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and POSECEF is send cyclically already
 	boolean initPacketUBXNAVPOSECEF(); // Allocate RAM for packetUBXNAVPOSECEF and initialize it
 	void flushNAVPOSECEF(); //Mark all the data as read/stale
+	void logNAVPOSECEF(boolean enabled = true); // Log data to file buffer
 
 	boolean getNAVSTATUS(uint16_t maxWait = defaultMaxWait); // NAV STATUS
 	boolean setAutoNAVSTATUS(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic STATUS reports at the navigation frequency
@@ -666,6 +673,7 @@ public:
 	boolean assumeAutoNAVSTATUS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and STATUS is send cyclically already
 	boolean initPacketUBXNAVSTATUS(); // Allocate RAM for packetUBXNAVSTATUS and initialize it
 	void flushNAVSTATUS(); //Mark all the data as read/stale
+	void logNAVSTATUS(boolean enabled = true); // Log data to file buffer
 
 	boolean getDOP(uint16_t maxWait = defaultMaxWait); //Query module for latest dilution of precision values and load global vars:. If autoDOP is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new DOP is available.
   boolean setAutoDOP(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic DOP reports at the navigation frequency
@@ -674,6 +682,7 @@ public:
 	boolean assumeAutoDOP(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and DOP is send cyclically already
 	boolean initPacketUBXNAVDOP(); // Allocate RAM for packetUBXNAVDOP and initialize it
   void flushDOP(); //Mark all the DOP data as read/stale
+	void logNAVDOP(boolean enabled = true); // Log data to file buffer
 
 	boolean getVehAtt(uint16_t maxWait = defaultMaxWait); // NAV ATT
 	boolean setAutoNAVATT(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic vehicle attitude reports at the navigation frequency
@@ -682,6 +691,7 @@ public:
 	boolean assumeAutoNAVATT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and vehicle attitude is send cyclically already
 	boolean initPacketUBXNAVATT(); // Allocate RAM for packetUBXNAVATT and initialize it
 	void flushNAVATT(); //Mark all the data as read/stale
+	void logNAVATT(boolean enabled = true); // Log data to file buffer
 
 	boolean getPVT(uint16_t maxWait = defaultMaxWait);	//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency
@@ -690,6 +700,7 @@ public:
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and PVT is send cyclically already
 	boolean initPacketUBXNAVPVT(); // Allocate RAM for packetUBXNAVPVT and initialize it
 	void flushPVT(); //Mark all the PVT data as read/stale
+	void logNAVPVT(boolean enabled = true); // Log data to file buffer
 
 	boolean getNAVODO(uint16_t maxWait = defaultMaxWait); // NAV ODO
 	boolean setAutoNAVODO(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic ODO reports at the navigation frequency
@@ -698,6 +709,7 @@ public:
 	boolean assumeAutoNAVODO(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ODO is send cyclically already
 	boolean initPacketUBXNAVODO(); // Allocate RAM for packetUBXNAVODO and initialize it
 	void flushNAVODO(); //Mark all the data as read/stale
+	void logNAVODO(boolean enabled = true); // Log data to file buffer
 
 	boolean getNAVVELECEF(uint16_t maxWait = defaultMaxWait); // NAV VELECEF
 	boolean setAutoNAVVELECEF(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic VELECEF reports at the navigation frequency
@@ -706,6 +718,7 @@ public:
 	boolean assumeAutoNAVVELECEF(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and VELECEF is send cyclically already
 	boolean initPacketUBXNAVVELECEF(); // Allocate RAM for packetUBXNAVVELECEF and initialize it
 	void flushNAVVELECEF(); //Mark all the data as read/stale
+	void logNAVVELECEF(boolean enabled = true); // Log data to file buffer
 
 	boolean getNAVVELNED(uint16_t maxWait = defaultMaxWait); // NAV VELNED
 	boolean setAutoNAVVELNED(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic VELNED reports at the navigation frequency
@@ -714,6 +727,7 @@ public:
 	boolean assumeAutoNAVVELNED(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and VELNED is send cyclically already
 	boolean initPacketUBXNAVVELNED(); // Allocate RAM for packetUBXNAVVELNED and initialize it
 	void flushNAVVELNED(); //Mark all the data as read/stale
+	void logNAVVELNED(boolean enabled = true); // Log data to file buffer
 
 	boolean getNAVHPPOSECEF(uint16_t maxWait = defaultMaxWait); // NAV HPPOSECEF
 	boolean setAutoNAVHPPOSECEF(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic HPPOSECEF reports at the navigation frequency
@@ -722,6 +736,7 @@ public:
 	boolean assumeAutoNAVHPPOSECEF(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HPPOSECEF is send cyclically already
 	boolean initPacketUBXNAVHPPOSECEF(); // Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
 	void flushNAVHPPOSECEF(); //Mark all the data as read/stale
+	void logNAVHPPOSECEF(boolean enabled = true); // Log data to file buffer
 
 	boolean getHPPOSLLH(uint16_t maxWait = defaultMaxWait); //Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new HPPOSLLH is available.
 	boolean setAutoHPPOSLLH(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HPPOSLLH reports at the navigation frequency
@@ -730,6 +745,7 @@ public:
 	boolean assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HPPOSLLH is send cyclically already
 	boolean initPacketUBXNAVHPPOSLLH(); // Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
 	void flushHPPOSLLH(); //Mark all the HPPPOSLLH data as read/stale. This is handy to get data alignment after CRC failure
+	void logNAVHPPOSLLH(boolean enabled = true); // Log data to file buffer
 
 	boolean getNAVCLOCK(uint16_t maxWait = defaultMaxWait); // NAV CLOCK
 	boolean setAutoNAVCLOCK(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic clock reports at the navigation frequency
@@ -738,6 +754,7 @@ public:
 	boolean assumeAutoNAVCLOCK(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and clock is send cyclically already
 	boolean initPacketUBXNAVCLOCK(); // Allocate RAM for packetUBXNAVCLOCK and initialize it
 	void flushNAVCLOCK(); //Mark all the data as read/stale
+	void logNAVCLOCK(boolean enabled = true); // Log data to file buffer
 
 	// Add "auto" support for NAV SVIN - to avoid needing 'global' storage
 	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables
@@ -750,6 +767,7 @@ public:
 	boolean assumeAutoRELPOSNED(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and RELPOSNED is send cyclically already
 	boolean initPacketUBXNAVRELPOSNED(); // Allocate RAM for packetUBXNAVRELPOSNED and initialize it
 	void flushNAVRELPOSNED(); //Mark all the data as read/stale
+	void logNAVRELPOSNED(boolean enabled = true); // Log data to file buffer
 
 	// Receiver Manager Messages (RXM)
 
@@ -760,6 +778,7 @@ public:
 	boolean assumeAutoRXMSFRBX(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and RXM SFRBX is send cyclically already
 	boolean initPacketUBXRXMSFRBX(); // Allocate RAM for packetUBXRXMSFRBX and initialize it
 	void flushRXMSFRBX(); //Mark all the data as read/stale
+	void logRXMSFRBX(boolean enabled = true); // Log data to file buffer
 
 	boolean getRXMRAWX(uint16_t maxWait = defaultMaxWait); // RXM RAWX
 	boolean setAutoRXMRAWX(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic RXM RAWX reports at the navigation frequency
@@ -768,6 +787,7 @@ public:
 	boolean assumeAutoRXMRAWX(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and RXM RAWX is send cyclically already
 	boolean initPacketUBXRXMRAWX(); // Allocate RAM for packetUBXRXMRAWX and initialize it
 	void flushRXMRAWX(); //Mark all the data as read/stale
+	void logRXMRAWX(boolean enabled = true); // Log data to file buffer
 
 	// Configuration (CFG)
 
@@ -784,6 +804,7 @@ public:
 	boolean assumeAutoTIMTM2(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and TIM TM2 is send cyclically already
 	boolean initPacketUBXTIMTM2(); // Allocate RAM for packetUBXTIMTM2 and initialize it
 	void flushTIMTM2(); //Mark all the data as read/stale
+	void logTIMTM2(boolean enabled = true); // Log data to file buffer
 
 	// Sensor fusion (dead reckoning) (ESF)
 
@@ -794,6 +815,7 @@ public:
 	boolean assumeAutoESFALG(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF ALG is send cyclically already
 	boolean initPacketUBXESFALG(); // Allocate RAM for packetUBXESFALG and initialize it
 	void flushESFALG(); //Mark all the data as read/stale
+	void logESFALG(boolean enabled = true); // Log data to file buffer
 
 	boolean getEsfInfo(uint16_t maxWait = defaultMaxWait); // ESF STATUS
 	boolean setAutoESFSTATUS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF STATUS reports
@@ -802,6 +824,7 @@ public:
 	boolean assumeAutoESFSTATUS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF STATUS is send cyclically already
 	boolean initPacketUBXESFSTATUS(); // Allocate RAM for packetUBXESFSTATUS and initialize it
 	void flushESFSTATUS(); //Mark all the data as read/stale
+	void logESFSTATUS(boolean enabled = true); // Log data to file buffer
 
 	boolean getEsfIns(uint16_t maxWait = defaultMaxWait); // ESF INS
 	boolean setAutoESFINS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF INS reports
@@ -810,6 +833,7 @@ public:
 	boolean assumeAutoESFINS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF INS is send cyclically already
 	boolean initPacketUBXESFINS(); // Allocate RAM for packetUBXESFINS and initialize it
 	void flushESFINS(); //Mark all the data as read/stale
+	void logESFINS(boolean enabled = true); // Log data to file buffer
 
 	boolean getEsfDataInfo(uint16_t maxWait = defaultMaxWait); // ESF MEAS
 	boolean setAutoESFMEAS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF MEAS reports
@@ -818,6 +842,7 @@ public:
 	boolean assumeAutoESFMEAS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF MEAS is send cyclically already
 	boolean initPacketUBXESFMEAS(); // Allocate RAM for packetUBXESFMEAS and initialize it
 	void flushESFMEAS(); //Mark all the data as read/stale
+	void logESFMEAS(boolean enabled = true); // Log data to file buffer
 
 	boolean getEsfRawDataInfo(uint16_t maxWait = defaultMaxWait); // ESF RAW
 	boolean setAutoESFRAW(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF RAW reports
@@ -826,6 +851,7 @@ public:
 	boolean assumeAutoESFRAW(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and ESF RAW is send cyclically already
 	boolean initPacketUBXESFRAW(); // Allocate RAM for packetUBXESFRAW and initialize it
 	void flushESFRAW(); //Mark all the data as read/stale
+	void logESFRAW(boolean enabled = true); // Log data to file buffer
 
 	// High navigation rate (HNR)
 
@@ -836,6 +862,7 @@ public:
 	boolean assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HNR Attitude is send cyclically already
 	boolean initPacketUBXHNRATT(); // Allocate RAM for packetUBXHNRATT and initialize it
 	void flushHNRATT(); //Mark all the data as read/stale
+	void logHNRATT(boolean enabled = true); // Log data to file buffer
 
 	boolean getHNRDyn(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR dynamics is successful. Data is returned in hnrVehDyn
   boolean setAutoHNRDyn(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR dynamics reports at the HNR rate
@@ -844,6 +871,7 @@ public:
 	boolean assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HNR dynamics is send cyclically already
 	boolean initPacketUBXHNRINS(); // Allocate RAM for packetUBXHNRINS and initialize it
 	void flushHNRINS(); //Mark all the data as read/stale
+	void logHNRINS(boolean enabled = true); // Log data to file buffer
 
 	boolean getHNRPVT(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR PVT is successful. Data is returned in hnrPVT
   boolean setAutoHNRPVT(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR PVT reports at the HNR rate
@@ -852,6 +880,7 @@ public:
 	boolean assumeAutoHNRPVT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HNR PVT is send cyclically already
 	boolean initPacketUBXHNRPVT(); // Allocate RAM for packetUBXHNRPVT and initialize it
 	void flushHNRPVT(); //Mark all the data as read/stale
+	void logHNRPVT(boolean enabled = true); // Log data to file buffer
 
 	// Helper functions for CFG RATE
 
@@ -1119,6 +1148,17 @@ private:
 	// Flag to prevent reentry into checkCallbacks
 	// Prevent badness if the user accidentally calls checkCallbacks from inside a callback
 	boolean checkCallbacksReentrant = false;
+
+	// Support for data logging
+	uint8_t *ubxFileBuffer = NULL; // Pointer to the file buffer. RAM is allocated for this if required in .begin
+	uint16_t fileBufferSize = 0; // The size of the file buffer. This can be changed by calling setFileBufferSize _before_ .begin
+	uint16_t fileBufferHead; // The incoming byte is written into the file buffer at this location
+	uint16_t fileBufferTail; // The next byte to be read from the buffer will be read from this location
+	uint16_t fileBufferMaxAvail = 0; // The maximum number of bytes the file buffer has contained. Handy for checking the buffer is large enough to handle all the incoming data.
+	boolean createFileBuffer(void); // Create the file buffer. Called by .begin
+	uint16_t fileBufferSpaceAvailable(void); // Check how much space is available in the buffer
+	uint16_t fileBufferSpaceUsed(void); // Check how much space is used in the buffer
+	boolean storeFileBytes(uint8_t *theBytes, uint16_t numBytes); // Add theBytes to the file buffer
 };
 
 #endif
