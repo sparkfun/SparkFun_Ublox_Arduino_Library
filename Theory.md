@@ -26,7 +26,7 @@ Version 2 of the library does things differently. Whilst of course trying to kee
   - The payload for **packetAuto** is allocated dynamically in RAM and deleted after use.
   - If insufficient RAM is available, the code falls back to using **packetCfg** to buffer the data instead.
 - The library no longer uses 'global' (permanently-allocated) storage for the GNSS data. Instead:
-  - Each message type has a **typedef struct** defined which matches the format of the UBX message. (_typedef structs_ are just definitions, they don't occupy memory.) You can find the definitions in _u-blox_structs.h_.
+  - Each message type has a **typedef struct** defined which matches the format of the UBX message. (_typedef structs_ are just definitions, they don't occupy memory.) You can find the definitions in [_**u-blox_structs.h**_](./src/u-blox_structs.h).
   - The struct allows each data field (latitude, longitude, etc.) to be read simply and easily using dot notation. Flags etc. are supported by bit definitions in the struct. The field names are as defined in the u-blox interface description.
   - Storage for that message is only _allocated_ in RAM if/when required. The allocation is done using _new_ via a pointer to the struct.
 - _Any_ message can be "auto" if required, but can be polled too.
