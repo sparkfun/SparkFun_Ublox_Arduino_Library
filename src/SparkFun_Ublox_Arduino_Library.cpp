@@ -62,7 +62,7 @@ void SFE_UBLOX_GPS::setPacketCfgPayloadSize(size_t payloadSize)
     delete[] payloadCfg;
     payloadCfg = NULL; // Redundant?
     packetCfg.payload = payloadCfg;
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setPacketCfgPayloadSize: Zero payloadSize! This will end _very_ badly..."));
   }
 
@@ -71,7 +71,7 @@ void SFE_UBLOX_GPS::setPacketCfgPayloadSize(size_t payloadSize)
     payloadCfg = new uint8_t[payloadSize];
     packetCfg.payload = payloadCfg;
     if (payloadCfg == NULL)
-      if ((_printDebug == true) || (_printLimitedDebug == true))
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM allocation failed! This will end _very_ badly..."));
   }
 
@@ -84,7 +84,7 @@ void SFE_UBLOX_GPS::setPacketCfgPayloadSize(size_t payloadSize)
     payloadCfg = newPayload;
     packetCfg.payload = payloadCfg;
     if (payloadCfg == NULL)
-      if ((_printDebug == true) || (_printLimitedDebug == true))
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         _debugSerial->println(F("setPacketCfgPayloadSize: PANIC! RAM resize failed! This will end _very_ badly..."));
   }
 
@@ -322,7 +322,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
       if (lsb == 0xFF)
       {
         //I believe this is a u-blox bug. Device should never present an 0xFF.
-        if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         {
           _debugSerial->println(F("checkUbloxI2C: u-blox bug, length lsb is 0xFF"));
         }
@@ -356,9 +356,9 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
       //Clear the MSbit
       bytesAvailable &= ~((uint16_t)1 << 15);
 
-      if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       {
-        _debugSerial->print(F("checkUbloxI2C: Bytes available error:"));
+        _debugSerial->print(F("checkUbloxI2C: Bytes available error: "));
         _debugSerial->println(bytesAvailable);
         if (debugPin >= 0)
         {
@@ -415,7 +415,7 @@ boolean SFE_UBLOX_GPS::checkUbloxI2C(ubxPacket *incomingUBX, uint8_t requestedCl
           {
             if ((incoming == 0x7F) && (ubx7FcheckDisabled == false))
             {
-              if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
+              if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
               {
                 _debugSerial->println(F("checkUbloxU2C: u-blox error, module not ready with data (7F error)"));
               }
@@ -792,7 +792,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           uint16_t maxPayload = getMaxPayloadSize(packetBuf.cls, packetBuf.id); // Calculate how much RAM we need
           if (maxPayload == 0)
           {
-            if (_printDebug == true)
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
             {
               _debugSerial->print(F("process: getMaxPayloadSize returned ZERO!! Class: 0x"));
               _debugSerial->print(packetBuf.cls);
@@ -802,7 +802,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           }
           if (payloadAuto != NULL) // Check if memory is already allocated - this should be impossible!
           {
-            if (_printDebug == true)
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
             {
               _debugSerial->println(F("process: memory is already allocated for payloadAuto! Deleting..."));
             }
@@ -814,7 +814,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
           packetAuto.payload = payloadAuto;
           if (payloadAuto == NULL) // Check if the alloc failed
           {
-            if (_printDebug == true)
+            if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
             {
               _debugSerial->print(F("process: memory allocation failed for \"automatic\" message: Class: 0x"));
               _debugSerial->print(packetBuf.cls, HEX);
@@ -872,7 +872,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
     {
       if (packetBuf.len == 0) // Check if length is zero (hopefully this is impossible!)
       {
-        if (_printDebug == true)
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         {
           _debugSerial->print(F("process: ZERO LENGTH packet received: Class: 0x"));
           _debugSerial->print(packetBuf.cls, HEX);
@@ -923,7 +923,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
         }
         else // Length is not 2 (hopefully this is impossible!)
         {
-          if (_printDebug == true)
+          if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
           {
             _debugSerial->print(F("process: ACK received with .len != 2: Class: 0x"));
             _debugSerial->print(packetBuf.payload[0], HEX);
@@ -1039,20 +1039,20 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
     //If incomingUBX is a user-defined custom packet, then the payload size could be different to packetCfgPayloadSize.
     //TO DO: update this to prevent an overrun when receiving an automatic message
     //       and the incomingUBX payload size is smaller than packetCfgPayloadSize.
-  size_t max_payload_size;
+  size_t maximum_payload_size;
   if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETCFG)
-    max_payload_size = packetCfgPayloadSize;
+    maximum_payload_size = packetCfgPayloadSize;
   else if (activePacketBuffer == SFE_UBLOX_PACKET_PACKETAUTO)
   {
     // Calculate maximum payload size once Class and ID have been received
     // (This check is probably redundant as activePacketBuffer can only be SFE_UBLOX_PACKET_PACKETAUTO
     //  when ubxFrameCounter >= 3)
-    if (incomingUBX->counter >= 2)
-    {
-      max_payload_size = getMaxPayloadSize(incomingUBX->cls, incomingUBX->id);
-      if (max_payload_size == 0)
+    //if (incomingUBX->counter >= 2)
+    //{
+      maximum_payload_size = getMaxPayloadSize(incomingUBX->cls, incomingUBX->id);
+      if (maximum_payload_size == 0)
       {
-        if (_printDebug == true)
+        if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
         {
           _debugSerial->print(F("processUBX: getMaxPayloadSize returned ZERO!! Class: 0x"));
           _debugSerial->print(incomingUBX->cls);
@@ -1060,12 +1060,13 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
           _debugSerial->println(incomingUBX->id);
         }
       }
-    }
-    else
-      max_payload_size = 2;
+    //}
+    //else
+    //  maximum_payload_size = 2;
   }
   else
-    max_payload_size = 2;
+    maximum_payload_size = 2;
+
   bool overrun = false;
 
   //Add all incoming bytes to the rolling checksum
@@ -1194,7 +1195,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         incomingUBX->classAndIDmatch = SFE_UBLOX_PACKET_VALIDITY_NOT_VALID; // If we have a match, set the classAndIDmatch flag to not valid
       }
 
-      if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
+      if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       {
         //Drive an external pin to allow for easier logic analyzation
         if (debugPin >= 0)
@@ -1215,12 +1216,6 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
         _debugSerial->print(F(" rollingChecksumB: "));
         _debugSerial->print(rollingChecksumB);
         _debugSerial->println();
-
-        _debugSerial->print(F("Failed  : "));
-        _debugSerial->print(F("Size: "));
-        _debugSerial->print(incomingUBX->len);
-        _debugSerial->print(F(" Received: "));
-        printPacket(incomingUBX);
       }
     }
 
@@ -1246,7 +1241,7 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
       if ((incomingUBX->counter - 4) >= startingSpot)
       {
         //Check to see if we have room for this byte
-        if (((incomingUBX->counter - 4) - startingSpot) < max_payload_size) //If counter = 208, starting spot = 200, we're good to record.
+        if (((incomingUBX->counter - 4) - startingSpot) < maximum_payload_size) //If counter = 208, starting spot = 200, we're good to record.
         {
           incomingUBX->payload[(incomingUBX->counter - 4) - startingSpot] = incoming; //Store this byte into payload array
         }
@@ -1258,21 +1253,26 @@ void SFE_UBLOX_GPS::processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t
     }
   }
 
-  //Increment the counter
-  incomingUBX->counter++;
-
-  if (overrun || (incomingUBX->counter == packetCfgPayloadSize))
+  // incomingUBX->counter should never reach maximum_payload_size + class + id + len[2] + checksum[2]
+  if (overrun || ((incomingUBX->counter == maximum_payload_size + 6) && (ignoreThisPayload == false)))
   {
     //Something has gone very wrong
     currentSentence = NONE; //Reset the sentence to being looking for a new start char
-    if ((_printDebug == true) || (_printLimitedDebug == true)) // Print this if doing limited debugging
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
       if (overrun)
-        _debugSerial->println(F("processUBX: buffer overrun detected"));
+        _debugSerial->print(F("processUBX: buffer overrun detected!"));
       else
-        _debugSerial->println(F("processUBX: counter hit packetCfgPayloadSize"));
+        _debugSerial->print(F("processUBX: counter hit maximum_payload_size + 6!"));
+      _debugSerial->print(F(" activePacketBuffer: "));
+      _debugSerial->print(activePacketBuffer);
+      _debugSerial->print(F(" maximum_payload_size: "));
+      _debugSerial->println(maximum_payload_size);
     }
   }
+
+  //Increment the counter
+  incomingUBX->counter++;
 }
 
 //Once a packet has been received and validated, identify this packet's class/id and update internal flags
@@ -1306,7 +1306,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVPOSECEF->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1337,7 +1337,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVSTATUS->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1369,7 +1369,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVDOP->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1401,7 +1401,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVATT->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1458,7 +1458,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVPVT->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1487,7 +1487,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVODO->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1516,7 +1516,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVVELECEF->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1549,7 +1549,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVVELNED->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1583,7 +1583,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1620,7 +1620,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1649,7 +1649,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVCLOCK->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1739,7 +1739,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1780,7 +1780,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXRXMSFRBX->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1837,7 +1837,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXRXMRAWX->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1888,7 +1888,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXTIMTM2->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1921,7 +1921,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXESFALG->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1953,7 +1953,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXESFINS->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -1987,7 +1987,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXESFMEAS->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -2016,7 +2016,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXESFRAW->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -2052,7 +2052,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXESFSTATUS->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -2101,7 +2101,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXHNRPVT->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -2133,7 +2133,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXHNRATT->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -2165,7 +2165,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         //Check if we need to copy the data into the file buffer
         if (packetUBXHNRINS->automaticFlags.flags.bits.addToFileBuffer)
         {
-          storeFileBytes(msg->payload, msg->len);
+          storePacket(msg);
         }
       }
     }
@@ -2555,12 +2555,12 @@ sfe_ublox_status_e SFE_UBLOX_GPS::waitForACKResponse(ubxPacket *outgoingUBX, uin
       // then the ACK has not yet been received and we should keep waiting for it
       else if ((outgoingUBX->classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_VALID) && (packetAck.classAndIDmatch == SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED))
       {
-        if (_printDebug == true)
-        {
-          _debugSerial->print(F("waitForACKResponse: valid data after "));
-          _debugSerial->print(millis() - startTime);
-          _debugSerial->println(F(" msec. Waiting for ACK."));
-        }
+        // if (_printDebug == true)
+        // {
+        //   _debugSerial->print(F("waitForACKResponse: valid data after "));
+        //   _debugSerial->print(millis() - startTime);
+        //   _debugSerial->println(F(" msec. Waiting for ACK."));
+        // }
       }
 
     } //checkUbloxInternal == true
@@ -2816,6 +2816,26 @@ void SFE_UBLOX_GPS::checkCallbacks(void)
     packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
+  if ((packetUBXRXMSFRBXcopy != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXRXMSFRBX->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for RXM SFRBX"));
+    packetUBXRXMSFRBX->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
+  if ((packetUBXRXMRAWXcopy != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXRXMRAWX->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+    && (packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
+  {
+    // if (_printDebug == true)
+    //   _debugSerial->println(F("checkCallbacks: calling callback for RXM RAWX"));
+    packetUBXRXMRAWX->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
+  }
+
   if ((packetUBXTIMTM2copy != NULL) // If RAM has been allocated for the copy of the data
     && (packetUBXTIMTM2->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
@@ -3027,7 +3047,7 @@ boolean SFE_UBLOX_GPS::createFileBuffer(void)
 
   if (ubxFileBuffer == NULL) // Check if the new (alloc) was successful
   {
-    if (_printDebug == true)
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
       _debugSerial->println(F("createFileBuffer: RAM alloc failed!"));
     }
@@ -3061,6 +3081,54 @@ uint16_t SFE_UBLOX_GPS::fileBufferSpaceUsed(void)
   }
 }
 
+// PRIVATE: Add a UBX packet to the file buffer
+boolean SFE_UBLOX_GPS::storePacket(ubxPacket *msg)
+{
+  // First, check that the file buffer has been created
+  if ((ubxFileBuffer == NULL) || (fileBufferSize == 0))
+  {
+    if (_printDebug == true)
+    {
+      _debugSerial->println(F("storePacket: file buffer not available!"));
+    }
+    return(false);
+  }
+
+  // Now, check if there is enough space in the buffer for all of the data
+  uint16_t totalLength = msg->len + 8; // Total length. Include sync chars, class, id, length and checksum bytes
+  if (totalLength > fileBufferSpaceAvailable())
+  {
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
+    {
+      _debugSerial->println(F("storePacket: insufficient space available! Data will be lost!"));
+    }
+    return(false);
+  }
+
+  //Store the two sync chars
+  uint8_t sync_chars[] = {0xB5, 0x62};
+  writeToFileBuffer(sync_chars, 2);
+
+  //Store the Class & ID
+  writeToFileBuffer(&msg->cls, 1);
+  writeToFileBuffer(&msg->id, 1);
+
+  //Store the length. Ensure length is little-endian
+  uint8_t msg_length[2];
+  msg_length[0] = msg->len & 0xFF;
+  msg_length[1] = msg->len >> 8;
+  writeToFileBuffer(msg_length, 2);
+
+  //Store the payload
+  writeToFileBuffer(msg->payload, msg->len);
+
+  //Store the checksum
+  writeToFileBuffer(&msg->checksumA, 1);
+  writeToFileBuffer(&msg->checksumB, 1);
+
+  return (true);
+}
+
 // PRIVATE: Add theBytes to the file buffer
 boolean SFE_UBLOX_GPS::storeFileBytes(uint8_t *theBytes, uint16_t numBytes)
 {
@@ -3077,14 +3145,22 @@ boolean SFE_UBLOX_GPS::storeFileBytes(uint8_t *theBytes, uint16_t numBytes)
   // Now, check if there is enough space in the buffer for all of the data
   if (numBytes > fileBufferSpaceAvailable())
   {
-    if (_printDebug == true)
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
-      _debugSerial->println(F("storeFileBytes: insufficient space available!"));
+      _debugSerial->println(F("storeFileBytes: insufficient space available! Data will be lost!"));
     }
     return(false);
   }
 
   // There is room for all the data in the buffer so copy the data into the buffer
+  writeToFileBuffer(theBytes, numBytes);
+
+  return (true);
+}
+
+// PRIVATE: Write theBytes to the file buffer
+void SFE_UBLOX_GPS::writeToFileBuffer(uint8_t *theBytes, uint16_t numBytes)
+{
   // Start writing at fileBufferHead. Wrap-around if required.
   uint16_t bytesBeforeWrapAround = fileBufferSize - fileBufferHead; // How much space is available 'above' Head?
   if (bytesBeforeWrapAround > numBytes) // Is there enough room for all the data?
@@ -3105,7 +3181,10 @@ boolean SFE_UBLOX_GPS::storeFileBytes(uint8_t *theBytes, uint16_t numBytes)
     fileBufferHead += numBytes; // Only update Head. The next byte written will be written here.
   }
 
-  return (true);
+  //Update fileBufferMaxAvail if required
+  uint16_t bytesInBuffer = fileBufferSpaceUsed();
+  if (bytesInBuffer > fileBufferMaxAvail)
+    fileBufferMaxAvail = bytesInBuffer;
 }
 
 //=-=-=-=-=-=-=-= Specific commands =-=-=-=-=-=-=-==-=-=-=-=-=-=-=
@@ -3300,8 +3379,7 @@ boolean SFE_UBLOX_GPS::factoryDefault(uint16_t maxWait)
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfg.len);
 
   packetCfg.payload[0] = 0xFF; //Set any bit in the clearMask field to clear saved config
   packetCfg.payload[1] = 0xFF;
@@ -3323,8 +3401,7 @@ boolean SFE_UBLOX_GPS::saveConfiguration(uint16_t maxWait)
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfg.len);
 
   packetCfg.payload[4] = 0xFF; //Set any bit in the saveMask field to save current config to Flash and BBR
   packetCfg.payload[5] = 0xFF;
@@ -3342,8 +3419,7 @@ boolean SFE_UBLOX_GPS::saveConfigSelective(uint32_t configMask, uint16_t maxWait
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfg.len);
 
   packetCfg.payload[4] = configMask & 0xFF; //Set the appropriate bits in the saveMask field to save current config to Flash and BBR
   packetCfg.payload[5] = (configMask >> 8) & 0xFF;
@@ -3448,10 +3524,6 @@ boolean SFE_UBLOX_GPS::setSurveyMode(uint8_t mode, uint16_t observationTime, flo
   packetCfg.len = 40;
   packetCfg.startingSpot = 0;
 
-  //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
-
   //payloadCfg should be loaded with poll response. Now modify only the bits we care about
   payloadCfg[2] = mode; //Set mode. Survey-In and Disabled are most common. Use ECEF (not LAT/LON/ALT).
 
@@ -3500,10 +3572,6 @@ bool SFE_UBLOX_GPS::setStaticPosition(int32_t ecefXOrLat, int8_t ecefXOrLatHP, i
     return (false);
 
   packetCfg.len = 40;
-
-  //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    payloadCfg[x] = 0;
 
   //customCfg should be loaded with poll response. Now modify only the bits we care about
   payloadCfg[2] = 2; //Set mode to fixed. Use ECEF (not LAT/LON/ALT).
@@ -3632,7 +3700,7 @@ boolean SFE_UBLOX_GPS::initModuleSWVersion()
   moduleSWVersion = new moduleSWVersion_t; //Allocate RAM for the main struct
   if (moduleSWVersion == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initModuleSWVersion: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -3815,7 +3883,7 @@ boolean SFE_UBLOX_GPS::initGeofenceParams()
   currentGeofenceParams = new geofenceParams_t; //Allocate RAM for the main struct
   if (currentGeofenceParams == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initGeofenceParams: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -3838,7 +3906,7 @@ boolean SFE_UBLOX_GPS::powerSaveMode(bool power_save, uint16_t maxWait)
   */
   if (protVer >= 27)
   {
-    if (_printDebug == true)
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
       _debugSerial->println(F("powerSaveMode (UBX-CFG-RXM) is not supported by this protocol version"));
     }
@@ -3886,7 +3954,7 @@ uint8_t SFE_UBLOX_GPS::getPowerSaveMode(uint16_t maxWait)
   */
   if (protVer >= 27)
   {
-    if (_printDebug == true)
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
     {
       _debugSerial->println(F("powerSaveMode (UBX-CFG-RXM) is not supported by this protocol version"));
     }
@@ -4109,8 +4177,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::getVal(uint32_t key, uint8_t layer, uint16_t m
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint8_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfg.len);
 
   //VALGET uses different memory layer definitions to VALSET
   //because it can only return the value for one layer.
@@ -4222,8 +4289,7 @@ uint8_t SFE_UBLOX_GPS::setVal16(uint32_t key, uint16_t value, uint8_t layer, uin
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint16_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfg.len);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
   payloadCfg[1] = layer; //By default we ask for the BBR layer
@@ -4254,8 +4320,7 @@ uint8_t SFE_UBLOX_GPS::setVal8(uint32_t key, uint8_t value, uint8_t layer, uint1
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint16_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfg.len);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
   payloadCfg[1] = layer; //By default we ask for the BBR layer
@@ -4285,8 +4350,7 @@ uint8_t SFE_UBLOX_GPS::setVal32(uint32_t key, uint32_t value, uint8_t layer, uin
   packetCfg.startingSpot = 0;
 
   //Clear packet payload
-  for (uint16_t x = 0; x < packetCfg.len; x++)
-    packetCfg.payload[x] = 0;
+  memset(payloadCfg, 0, packetCfg.len);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
   payloadCfg[1] = layer; //By default we ask for the BBR layer
@@ -4318,9 +4382,7 @@ uint8_t SFE_UBLOX_GPS::newCfgValset32(uint32_t key, uint32_t value, uint8_t laye
   packetCfg.len = 4 + 4 + 4; //4 byte header, 4 byte key ID, 4 bytes of value
   packetCfg.startingSpot = 0;
 
-  //Clear packet payload
-  //for (uint16_t x = 0; x < packetCfgPayloadSize; x++)
-  //  packetCfg.payload[x] = 0;
+  //Clear all of packet payload
   memset(payloadCfg, 0, packetCfgPayloadSize);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
@@ -4353,9 +4415,7 @@ uint8_t SFE_UBLOX_GPS::newCfgValset16(uint32_t key, uint16_t value, uint8_t laye
   packetCfg.len = 4 + 4 + 2; //4 byte header, 4 byte key ID, 2 bytes of value
   packetCfg.startingSpot = 0;
 
-  //Clear packet payload
-  //for (uint16_t x = 0; x < packetCfgPayloadSize; x++)
-  //  packetCfg.payload[x] = 0;
+  //Clear all of packet payload
   memset(payloadCfg, 0, packetCfgPayloadSize);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
@@ -4386,9 +4446,7 @@ uint8_t SFE_UBLOX_GPS::newCfgValset8(uint32_t key, uint8_t value, uint8_t layer)
   packetCfg.len = 4 + 4 + 1; //4 byte header, 4 byte key ID, 1 byte value
   packetCfg.startingSpot = 0;
 
-  //Clear packet payload
-  //for (uint16_t x = 0; x < packetCfgPayloadSize; x++)
-  //  packetCfg.payload[x] = 0;
+  //Clear all of packet payload
   memset(payloadCfg, 0, packetCfgPayloadSize);
 
   payloadCfg[0] = 0;     //Message Version - set to 0
@@ -4599,7 +4657,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVPOSECEFcallback(void (*callbackPointer)(), uint
 
   if (packetUBXNAVPOSECEFcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVPOSECEFcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -4631,7 +4689,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPOSECEF()
   packetUBXNAVPOSECEF = new UBX_NAV_POSECEF_t; //Allocate RAM for the main struct
   if (packetUBXNAVPOSECEF == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVPOSECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -4747,7 +4805,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVSTATUScallback(void (*callbackPointer)(), uint1
 
   if (packetUBXNAVSTATUScopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVSTATUScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -4779,7 +4837,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSTATUS()
   packetUBXNAVSTATUS = new UBX_NAV_STATUS_t; //Allocate RAM for the main struct
   if (packetUBXNAVSTATUS == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVSTATUS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -4917,7 +4975,7 @@ boolean SFE_UBLOX_GPS::setAutoDOPcallback(void (*callbackPointer)(), uint16_t ma
 
   if (packetUBXNAVDOPcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoDOPcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -4949,7 +5007,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVDOP()
   packetUBXNAVDOP = new UBX_NAV_DOP_t; //Allocate RAM for the main struct
   if (packetUBXNAVDOP == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVDOP: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -5066,7 +5124,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVATTcallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXNAVATTcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVATTcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -5098,7 +5156,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVATT()
   packetUBXNAVATT = new UBX_NAV_ATT_t; //Allocate RAM for the main struct
   if (packetUBXNAVATT == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -5237,7 +5295,7 @@ boolean SFE_UBLOX_GPS::setAutoPVTcallback(void (*callbackPointer)(), uint16_t ma
 
   if (packetUBXNAVPVTcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoPVTcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -5269,7 +5327,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPVT()
   packetUBXNAVPVT = new UBX_NAV_PVT_t; //Allocate RAM for the main struct
   if (packetUBXNAVPVT == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -5386,7 +5444,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVODOcallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXNAVODOcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVODOcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -5418,7 +5476,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVODO()
   packetUBXNAVODO = new UBX_NAV_ODO_t; //Allocate RAM for the main struct
   if (packetUBXNAVODO == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVODO: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -5533,7 +5591,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELECEFcallback(void (*callbackPointer)(), uint
 
   if (packetUBXNAVVELECEFcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVVELECEFcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -5565,7 +5623,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELECEF()
   packetUBXNAVVELECEF = new UBX_NAV_VELECEF_t; //Allocate RAM for the main struct
   if (packetUBXNAVVELECEF == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVVELECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -5680,7 +5738,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELNEDcallback(void (*callbackPointer)(), uint1
 
   if (packetUBXNAVVELNEDcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVVELNEDcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -5712,7 +5770,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELNED()
   packetUBXNAVVELNED = new UBX_NAV_VELNED_t; //Allocate RAM for the main struct
   if (packetUBXNAVVELNED == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVVELNED: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -5827,7 +5885,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEFcallback(void (*callbackPointer)(), ui
 
   if (packetUBXNAVHPPOSECEFcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVHPPOSECEFcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -5859,7 +5917,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSECEF()
   packetUBXNAVHPPOSECEF = new UBX_NAV_HPPOSECEF_t; //Allocate RAM for the main struct
   if (packetUBXNAVHPPOSECEF == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVHPPOSECEF: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -5996,7 +6054,7 @@ boolean SFE_UBLOX_GPS::setAutoHPPOSLLHcallback(void (*callbackPointer)(), uint16
 
   if (packetUBXNAVHPPOSLLHcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHPPOSLLHcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -6028,7 +6086,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSLLH()
   packetUBXNAVHPPOSLLH = new UBX_NAV_HPPOSLLH_t; //Allocate RAM for the main struct
   if (packetUBXNAVHPPOSLLH == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVHPPOSLLH: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -6143,7 +6201,7 @@ boolean SFE_UBLOX_GPS::setAutoNAVCLOCKcallback(void (*callbackPointer)(), uint16
 
   if (packetUBXNAVCLOCKcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVCLOCKcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -6175,7 +6233,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVCLOCK()
   packetUBXNAVCLOCK = new UBX_NAV_CLOCK_t ; //Allocate RAM for the main struct
   if (packetUBXNAVCLOCK == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVCLOCK: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -6235,7 +6293,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSVIN()
   packetUBXNAVSVIN = new UBX_NAV_SVIN_t; //Allocate RAM for the main struct
   if (packetUBXNAVSVIN == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVSVIN: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -6341,7 +6399,7 @@ boolean SFE_UBLOX_GPS::setAutoRELPOSNEDcallback(void (*callbackPointer)(), uint1
 
   if (packetUBXNAVRELPOSNEDcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoRELPOSNEDcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -6373,7 +6431,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVRELPOSNED()
   packetUBXNAVRELPOSNED = new UBX_NAV_RELPOSNED_t ; //Allocate RAM for the main struct
   if (packetUBXNAVRELPOSNED == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXNAVRELPOSNED: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -6488,7 +6546,7 @@ boolean SFE_UBLOX_GPS::setAutoRXMSFRBXcallback(void (*callbackPointer)(), uint16
 
   if (packetUBXRXMSFRBXcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoRXMSFRBXcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -6520,7 +6578,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMSFRBX()
   packetUBXRXMSFRBX = new UBX_RXM_SFRBX_t; //Allocate RAM for the main struct
   if (packetUBXRXMSFRBX == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXRXMSFRBX: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -6635,7 +6693,7 @@ boolean SFE_UBLOX_GPS::setAutoRXMRAWXcallback(void (*callbackPointer)(), uint16_
 
   if (packetUBXRXMRAWXcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoRXMRAWXcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -6667,7 +6725,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMRAWX()
   packetUBXRXMRAWX = new UBX_RXM_RAWX_t; //Allocate RAM for the main struct
   if (packetUBXRXMRAWX == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXRXMRAWX: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -6740,7 +6798,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXCFGRATE()
   packetUBXCFGRATE = new UBX_CFG_RATE_t; //Allocate RAM for the main struct
   if (packetUBXCFGRATE == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXCFGRATE: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -6841,7 +6899,7 @@ boolean SFE_UBLOX_GPS::setAutoTIMTM2callback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXTIMTM2copy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoTIMTM2callback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -6873,7 +6931,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXTIMTM2()
   packetUBXTIMTM2 = new UBX_TIM_TM2_t; //Allocate RAM for the main struct
   if (packetUBXTIMTM2 == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXTIMTM2: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -7012,7 +7070,7 @@ boolean SFE_UBLOX_GPS::setAutoESFALGcallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXESFALGcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFALGcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -7044,7 +7102,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFALG()
   packetUBXESFALG = new UBX_ESF_ALG_t; //Allocate RAM for the main struct
   if (packetUBXESFALG == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXESFALG: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -7183,7 +7241,7 @@ boolean SFE_UBLOX_GPS::setAutoESFSTATUScallback(void (*callbackPointer)(), uint1
 
   if (packetUBXESFSTATUScopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFSTATUScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -7215,7 +7273,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
   packetUBXESFSTATUS = new UBX_ESF_STATUS_t; //Allocate RAM for the main struct
   if (packetUBXESFSTATUS == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXESFSTATUS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -7354,7 +7412,7 @@ boolean SFE_UBLOX_GPS::setAutoESFINScallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXESFINScopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFINScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -7386,7 +7444,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFINS()
   packetUBXESFINS = new UBX_ESF_INS_t; //Allocate RAM for the main struct
   if (packetUBXESFINS == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXESFINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -7525,7 +7583,7 @@ boolean SFE_UBLOX_GPS::setAutoESFMEAScallback(void (*callbackPointer)(), uint16_
 
   if (packetUBXESFMEAScopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFMEAScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -7557,7 +7615,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFMEAS()
   packetUBXESFMEAS = new UBX_ESF_MEAS_t; //Allocate RAM for the main struct
   if (packetUBXESFMEAS == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXESFMEAS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -7696,7 +7754,7 @@ boolean SFE_UBLOX_GPS::setAutoESFRAWcallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXESFRAWcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFRAWcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -7728,7 +7786,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFRAW()
   packetUBXESFRAW = new UBX_ESF_RAW_t; //Allocate RAM for the main struct
   if (packetUBXESFRAW == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXESFRAW: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -7872,7 +7930,7 @@ boolean SFE_UBLOX_GPS::setAutoHNRAttcallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXHNRATTcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHNRAttcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -7904,7 +7962,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRATT()
   packetUBXHNRATT = new UBX_HNR_ATT_t; //Allocate RAM for the main struct
   if (packetUBXHNRATT == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXHNRATT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -8049,7 +8107,7 @@ boolean SFE_UBLOX_GPS::setAutoHNRDyncallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXHNRINScopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHNRDyncallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -8081,7 +8139,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRINS()
   packetUBXHNRINS = new UBX_HNR_INS_t; //Allocate RAM for the main struct
   if (packetUBXHNRINS == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXHNRINS: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
@@ -8225,7 +8283,7 @@ boolean SFE_UBLOX_GPS::setAutoHNRPVTcallback(void (*callbackPointer)(), uint16_t
 
   if (packetUBXHNRPVTcopy == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHNRPVTcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
@@ -8257,7 +8315,7 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRPVT()
   packetUBXHNRPVT = new UBX_HNR_PVT_t; //Allocate RAM for the main struct
   if (packetUBXHNRPVT == NULL)
   {
-    if ((_printDebug == true) || (_printLimitedDebug == true))
+    if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("initPacketUBXHNRPVT: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }

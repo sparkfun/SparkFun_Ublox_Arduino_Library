@@ -10,7 +10,7 @@
   and log the data to SD card in UBX format.
 
   This code is intended to be run on the MicroMod Data Logging Carrier Board using the Artemis Processor
-  but can be adapted by changing the chip select pin and SPI allocations:
+  but can be adapted by changing the chip select pin and SPI definitions:
   https://www.sparkfun.com/products/16829
   https://www.sparkfun.com/products/16401
 
@@ -22,16 +22,20 @@
   Insert a formatted micro-SD card into the socket on the Carrier Board.
   Connect the Carrier Board to your computer using a USB-C cable.
   Ensure you have the SparkFun Apollo3 boards installed: http://boardsmanager/All#SparkFun_Apollo3
-  This code has been tested using version 1.2.1 of the Apollo3 boards.
+  This code has been tested using version 1.2.1 of the Apollo3 boards on Arduino IDE 1.8.13.
   Select "SparkFun Artemis MicroMod" as the board type.
   Press upload to upload the code onto the Artemis.
   Open the Serial Monitor at 115200 baud to see the output.
+
+  To minimise I2C bus errors, it is a good idea to open the I2C pull-up split pad links on
+  both the MicroMod Data Logging Carrier Board and the u-blox module breakout.
 
   Connecting the PPS (Pulse Per Second) breakout pin to the INT (Interrupt) pin with a jumper wire
   will cause a TIM TM2 message to be produced once per second. You can then study the timing of the
   pulse edges with nanosecond resolution!
 
-  Data is logged in u-blox UBX format. You can replay and analyze the data using u-center:
+  Data is logged in u-blox UBX format. Please see the u-blox protocol specification for more details.
+  You can replay and analyze the data using u-center:
   https://www.u-blox.com/en/product/u-center
 
   Feel like supporting open source hardware?
@@ -48,6 +52,10 @@
 SFE_UBLOX_GPS myGPS;
 
 File myFile; //File that all GNSS data is written to
+
+#define sdChipSelect CS //Primary SPI Chip Select is CS for the MicroMod Artemis Processor. Adjust for your processor if necessary.
+
+#define packetLength 36 // TIM TM2 is 28 + 8 bytes in length (including the sync chars, class, id, length and checksum bytes)
 
 // Callback: printTIMTM2data will be called when new TIM TM2 data arrives
 // See u-blox_structs.h for the full definition of UBX_TIM_TM2_data_t *packetUBXTIMTM2copy
@@ -83,7 +91,11 @@ void setup()
   while (!Serial); //Wait for user to open terminal
   Serial.println("SparkFun u-blox Example");
 
-  Wire.begin();
+  Wire.begin(); // Start I2C communication with the GNSS
+
+#if defined(AM_PART_APOLLO3)
+  Wire.setPullups(0); // On the Artemis, we can disable the internal I2C pull-ups too to help reduce bus errors
+#endif
 
   while (Serial.available()) // Make sure the Serial buffer is empty
   {
@@ -104,10 +116,10 @@ void setup()
     Serial.read();
   }
 
-  Serial.print("Initializing SD card...");
+  Serial.println("Initializing SD card...");
 
   // See if the card is present and can be initialized:
-  if (!SD.begin(CS)) //Primary SPI Chip Select is CS for Artemis MicroMod. Adjust for your processor if necessary.
+  if (!SD.begin(sdChipSelect))
   {
     Serial.println("Card failed, or not present. Freezing...");
     // don't do anything more:
@@ -115,7 +127,9 @@ void setup()
   }
   Serial.println("SD card initialized.");
 
-  myFile = SD.open("TIM_TM2.ubx", FILE_WRITE); // Create or open a file called "TIM_TM2.ubx" on the SD card
+  // Create or open a file called "TIM_TM2.ubx" on the SD card.
+  // If the file already exists, the new data is appended to the end of the file.
+  myFile = SD.open("TIM_TM2.ubx", FILE_WRITE);
   if(!myFile)
   {
     Serial.println(F("Failed to create UBX data file! Freezing..."));
@@ -124,10 +138,13 @@ void setup()
 
   //myGPS.enableDebugging(); // Uncomment this line to enable helpful GNSS debug messages on Serial
 
-  // TIM TM2 contains 28 bytes of data.
+  //myGPS.disableUBX7Fcheck(); // Advanced users only: uncomment this line to disable the "7F" check in checkUbloxI2C
+
+  // TIM TM2 messages are 36 bytes long.
   // In this example, the data will arrive no faster than one message per second.
-  // So, setting the file buffer size to 256 bytes should be more than adequate.
-  myGPS.setFileBufferSize(256); // setFileBufferSize must be called _before_ .begin
+  // So, setting the file buffer size to 109 bytes should be more than adequate.
+  // I.e. room for three messages plus an empty tail byte.
+  myGPS.setFileBufferSize(109); // setFileBufferSize must be called _before_ .begin
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
@@ -152,27 +169,33 @@ void loop()
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
-  if (myGPS.fileBufferAvailable() >= 28) // Check to see if a new 28-byte TIM TM2 message has been stored
+  if (myGPS.fileBufferAvailable() >= packetLength) // Check to see if a new packetLength-byte TIM TM2 message has been stored
   {
-    char myBuffer[28]; // Create our own buffer to hold the data while we write it to SD card
+    uint8_t myBuffer[packetLength]; // Create our own buffer to hold the data while we write it to SD card
 
-    uint16_t numBytesExtracted = myGPS.extractFileBufferData((uint8_t *)&myBuffer, 28); // Extract exactly 28 bytes from the UBX file buffer and put them into myBuffer
+    uint16_t numBytesExtracted = myGPS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
 
-    if (numBytesExtracted != 28) // Check that we did extract exactly 28 bytes
+    if (numBytesExtracted != packetLength) // Check that we did extract exactly packetLength bytes
     {
-      Serial.println(F("PANIC! numBytesExtracted is not 28! Something really bad has happened! Freezing..."));
-      while (1);      
+      Serial.println(F("numBytesExtracted does not match packetLength! Something really bad has happened! Freezing..."));
+      myFile.close(); // Close the data file
+      while (1); // Do nothing more
     }
 
-    uint16_t numBytesWritten = myFile.write(myBuffer, 28); // Write exactly 28 bytes from myBuffer to the ubxDataFile on the SD card
+    uint16_t numBytesWritten = myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
+
+    //printBuffer(myBuffer); // Uncomment this line to print the data
     
-    if (numBytesWritten != 28) // Check that we did write exactly 28 bytes
+    if (numBytesWritten != packetLength) // Check that we did write exactly packetLength bytes
     {
-      Serial.println(F("PANIC! numBytesWritten is not 28! Something really bad has happened! Freezing..."));
+      Serial.println(F("numBytesWritten does not match packetLength! Something really bad has happened! Freezing..."));
+      myFile.close(); // Close the data file
       while (1);      
     }
 
-    Serial.println(F("Wrote 28 bytes of data to ubxDataFile.ubx"));
+    Serial.print(F("Wrote "));
+    Serial.print(packetLength);
+    Serial.println(F(" bytes of data to TIM_TM2.ubx"));
   }
 
   if (Serial.available()) // Check if the user wants to stop logging
@@ -184,4 +207,26 @@ void loop()
   
   Serial.print(".");
   delay(50);
+}
+
+// Print the buffer contents as Hexadecimal
+// You should see:
+// SYNC CHAR 1: 0xB5
+// SYNC CHAR 2: 0x62
+// CLASS: 0x0D for TIM
+// ID: 0x03 for TM2
+// LENGTH: 2-bytes Little Endian (0x1C00 = 28 bytes for TIM TM2)
+// PAYLOAD: LENGTH bytes
+// CHECKSUM_A
+// CHECKSUM_B
+// Please see the u-blox protocol specification for more details
+void printBuffer(uint8_t *ptr)
+{
+  for (int i = 0; i < packetLength; i++)
+  {
+    if (ptr[i] < 16) Serial.print("0"); // Print a leading zero if required
+    Serial.print(ptr[i], HEX); // Print the byte as Hexadecimal
+    Serial.print(" ");
+  }
+  Serial.println();
 }
