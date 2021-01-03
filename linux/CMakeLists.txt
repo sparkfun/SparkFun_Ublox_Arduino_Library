@@ -30,7 +30,6 @@ set(
     ublox_parser_src
     ../src/SparkFun_Ublox_Arduino_Library.cpp
     src/Print.cpp
-    src/Utils.cpp
     )
 
 add_library(
