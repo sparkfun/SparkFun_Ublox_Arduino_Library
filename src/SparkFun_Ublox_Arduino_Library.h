@@ -696,7 +696,7 @@ public:
 	boolean getPVT(uint16_t maxWait = defaultMaxWait);	//Query module for latest group of datums and load global vars: lat, long, alt, speed, SIV, accuracies, etc. If autoPVT is disabled, performs an explicit poll and waits, if enabled does not block. Returns true if new PVT is available.
 	boolean setAutoPVT(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency
 	boolean setAutoPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic PVT reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-	boolean setAutoPVTcallback(void (*callbackPointer)(), uint16_t maxWait = defaultMaxWait); //Enable automatic PVT reports at the navigation frequency. Data is accessed from the callback.
+	boolean setAutoPVTcallback(void (*callbackPointer)(UBX_NAV_PVT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic PVT reports at the navigation frequency. Data is accessed from the callback.
 	boolean assumeAutoPVT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and PVT is send cyclically already
 	boolean initPacketUBXNAVPVT(); // Allocate RAM for packetUBXNAVPVT and initialize it
 	void flushPVT(); //Mark all the PVT data as read/stale
@@ -1009,7 +1009,6 @@ public:
 	UBX_NAV_ATT_t *packetUBXNAVATT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_ATT_data_t *packetUBXNAVATTcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_PVT_t *packetUBXNAVPVT = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
-	UBX_NAV_PVT_data_t *packetUBXNAVPVTcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_ODO_t *packetUBXNAVODO = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 	UBX_NAV_ODO_data_t *packetUBXNAVODOcopy = NULL; // Copy of the data - to be passed to the callback if required
 	UBX_NAV_VELECEF_t *packetUBXNAVVELECEF = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary

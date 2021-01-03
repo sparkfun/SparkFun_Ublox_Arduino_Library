@@ -1448,10 +1448,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVPVTcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVPVT->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVPVTcopy->iTOW, &packetUBXNAVPVT->data.iTOW, sizeof(UBX_NAV_PVT_data_t));
+          memcpy(&packetUBXNAVPVT->callbackData->iTOW, &packetUBXNAVPVT->data.iTOW, sizeof(UBX_NAV_PVT_data_t));
           packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -2736,13 +2736,13 @@ void SFE_UBLOX_GPS::checkCallbacks(void)
     packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVPVTcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVPVT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVPVT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVPVT->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
-    packetUBXNAVPVT->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVPVT->callbackPointer(*packetUBXNAVPVT->callbackData); // Call the callback
     packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
@@ -5280,27 +5280,27 @@ boolean SFE_UBLOX_GPS::setAutoPVT(boolean enable, boolean implicitUpdate, uint16
 }
 
 //Enable automatic navigation message generation by the GNSS. This changes the way getPVT works.
-//Data is passed to the callback in packetUBXNAVPVTcopy.
-boolean SFE_UBLOX_GPS::setAutoPVTcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoPVTcallback(void (*callbackPointer)(UBX_NAV_PVT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoPVT(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAutoPVT failed
 
-  if (packetUBXNAVPVTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVPVT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVPVTcopy = new UBX_NAV_PVT_data_t; //Allocate RAM for the main struct
+    packetUBXNAVPVT->callbackData = new UBX_NAV_PVT_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVPVTcopy == NULL)
+  if (packetUBXNAVPVT->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoPVTcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVPVT->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVPVT->callbackPointer = callbackPointer; // RAM has been allocated so now update the pointer
+
   return (true);
 }
 
@@ -5335,6 +5335,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPVT()
   packetUBXNAVPVT->automaticFlags.callbackPointer = NULL;
   packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
   packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
+  packetUBXNAVPVT->callbackPointer = NULL;
+  packetUBXNAVPVT->callbackData = NULL;
   return (true);
 }
 
