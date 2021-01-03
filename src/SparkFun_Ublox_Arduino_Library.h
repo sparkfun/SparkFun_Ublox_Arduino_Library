@@ -528,7 +528,7 @@ public:
 
 	void printPacket(ubxPacket *packet, boolean alwaysPrintPayload = false); //Useful for debugging
 
-	// After sending a message to teh module, wait for the expected response (data+ACK or just data)
+	// After sending a message to the module, wait for the expected response (data+ACK or just data)
 
 	sfe_ublox_status_e waitForACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);	 //Poll the module until a config packet and an ACK is received
 	sfe_ublox_status_e waitForNoACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait); //Poll the module until a config packet is received
@@ -990,12 +990,12 @@ public:
 
 	// Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
 	// From v2.0: These are public. The user can call these to extract data from custom packets
-	uint32_t extractLong(ubxPacket *msg, uint8_t spotToStart);																	 //Combine four bytes from payload into long
-	int32_t extractSignedLong(ubxPacket *msg, uint8_t spotToStart);																//Combine four bytes from payload into signed long (avoiding any ambiguity caused by casting)
-	uint16_t extractInt(ubxPacket *msg, uint8_t spotToStart);																	 //Combine two bytes from payload into int
+	uint32_t extractLong(ubxPacket *msg, uint8_t spotToStart); //Combine four bytes from payload into long
+	int32_t extractSignedLong(ubxPacket *msg, uint8_t spotToStart); //Combine four bytes from payload into signed long (avoiding any ambiguity caused by casting)
+	uint16_t extractInt(ubxPacket *msg, uint8_t spotToStart); //Combine two bytes from payload into int
 	int16_t extractSignedInt(ubxPacket *msg, int8_t spotToStart);
-	uint8_t extractByte(ubxPacket *msg, uint8_t spotToStart);																	 //Get byte from payload
-	int8_t extractSignedChar(ubxPacket *msg, uint8_t spotToStart);																 //Get signed 8-bit value from payload
+	uint8_t extractByte(ubxPacket *msg, uint8_t spotToStart); //Get byte from payload
+	int8_t extractSignedChar(ubxPacket *msg, uint8_t spotToStart); //Get signed 8-bit value from payload
 
 	// Pointers to storage for the "automatic" messages
 	// RAM is allocated for these if/when required.
