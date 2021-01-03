@@ -1614,7 +1614,7 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
           && (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
           memcpy(&packetUBXNAVHPPOSLLHcopy->version, &packetUBXNAVHPPOSLLH->data.version, sizeof(UBX_NAV_HPPOSLLH_data_t));
-          packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
+          packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
         //Check if we need to copy the data into the file buffer
