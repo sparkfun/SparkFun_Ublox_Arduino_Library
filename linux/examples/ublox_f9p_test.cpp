@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     } 
 
     Stream seriComm(argv[1]);
-    seriComm.begin(115200);
+    seriComm.begin(38400);
     if (!seriComm.isConnected()) {
         printf ("Ublox is not connected. Please connect ublox GNSS module and try again...\n");
         return 0;
