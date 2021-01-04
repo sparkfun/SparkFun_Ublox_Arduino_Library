@@ -62,7 +62,7 @@ void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
     long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
-    Serial.println(F(" (mm)"));  
+    Serial.println(F(" (mm)"));
 }
 
 void setup()
@@ -74,6 +74,8 @@ void setup()
   Wire.begin();
 
   //myGPS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
+
+  myGPS.disableUBX7Fcheck();
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {

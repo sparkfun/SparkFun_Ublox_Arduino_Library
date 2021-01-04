@@ -63,7 +63,6 @@ struct ubxAutomaticFlags
       uint8_t callbackCopyValid : 1; // Is the copy of the data struct used by the callback valid/fresh?
     } bits;
   } flags;
-  void (*callbackPointer)(); // This will contain the pointer to the callback function
 };
 
 // UBX-NAV-POSECEF (0x01 0x01): Position solution in ECEF
@@ -101,6 +100,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_POSECEF_data_t data;
   UBX_NAV_POSECEF_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_POSECEF_data_t);
+  UBX_NAV_POSECEF_data_t  *callbackData;
 } UBX_NAV_POSECEF_t;
 
 // UBX-NAV-POSLLH (0x01 0x02): Geodetic position solution
@@ -142,6 +143,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_POSLLH_data_t data;
   UBX_NAV_POSLLH_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_POSLLH_data_t);
+  UBX_NAV_POSLLH_data_t  *callbackData;
 } UBX_NAV_POSLLH_t;
 
 // UBX-NAV-STATUS (0x01 0x03): Receiver navigation status
@@ -240,6 +243,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_STATUS_data_t data;
   UBX_NAV_STATUS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_STATUS_data_t);
+  UBX_NAV_STATUS_data_t  *callbackData;
 } UBX_NAV_STATUS_t;
 
 // UBX-NAV-DOP (0x01 0x04): Dilution of precision
@@ -283,6 +288,8 @@ typedef struct
   ubxAutomaticFlags automaticFlags;
   UBX_NAV_DOP_data_t data;
   UBX_NAV_DOP_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_DOP_data_t);
+  UBX_NAV_DOP_data_t  *callbackData;
 } UBX_NAV_DOP_t;
 
 // UBX-NAV-ATT (0x01 0x05): Attitude solution
@@ -327,6 +334,8 @@ typedef struct
   ubxAutomaticFlags automaticFlags;
   UBX_NAV_ATT_data_t data;
   UBX_NAV_ATT_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_ATT_data_t);
+  UBX_NAV_ATT_data_t  *callbackData;
 } UBX_NAV_ATT_t;
 
 // UBX-NAV-PVT (0x01 0x07): Navigation position velocity time solution
@@ -528,6 +537,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_ODO_data_t data;
   UBX_NAV_ODO_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_ODO_data_t);
+  UBX_NAV_ODO_data_t  *callbackData;
 } UBX_NAV_ODO_t;
 
 // UBX-NAV-VELECEF (0x01 0x11): Velocity solution in ECEF
@@ -565,6 +576,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_VELECEF_data_t data;
   UBX_NAV_VELECEF_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_VELECEF_data_t);
+  UBX_NAV_VELECEF_data_t  *callbackData;
 } UBX_NAV_VELECEF_t;
 
 // UBX-NAV-VELNED (0x01 0x12): Velocity solution in NED frame
@@ -610,6 +623,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_VELNED_data_t data;
   UBX_NAV_VELNED_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_VELNED_data_t);
+  UBX_NAV_VELNED_data_t  *callbackData;
 } UBX_NAV_VELNED_t;
 
 // UBX-NAV-HPPOSECEF (0x01 0x13): High precision position solution in ECEF
@@ -667,6 +682,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_HPPOSECEF_data_t data;
   UBX_NAV_HPPOSECEF_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_HPPOSECEF_data_t);
+  UBX_NAV_HPPOSECEF_data_t  *callbackData;
 } UBX_NAV_HPPOSECEF_t;
 
 // UBX-NAV-HPPOSLLH (0x01 0x14): High precision geodetic position solution
@@ -730,6 +747,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_HPPOSLLH_data_t data;
   UBX_NAV_HPPOSLLH_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_HPPOSLLH_data_t);
+  UBX_NAV_HPPOSLLH_data_t  *callbackData;
 } UBX_NAV_HPPOSLLH_t;
 
 // UBX-NAV-TIMEUTC (0x01 0x21): UTC time solution
@@ -792,6 +811,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_TIMEUTC_data_t data;
   UBX_NAV_TIMEUTC_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_TIMEUTC_data_t);
+  UBX_NAV_TIMEUTC_data_t  *callbackData;
 } UBX_NAV_TIMEUTC_t;
 
 // UBX-NAV-CLOCK (0x01 0x22): Clock solution
@@ -829,6 +850,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_CLOCK_data_t data;
   UBX_NAV_CLOCK_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_CLOCK_data_t);
+  UBX_NAV_CLOCK_data_t  *callbackData;
 } UBX_NAV_CLOCK_t;
 
 // UBX-NAV-SVIN (0x01 0x3B): Survey-in data
@@ -885,6 +908,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_SVIN_data_t data;
   UBX_NAV_SVIN_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_SVIN_data_t);
+  UBX_NAV_SVIN_data_t  *callbackData;
 } UBX_NAV_SVIN_t;
 
 // UBX-NAV-RELPOSNED (0x01 0x3C): Relative positioning information in NED frame
@@ -982,6 +1007,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_RELPOSNED_data_t data;
   UBX_NAV_RELPOSNED_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_RELPOSNED_data_t);
+  UBX_NAV_RELPOSNED_data_t  *callbackData;
 } UBX_NAV_RELPOSNED_t;
 
 // RXM-specific structs
@@ -1011,6 +1038,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_RXM_SFRBX_data_t data;
   boolean moduleQueried;
+  void (*callbackPointer)(UBX_RXM_SFRBX_data_t);
+  UBX_RXM_SFRBX_data_t  *callbackData;
 } UBX_RXM_SFRBX_t;
 
 // UBX-RXM-RAWX (0x02 0x15): Multi-GNSS raw measurement data
@@ -1076,6 +1105,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_RXM_RAWX_data_t data;
   boolean moduleQueried;
+  void (*callbackPointer)(UBX_RXM_RAWX_data_t);
+  UBX_RXM_RAWX_data_t  *callbackData;
 } UBX_RXM_RAWX_t;
 
 // CFG-specific structs
@@ -1111,6 +1142,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_CFG_RATE_data_t data;
   UBX_CFG_RATE_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_CFG_RATE_data_t);
+  UBX_CFG_RATE_data_t  *callbackData;
 } UBX_CFG_RATE_t;
 
 // TIM-specific structs
@@ -1180,6 +1213,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_TIM_TM2_data_t data;
   UBX_TIM_TM2_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_TIM_TM2_data_t);
+  UBX_TIM_TM2_data_t  *callbackData;
 } UBX_TIM_TM2_t;
 
 // ESF-specific structs
@@ -1252,6 +1287,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_ESF_ALG_data_t data;
   UBX_ESF_ALG_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_ESF_ALG_data_t);
+  UBX_ESF_ALG_data_t  *callbackData;
 } UBX_ESF_ALG_t;
 
 // UBX-ESF-INS (0x10 0x15): Vehicle dynamics information
@@ -1316,6 +1353,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_ESF_INS_data_t data;
   UBX_ESF_INS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_ESF_INS_data_t);
+  UBX_ESF_INS_data_t  *callbackData;
 } UBX_ESF_INS_t;
 
 // UBX-ESF-MEAS (0x10 0x02): External sensor fusion measurements
@@ -1384,6 +1423,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_ESF_MEAS_data_t data;
   UBX_ESF_MEAS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_ESF_MEAS_data_t);
+  UBX_ESF_MEAS_data_t  *callbackData;
 } UBX_ESF_MEAS_t;
 
 // UBX-ESF-RAW (0x10 0x03): Raw sensor measurements
@@ -1429,6 +1470,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_ESF_RAW_data_t data;
   UBX_ESF_RAW_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_ESF_RAW_data_t);
+  UBX_ESF_RAW_data_t  *callbackData;
 } UBX_ESF_RAW_t;
 
 // UBX-ESF-STATUS (0x10 0x10): External sensor fusion status
@@ -1514,6 +1557,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_ESF_STATUS_data_t data;
   UBX_ESF_STATUS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_ESF_STATUS_data_t);
+  UBX_ESF_STATUS_data_t  *callbackData;
 } UBX_ESF_STATUS_t;
 
 // HNR-specific structs
@@ -1628,6 +1673,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_HNR_PVT_data_t data;
   UBX_HNR_PVT_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_HNR_PVT_data_t);
+  UBX_HNR_PVT_data_t  *callbackData;
 } UBX_HNR_PVT_t;
 
 // UBX-HNR-ATT (0x28 0x01): Attitude solution
@@ -1672,6 +1719,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_HNR_ATT_data_t data;
   UBX_HNR_ATT_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_HNR_ATT_data_t);
+  UBX_HNR_ATT_data_t  *callbackData;
 } UBX_HNR_ATT_t;
 
 // UBX-HNR-INS (0x28 0x02): Vehicle dynamics information
@@ -1736,6 +1785,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_HNR_INS_data_t data;
   UBX_HNR_INS_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_HNR_INS_data_t);
+  UBX_HNR_INS_data_t  *callbackData;
 } UBX_HNR_INS_t;
 
 #endif

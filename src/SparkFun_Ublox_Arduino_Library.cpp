@@ -1296,10 +1296,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVPOSECEFcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVPOSECEF->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVPOSECEF->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVPOSECEFcopy->iTOW, &packetUBXNAVPOSECEF->data.iTOW, sizeof(UBX_NAV_POSECEF_data_t));
+          memcpy(&packetUBXNAVPOSECEF->callbackData->iTOW, &packetUBXNAVPOSECEF->data.iTOW, sizeof(UBX_NAV_POSECEF_data_t));
           packetUBXNAVPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1327,10 +1327,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVSTATUScopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVSTATUS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVSTATUScopy->iTOW, &packetUBXNAVSTATUS->data.iTOW, sizeof(UBX_NAV_STATUS_data_t));
+          memcpy(&packetUBXNAVSTATUS->callbackData->iTOW, &packetUBXNAVSTATUS->data.iTOW, sizeof(UBX_NAV_STATUS_data_t));
           packetUBXNAVSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1359,10 +1359,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVDOPcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVDOP->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVDOP->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVDOPcopy->iTOW, &packetUBXNAVDOP->data.iTOW, sizeof(UBX_NAV_DOP_data_t));
+          memcpy(&packetUBXNAVDOP->callbackData->iTOW, &packetUBXNAVDOP->data.iTOW, sizeof(UBX_NAV_DOP_data_t));
           packetUBXNAVDOP->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1391,10 +1391,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVATT->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVATTcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVATT->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVATTcopy->iTOW, &packetUBXNAVATT->data.iTOW, sizeof(UBX_NAV_ATT_data_t));
+          memcpy(&packetUBXNAVATT->callbackData->iTOW, &packetUBXNAVATT->data.iTOW, sizeof(UBX_NAV_ATT_data_t));
           packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1477,10 +1477,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVODO->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVODOcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVODO->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVODO->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVODOcopy->version, &packetUBXNAVODO->data.version, sizeof(UBX_NAV_ODO_data_t));
+          memcpy(&packetUBXNAVODO->callbackData->version, &packetUBXNAVODO->data.version, sizeof(UBX_NAV_ODO_data_t));
           packetUBXNAVODO->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1506,10 +1506,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVVELECEFcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVVELECEF->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVVELECEF->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVVELECEFcopy->iTOW, &packetUBXNAVVELECEF->data.iTOW, sizeof(UBX_NAV_VELECEF_data_t));
+          memcpy(&packetUBXNAVVELECEF->callbackData->iTOW, &packetUBXNAVVELECEF->data.iTOW, sizeof(UBX_NAV_VELECEF_data_t));
           packetUBXNAVVELECEF->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1539,10 +1539,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVVELNEDcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVVELNED->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVVELNED->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVVELNEDcopy->iTOW, &packetUBXNAVVELNED->data.iTOW, sizeof(UBX_NAV_VELNED_data_t));
+          memcpy(&packetUBXNAVVELNED->callbackData->iTOW, &packetUBXNAVVELNED->data.iTOW, sizeof(UBX_NAV_VELNED_data_t));
           packetUBXNAVVELNED->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1573,10 +1573,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVHPPOSECEFcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVHPPOSECEF->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVHPPOSECEFcopy->version, &packetUBXNAVHPPOSECEF->data.version, sizeof(UBX_NAV_HPPOSECEF_data_t));
+          memcpy(&packetUBXNAVHPPOSECEF->callbackData->version, &packetUBXNAVHPPOSECEF->data.version, sizeof(UBX_NAV_HPPOSECEF_data_t));
           packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1610,10 +1610,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVHPPOSLLHcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVHPPOSLLH->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVHPPOSLLHcopy->version, &packetUBXNAVHPPOSLLH->data.version, sizeof(UBX_NAV_HPPOSLLH_data_t));
+          memcpy(&packetUBXNAVHPPOSLLH->callbackData->version, &packetUBXNAVHPPOSLLH->data.version, sizeof(UBX_NAV_HPPOSLLH_data_t));
           packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1639,10 +1639,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVCLOCKcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVCLOCK->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVCLOCKcopy->iTOW, &packetUBXNAVCLOCK->data.iTOW, sizeof(UBX_NAV_CLOCK_data_t));
+          memcpy(&packetUBXNAVCLOCK->callbackData->iTOW, &packetUBXNAVCLOCK->data.iTOW, sizeof(UBX_NAV_CLOCK_data_t));
           packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1729,10 +1729,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXNAVRELPOSNEDcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXNAVRELPOSNED->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXNAVRELPOSNEDcopy->version, &packetUBXNAVRELPOSNED->data.version, sizeof(UBX_NAV_RELPOSNED_data_t));
+          memcpy(&packetUBXNAVRELPOSNED->callbackData->version, &packetUBXNAVRELPOSNED->data.version, sizeof(UBX_NAV_RELPOSNED_data_t));
           packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1770,10 +1770,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXRXMSFRBX->moduleQueried = true;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXRXMSFRBXcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXRXMSFRBX->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXRXMSFRBXcopy->gnssId, &packetUBXRXMSFRBX->data.gnssId, sizeof(UBX_RXM_SFRBX_data_t));
+          memcpy(&packetUBXRXMSFRBX->callbackData->gnssId, &packetUBXRXMSFRBX->data.gnssId, sizeof(UBX_RXM_SFRBX_data_t));
           packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1827,10 +1827,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXRXMRAWX->moduleQueried = true;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXRXMRAWXcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXRXMRAWX->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXRXMRAWXcopy->header.rcvTow[0], &packetUBXRXMRAWX->data.header.rcvTow[0], sizeof(UBX_RXM_RAWX_data_t));
+          memcpy(&packetUBXRXMRAWX->callbackData->header.rcvTow[0], &packetUBXRXMRAWX->data.header.rcvTow[0], sizeof(UBX_RXM_RAWX_data_t));
           packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1878,10 +1878,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXTIMTM2copy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXTIMTM2->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXTIMTM2copy->ch, &packetUBXTIMTM2->data.ch, sizeof(UBX_TIM_TM2_data_t));
+          memcpy(&packetUBXTIMTM2->callbackData->ch, &packetUBXTIMTM2->data.ch, sizeof(UBX_TIM_TM2_data_t));
           packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1911,10 +1911,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXESFALG->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXESFALGcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXESFALG->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXESFALG->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXESFALGcopy->iTOW, &packetUBXESFALG->data.iTOW, sizeof(UBX_ESF_ALG_data_t));
+          memcpy(&packetUBXESFALG->callbackData->iTOW, &packetUBXESFALG->data.iTOW, sizeof(UBX_ESF_ALG_data_t));
           packetUBXESFALG->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1943,10 +1943,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXESFINS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXESFINScopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXESFINS->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXESFINS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXESFINScopy->bitfield0.all, &packetUBXESFINS->data.bitfield0.all, sizeof(UBX_ESF_INS_data_t));
+          memcpy(&packetUBXESFINS->callbackData->bitfield0.all, &packetUBXESFINS->data.bitfield0.all, sizeof(UBX_ESF_INS_data_t));
           packetUBXESFINS->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -1977,10 +1977,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXESFMEAScopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXESFMEAS->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXESFMEAS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXESFMEAScopy->timeTag, &packetUBXESFMEAS->data.timeTag, sizeof(UBX_ESF_MEAS_data_t));
+          memcpy(&packetUBXESFMEAS->callbackData->timeTag, &packetUBXESFMEAS->data.timeTag, sizeof(UBX_ESF_MEAS_data_t));
           packetUBXESFMEAS->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -2006,10 +2006,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXESFRAW->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXESFRAWcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXESFRAW->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXESFRAW->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXESFRAWcopy->data[0].data.all, &packetUBXESFRAW->data.data[0].data.all, sizeof(UBX_ESF_RAW_data_t));
+          memcpy(&packetUBXESFRAW->callbackData->data[0].data.all, &packetUBXESFRAW->data.data[0].data.all, sizeof(UBX_ESF_RAW_data_t));
           packetUBXESFRAW->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -2042,10 +2042,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXESFSTATUScopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXESFSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXESFSTATUS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXESFSTATUScopy->iTOW, &packetUBXESFSTATUS->data.iTOW, sizeof(UBX_ESF_STATUS_data_t));
+          memcpy(&packetUBXESFSTATUS->callbackData->iTOW, &packetUBXESFSTATUS->data.iTOW, sizeof(UBX_ESF_STATUS_data_t));
           packetUBXESFSTATUS->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -2091,10 +2091,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXHNRPVT->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXHNRPVTcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXHNRPVT->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXHNRPVTcopy->iTOW, &packetUBXHNRPVT->data.iTOW, sizeof(UBX_HNR_PVT_data_t));
+          memcpy(&packetUBXHNRPVT->callbackData->iTOW, &packetUBXHNRPVT->data.iTOW, sizeof(UBX_HNR_PVT_data_t));
           packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -2123,10 +2123,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXHNRATT->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXHNRATTcopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXHNRATT->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXHNRATTcopy->iTOW, &packetUBXHNRATT->data.iTOW, sizeof(UBX_HNR_ATT_data_t));
+          memcpy(&packetUBXHNRATT->callbackData->iTOW, &packetUBXHNRATT->data.iTOW, sizeof(UBX_HNR_ATT_data_t));
           packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -2155,10 +2155,10 @@ void SFE_UBLOX_GPS::processUBXpacket(ubxPacket *msg)
         packetUBXHNRINS->moduleQueried.moduleQueried.all = 0xFFFFFFFF;
 
         //Check if we need to copy the data for the callback
-        if ((packetUBXHNRINScopy != NULL) // If RAM has been allocated for the copy of the data
+        if ((packetUBXHNRINS->callbackData != NULL) // If RAM has been allocated for the copy of the data
           && (packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid == false)) // AND the data is stale
         {
-          memcpy(&packetUBXHNRINScopy->bitfield0.all, &packetUBXHNRINS->data.bitfield0.all, sizeof(UBX_HNR_INS_data_t));
+          memcpy(&packetUBXHNRINS->callbackData->bitfield0.all, &packetUBXHNRINS->data.bitfield0.all, sizeof(UBX_HNR_INS_data_t));
           packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid = true;
         }
 
@@ -2696,233 +2696,256 @@ void SFE_UBLOX_GPS::checkCallbacks(void)
 
   checkCallbacksReentrant = true;
 
-  if ((packetUBXNAVPOSECEFcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVPOSECEF->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVPOSECEF != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVPOSECEF->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVPOSECEF->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVPOSECEF->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV POSECEF"));
-    packetUBXNAVPOSECEF->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVPOSECEF->callbackPointer(*packetUBXNAVPOSECEF->callbackData); // Call the callback
     packetUBXNAVPOSECEF->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVSTATUScopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVSTATUS->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVSTATUS != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVSTATUS->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVSTATUS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV STATUS"));
-    packetUBXNAVSTATUS->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVSTATUS->callbackPointer(*packetUBXNAVSTATUS->callbackData); // Call the callback
     packetUBXNAVSTATUS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVDOPcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVDOP->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVDOP != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVDOP->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVDOP->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVDOP->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV DOP"));
-    packetUBXNAVDOP->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVDOP->callbackPointer(*packetUBXNAVDOP->callbackData); // Call the callback
     packetUBXNAVDOP->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVATTcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVATT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVATT != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVATT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVATT->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV ATT"));
-    packetUBXNAVATT->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVATT->callbackPointer(*packetUBXNAVATT->callbackData); // Call the callback
     packetUBXNAVATT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVPVT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+  if ((packetUBXNAVPVT != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVPVT->callbackData != NULL) // If RAM has been allocated for the copy of the data
     && (packetUBXNAVPVT->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
-    // if (_printDebug == true)
-    //   _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
+    if (_printDebug == true)
+      _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
     packetUBXNAVPVT->callbackPointer(*packetUBXNAVPVT->callbackData); // Call the callback
     packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVODOcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVODO->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVODO != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVODO->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVODO->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVODO->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV ODO"));
-    packetUBXNAVODO->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVODO->callbackPointer(*packetUBXNAVODO->callbackData); // Call the callback
     packetUBXNAVODO->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVVELECEFcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVVELECEF->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVVELECEF != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVVELECEF->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVVELECEF->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVVELECEF->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV VELECEF"));
-    packetUBXNAVVELECEF->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVVELECEF->callbackPointer(*packetUBXNAVVELECEF->callbackData); // Call the callback
     packetUBXNAVVELECEF->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVVELNEDcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVVELNED->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVVELNED != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVVELNED->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVVELNED->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVVELNED->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV VELNED"));
-    packetUBXNAVVELNED->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVVELNED->callbackPointer(*packetUBXNAVVELNED->callbackData); // Call the callback
     packetUBXNAVVELNED->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVHPPOSECEFcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVHPPOSECEF->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVHPPOSECEF != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVHPPOSECEF->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVHPPOSECEF->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV HPPOSECEF"));
-    packetUBXNAVHPPOSECEF->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVHPPOSECEF->callbackPointer(*packetUBXNAVHPPOSECEF->callbackData); // Call the callback
     packetUBXNAVHPPOSECEF->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVHPPOSLLHcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVHPPOSLLH->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVHPPOSLLH != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVHPPOSLLH->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVHPPOSLLH->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV HPPOSLLH"));
-    packetUBXNAVHPPOSLLH->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVHPPOSLLH->callbackPointer(*packetUBXNAVHPPOSLLH->callbackData); // Call the callback
     packetUBXNAVHPPOSLLH->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVCLOCKcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVCLOCK->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVCLOCK != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVCLOCK->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVCLOCK->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV CLOCK"));
-    packetUBXNAVCLOCK->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVCLOCK->callbackPointer(*packetUBXNAVCLOCK->callbackData); // Call the callback
     packetUBXNAVCLOCK->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXNAVRELPOSNEDcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXNAVRELPOSNED->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXNAVRELPOSNED != NULL) // If RAM has been allocated for message storage
+    && (packetUBXNAVRELPOSNED->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXNAVRELPOSNED->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for NAV RELPOSNED"));
-    packetUBXNAVRELPOSNED->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXNAVRELPOSNED->callbackPointer(*packetUBXNAVRELPOSNED->callbackData); // Call the callback
     packetUBXNAVRELPOSNED->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXRXMSFRBXcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXRXMSFRBX->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXRXMSFRBX != NULL) // If RAM has been allocated for message storage
+    && (packetUBXRXMSFRBX->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXRXMSFRBX->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for RXM SFRBX"));
-    packetUBXRXMSFRBX->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXRXMSFRBX->callbackPointer(*packetUBXRXMSFRBX->callbackData); // Call the callback
     packetUBXRXMSFRBX->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXRXMRAWXcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXRXMRAWX->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXRXMRAWX != NULL) // If RAM has been allocated for message storage
+    && (packetUBXRXMRAWX->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXRXMRAWX->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for RXM RAWX"));
-    packetUBXRXMRAWX->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXRXMRAWX->callbackPointer(*packetUBXRXMRAWX->callbackData); // Call the callback
     packetUBXRXMRAWX->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXTIMTM2copy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXTIMTM2->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXTIMTM2 != NULL) // If RAM has been allocated for message storage
+    && (packetUBXTIMTM2->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXTIMTM2->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for TIM TM2"));
-    packetUBXTIMTM2->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXTIMTM2->callbackPointer(*packetUBXTIMTM2->callbackData); // Call the callback
     packetUBXTIMTM2->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXESFALGcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXESFALG->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXESFALG != NULL) // If RAM has been allocated for message storage
+    && (packetUBXESFALG->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXESFALG->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXESFALG->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for ESF ALG"));
-    packetUBXESFALG->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXESFALG->callbackPointer(*packetUBXESFALG->callbackData); // Call the callback
     packetUBXESFALG->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXESFINScopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXESFINS->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXESFINS != NULL) // If RAM has been allocated for message storage
+    && (packetUBXESFINS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXESFINS->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXESFINS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for ESF INS"));
-    packetUBXESFINS->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXESFINS->callbackPointer(*packetUBXESFINS->callbackData); // Call the callback
     packetUBXESFINS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXESFMEAScopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXESFMEAS->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXESFMEAS != NULL) // If RAM has been allocated for message storage
+    && (packetUBXESFMEAS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXESFMEAS->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXESFMEAS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for ESF MEAS"));
-    packetUBXESFMEAS->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXESFMEAS->callbackPointer(*packetUBXESFMEAS->callbackData); // Call the callback
     packetUBXESFMEAS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXESFRAWcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXESFRAW->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXESFRAW != NULL) // If RAM has been allocated for message storage
+    && (packetUBXESFRAW->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXESFRAW->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXESFRAW->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for ESF RAW"));
-    packetUBXESFRAW->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXESFRAW->callbackPointer(*packetUBXESFRAW->callbackData); // Call the callback
     packetUBXESFRAW->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXESFSTATUScopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXESFSTATUS->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXESFSTATUS != NULL) // If RAM has been allocated for message storage
+    && (packetUBXESFSTATUS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXESFSTATUS->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXESFSTATUS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for ESF STATUS"));
-    packetUBXESFSTATUS->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXESFSTATUS->callbackPointer(*packetUBXESFSTATUS->callbackData); // Call the callback
     packetUBXESFSTATUS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXHNRATTcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXHNRATT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXHNRATT != NULL) // If RAM has been allocated for message storage
+    && (packetUBXHNRATT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXHNRATT->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for HNR ATT"));
-    packetUBXHNRATT->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXHNRATT->callbackPointer(*packetUBXHNRATT->callbackData); // Call the callback
     packetUBXHNRATT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXHNRINScopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXHNRINS->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXHNRINS != NULL) // If RAM has been allocated for message storage
+    && (packetUBXHNRINS->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXHNRINS->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for HNR INS"));
-    packetUBXHNRINS->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXHNRINS->callbackPointer(*packetUBXHNRINS->callbackData); // Call the callback
     packetUBXHNRINS->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
-  if ((packetUBXHNRPVTcopy != NULL) // If RAM has been allocated for the copy of the data
-    && (packetUBXHNRPVT->automaticFlags.callbackPointer != NULL) // If the pointer to the callback has been defined
+  if ((packetUBXHNRPVT != NULL) // If RAM has been allocated for message storage
+    && (packetUBXHNRPVT->callbackData != NULL) // If RAM has been allocated for the copy of the data
+    && (packetUBXHNRPVT->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
     // if (_printDebug == true)
     //   _debugSerial->println(F("checkCallbacks: calling callback for HNR PVT"));
-    packetUBXHNRPVT->automaticFlags.callbackPointer(); // Call the callback
+    packetUBXHNRPVT->callbackPointer(*packetUBXHNRPVT->callbackData); // Call the callback
     packetUBXHNRPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
 
@@ -4643,26 +4666,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVPOSECEF(boolean enable, boolean implicitUpdate,
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVPOSECEFcopy.
-boolean SFE_UBLOX_GPS::setAutoNAVPOSECEFcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVPOSECEFcallback(void (*callbackPointer)(UBX_NAV_POSECEF_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVPOSECEF(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVPOSECEFcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVPOSECEF->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVPOSECEFcopy = new UBX_NAV_POSECEF_data_t; //Allocate RAM for the main struct
+    packetUBXNAVPOSECEF->callbackData = new UBX_NAV_POSECEF_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVPOSECEFcopy == NULL)
+  if (packetUBXNAVPOSECEF->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVPOSECEFcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVPOSECEF->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVPOSECEF->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -4683,7 +4706,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVPOSECEF(boolean enabled, boolean implicitUpd
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVPOSECEF and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVPOSECEF and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVPOSECEF()
 {
   packetUBXNAVPOSECEF = new UBX_NAV_POSECEF_t; //Allocate RAM for the main struct
@@ -4694,7 +4717,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPOSECEF()
     return (false);
   }
   packetUBXNAVPOSECEF->automaticFlags.flags.all = 0;
-  packetUBXNAVPOSECEF->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVPOSECEF->callbackPointer = NULL;
+  packetUBXNAVPOSECEF->callbackData = NULL;
   packetUBXNAVPOSECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4791,26 +4815,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVSTATUS(boolean enable, boolean implicitUpdate, 
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVSTATUScopy.
-boolean SFE_UBLOX_GPS::setAutoNAVSTATUScallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVSTATUScallback(void (*callbackPointer)(UBX_NAV_STATUS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVSTATUS(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVSTATUScopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVSTATUS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVSTATUScopy = new UBX_NAV_STATUS_data_t; //Allocate RAM for the main struct
+    packetUBXNAVSTATUS->callbackData = new UBX_NAV_STATUS_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVSTATUScopy == NULL)
+  if (packetUBXNAVSTATUS->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVSTATUScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVSTATUS->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVSTATUS->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -4831,7 +4855,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVSTATUS(boolean enabled, boolean implicitUpda
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVSTATUS and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVSTATUS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVSTATUS()
 {
   packetUBXNAVSTATUS = new UBX_NAV_STATUS_t; //Allocate RAM for the main struct
@@ -4842,7 +4866,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSTATUS()
     return (false);
   }
   packetUBXNAVSTATUS->automaticFlags.flags.all = 0;
-  packetUBXNAVSTATUS->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVSTATUS->callbackPointer = NULL;
+  packetUBXNAVSTATUS->callbackData = NULL;
   packetUBXNAVSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -4961,26 +4986,26 @@ boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, boolean implicitUpdate, uint16
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVDOPcopy.
-boolean SFE_UBLOX_GPS::setAutoDOPcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoDOPcallback(void (*callbackPointer)(UBX_NAV_DOP_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoDOP(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVDOPcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVDOP->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVDOPcopy = new UBX_NAV_DOP_data_t; //Allocate RAM for the main struct
+    packetUBXNAVDOP->callbackData = new UBX_NAV_DOP_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVDOPcopy == NULL)
+  if (packetUBXNAVDOP->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoDOPcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVDOP->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVDOP->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -5001,7 +5026,7 @@ boolean SFE_UBLOX_GPS::assumeAutoDOP(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVDOP and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVDOP and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVDOP()
 {
   packetUBXNAVDOP = new UBX_NAV_DOP_t; //Allocate RAM for the main struct
@@ -5012,7 +5037,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVDOP()
     return (false);
   }
   packetUBXNAVDOP->automaticFlags.flags.all = 0;
-  packetUBXNAVDOP->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVDOP->callbackPointer = NULL;
+  packetUBXNAVDOP->callbackData = NULL;
   packetUBXNAVDOP->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5110,26 +5136,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVATT(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVATTcopy.
-boolean SFE_UBLOX_GPS::setAutoNAVATTcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVATTcallback(void (*callbackPointer)(UBX_NAV_ATT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVATT(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVATTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVATT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVATTcopy = new UBX_NAV_ATT_data_t; //Allocate RAM for the main struct
+    packetUBXNAVATT->callbackData = new UBX_NAV_ATT_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVATTcopy == NULL)
+  if (packetUBXNAVATT->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVATTcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVATT->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVATT->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -5150,7 +5176,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVATT(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVATT and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVATT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVATT()
 {
   packetUBXNAVATT = new UBX_NAV_ATT_t; //Allocate RAM for the main struct
@@ -5161,7 +5187,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVATT()
     return (false);
   }
   packetUBXNAVATT->automaticFlags.flags.all = 0;
-  packetUBXNAVATT->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVATT->callbackPointer = NULL;
+  packetUBXNAVATT->callbackData = NULL;
   packetUBXNAVATT->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5321,7 +5348,7 @@ boolean SFE_UBLOX_GPS::assumeAutoPVT(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVPVT and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVPVT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVPVT()
 {
   packetUBXNAVPVT = new UBX_NAV_PVT_t; //Allocate RAM for the main struct
@@ -5332,11 +5359,10 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVPVT()
     return (false);
   }
   packetUBXNAVPVT->automaticFlags.flags.all = 0;
-  packetUBXNAVPVT->automaticFlags.callbackPointer = NULL;
-  packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
-  packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
   packetUBXNAVPVT->callbackPointer = NULL;
   packetUBXNAVPVT->callbackData = NULL;
+  packetUBXNAVPVT->moduleQueried.moduleQueried1.all = 0;
+  packetUBXNAVPVT->moduleQueried.moduleQueried2.all = 0;
   return (true);
 }
 
@@ -5432,26 +5458,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVODO(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVODOcopy.
-boolean SFE_UBLOX_GPS::setAutoNAVODOcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVODOcallback(void (*callbackPointer)(UBX_NAV_ODO_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVODO(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVODOcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVODO->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVODOcopy = new UBX_NAV_ODO_data_t; //Allocate RAM for the main struct
+    packetUBXNAVODO->callbackData = new UBX_NAV_ODO_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVODOcopy == NULL)
+  if (packetUBXNAVODO->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVODOcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVODO->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVODO->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -5472,7 +5498,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVODO(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVODO and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVODO and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVODO()
 {
   packetUBXNAVODO = new UBX_NAV_ODO_t; //Allocate RAM for the main struct
@@ -5483,7 +5509,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVODO()
     return (false);
   }
   packetUBXNAVODO->automaticFlags.flags.all = 0;
-  packetUBXNAVODO->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVODO->callbackPointer = NULL;
+  packetUBXNAVODO->callbackData = NULL;
   packetUBXNAVODO->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5579,26 +5606,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELECEF(boolean enable, boolean implicitUpdate,
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVVELECEFcopy.
-boolean SFE_UBLOX_GPS::setAutoNAVVELECEFcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVVELECEFcallback(void (*callbackPointer)(UBX_NAV_VELECEF_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVVELECEF(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVVELECEFcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVVELECEF->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVVELECEFcopy = new UBX_NAV_VELECEF_data_t; //Allocate RAM for the main struct
+    packetUBXNAVVELECEF->callbackData = new UBX_NAV_VELECEF_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVVELECEFcopy == NULL)
+  if (packetUBXNAVVELECEF->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVVELECEFcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVVELECEF->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVVELECEF->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -5619,7 +5646,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVVELECEF(boolean enabled, boolean implicitUpd
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVVELECEF and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVVELECEF and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVVELECEF()
 {
   packetUBXNAVVELECEF = new UBX_NAV_VELECEF_t; //Allocate RAM for the main struct
@@ -5630,7 +5657,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELECEF()
     return (false);
   }
   packetUBXNAVVELECEF->automaticFlags.flags.all = 0;
-  packetUBXNAVVELECEF->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVVELECEF->callbackPointer = NULL;
+  packetUBXNAVVELECEF->callbackData = NULL;
   packetUBXNAVVELECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5726,26 +5754,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELNED(boolean enable, boolean implicitUpdate, 
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVVELNEDcopy.
-boolean SFE_UBLOX_GPS::setAutoNAVVELNEDcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVVELNEDcallback(void (*callbackPointer)(UBX_NAV_VELNED_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVVELNED(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVVELNEDcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVVELNED->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVVELNEDcopy = new UBX_NAV_VELNED_data_t; //Allocate RAM for the main struct
+    packetUBXNAVVELNED->callbackData = new UBX_NAV_VELNED_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVVELNEDcopy == NULL)
+  if (packetUBXNAVVELNED->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVVELNEDcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVVELNED->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVVELNED->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -5766,7 +5794,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVVELNED(boolean enabled, boolean implicitUpda
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVVELNED and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVVELNED and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVVELNED()
 {
   packetUBXNAVVELNED = new UBX_NAV_VELNED_t; //Allocate RAM for the main struct
@@ -5777,7 +5805,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVVELNED()
     return (false);
   }
   packetUBXNAVVELNED->automaticFlags.flags.all = 0;
-  packetUBXNAVVELNED->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVVELNED->callbackPointer = NULL;
+  packetUBXNAVVELNED->callbackData = NULL;
   packetUBXNAVVELNED->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -5873,26 +5902,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEF(boolean enable, boolean implicitUpdat
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVHPPOSECEFcopy.
-boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEFcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEFcallback(void (*callbackPointer)(UBX_NAV_HPPOSECEF_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVHPPOSECEF(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVHPPOSECEFcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVHPPOSECEF->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVHPPOSECEFcopy = new UBX_NAV_HPPOSECEF_data_t; //Allocate RAM for the main struct
+    packetUBXNAVHPPOSECEF->callbackData = new UBX_NAV_HPPOSECEF_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVHPPOSECEFcopy == NULL)
+  if (packetUBXNAVHPPOSECEF->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVHPPOSECEFcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVHPPOSECEF->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVHPPOSECEF->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -5913,7 +5942,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVHPPOSECEF(boolean enabled, boolean implicitU
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVHPPOSECEF and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSECEF()
 {
   packetUBXNAVHPPOSECEF = new UBX_NAV_HPPOSECEF_t; //Allocate RAM for the main struct
@@ -5924,7 +5953,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSECEF()
     return (false);
   }
   packetUBXNAVHPPOSECEF->automaticFlags.flags.all = 0;
-  packetUBXNAVHPPOSECEF->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVHPPOSECEF->callbackPointer = NULL;
+  packetUBXNAVHPPOSECEF->callbackData = NULL;
   packetUBXNAVHPPOSECEF->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6042,26 +6072,26 @@ boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, u
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVHPPOSLLHcopy.
-boolean SFE_UBLOX_GPS::setAutoHPPOSLLHcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHPPOSLLHcallback(void (*callbackPointer)(UBX_NAV_HPPOSLLH_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoHPPOSLLH(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVHPPOSLLHcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVHPPOSLLH->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVHPPOSLLHcopy = new UBX_NAV_HPPOSLLH_data_t; //Allocate RAM for the main struct
+    packetUBXNAVHPPOSLLH->callbackData = new UBX_NAV_HPPOSLLH_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVHPPOSLLHcopy == NULL)
+  if (packetUBXNAVHPPOSLLH->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHPPOSLLHcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVHPPOSLLH->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVHPPOSLLH->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -6082,7 +6112,7 @@ boolean SFE_UBLOX_GPS::assumeAutoHPPOSLLH(boolean enabled, boolean implicitUpdat
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVHPPOSLLH and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSLLH()
 {
   packetUBXNAVHPPOSLLH = new UBX_NAV_HPPOSLLH_t; //Allocate RAM for the main struct
@@ -6093,7 +6123,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVHPPOSLLH()
     return (false);
   }
   packetUBXNAVHPPOSLLH->automaticFlags.flags.all = 0;
-  packetUBXNAVHPPOSLLH->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVHPPOSLLH->callbackPointer = NULL;
+  packetUBXNAVHPPOSLLH->callbackData = NULL;
   packetUBXNAVHPPOSLLH->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6189,26 +6220,26 @@ boolean SFE_UBLOX_GPS::setAutoNAVCLOCK(boolean enable, boolean implicitUpdate, u
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVCLOCKcopy.
-boolean SFE_UBLOX_GPS::setAutoNAVCLOCKcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoNAVCLOCKcallback(void (*callbackPointer)(UBX_NAV_CLOCK_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoNAVCLOCK(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVCLOCKcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVCLOCK->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVCLOCKcopy = new UBX_NAV_CLOCK_data_t; //Allocate RAM for the main struct
+    packetUBXNAVCLOCK->callbackData = new UBX_NAV_CLOCK_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVCLOCKcopy == NULL)
+  if (packetUBXNAVCLOCK->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoNAVCLOCKcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVCLOCK->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVCLOCK->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -6229,7 +6260,7 @@ boolean SFE_UBLOX_GPS::assumeAutoNAVCLOCK(boolean enabled, boolean implicitUpdat
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVCLOCK and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVCLOCK and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVCLOCK()
 {
   packetUBXNAVCLOCK = new UBX_NAV_CLOCK_t ; //Allocate RAM for the main struct
@@ -6240,7 +6271,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVCLOCK()
     return (false);
   }
   packetUBXNAVCLOCK->automaticFlags.flags.all = 0;
-  packetUBXNAVCLOCK->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVCLOCK->callbackPointer = NULL;
+  packetUBXNAVCLOCK->callbackData = NULL;
   packetUBXNAVCLOCK->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6289,7 +6321,7 @@ boolean SFE_UBLOX_GPS::getSurveyStatus(uint16_t maxWait)
   return (false);
 }
 
-// Allocate RAM for packetUBXNAVSVIN and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVSVIN and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVSVIN()
 {
   packetUBXNAVSVIN = new UBX_NAV_SVIN_t; //Allocate RAM for the main struct
@@ -6300,7 +6332,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVSVIN()
     return (false);
   }
   packetUBXNAVSVIN->automaticFlags.flags.all = 0;
-  packetUBXNAVSVIN->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVSVIN->callbackPointer = NULL;
+  packetUBXNAVSVIN->callbackData = NULL;
   packetUBXNAVSVIN->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6387,26 +6420,26 @@ boolean SFE_UBLOX_GPS::setAutoRELPOSNED(boolean enable, boolean implicitUpdate, 
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXNAVRELPOSNEDcopy.
-boolean SFE_UBLOX_GPS::setAutoRELPOSNEDcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoRELPOSNEDcallback(void (*callbackPointer)(UBX_NAV_RELPOSNED_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoRELPOSNED(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXNAVRELPOSNEDcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXNAVRELPOSNED->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXNAVRELPOSNEDcopy = new UBX_NAV_RELPOSNED_data_t; //Allocate RAM for the main struct
+    packetUBXNAVRELPOSNED->callbackData = new UBX_NAV_RELPOSNED_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXNAVRELPOSNEDcopy == NULL)
+  if (packetUBXNAVRELPOSNED->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoRELPOSNEDcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXNAVRELPOSNED->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXNAVRELPOSNED->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -6427,7 +6460,7 @@ boolean SFE_UBLOX_GPS::assumeAutoRELPOSNED(boolean enabled, boolean implicitUpda
   return changes;
 }
 
-// Allocate RAM for packetUBXNAVRELPOSNED and initialize it
+// PRIVATE: Allocate RAM for packetUBXNAVRELPOSNED and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXNAVRELPOSNED()
 {
   packetUBXNAVRELPOSNED = new UBX_NAV_RELPOSNED_t ; //Allocate RAM for the main struct
@@ -6438,7 +6471,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXNAVRELPOSNED()
     return (false);
   }
   packetUBXNAVRELPOSNED->automaticFlags.flags.all = 0;
-  packetUBXNAVRELPOSNED->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVRELPOSNED->callbackPointer = NULL;
+  packetUBXNAVRELPOSNED->callbackData = NULL;
   packetUBXNAVRELPOSNED->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6534,26 +6568,26 @@ boolean SFE_UBLOX_GPS::setAutoRXMSFRBX(boolean enable, boolean implicitUpdate, u
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXRXMSFRBXcopy.
-boolean SFE_UBLOX_GPS::setAutoRXMSFRBXcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoRXMSFRBXcallback(void (*callbackPointer)(UBX_RXM_SFRBX_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoRXMSFRBX(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXRXMSFRBXcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXRXMSFRBX->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXRXMSFRBXcopy = new UBX_RXM_SFRBX_data_t; //Allocate RAM for the main struct
+    packetUBXRXMSFRBX->callbackData = new UBX_RXM_SFRBX_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXRXMSFRBXcopy == NULL)
+  if (packetUBXRXMSFRBX->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoRXMSFRBXcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXRXMSFRBX->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXRXMSFRBX->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -6574,7 +6608,7 @@ boolean SFE_UBLOX_GPS::assumeAutoRXMSFRBX(boolean enabled, boolean implicitUpdat
   return changes;
 }
 
-// Allocate RAM for packetUBXRXMSFRBX and initialize it
+// PRIVATE: Allocate RAM for packetUBXRXMSFRBX and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXRXMSFRBX()
 {
   packetUBXRXMSFRBX = new UBX_RXM_SFRBX_t; //Allocate RAM for the main struct
@@ -6585,7 +6619,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMSFRBX()
     return (false);
   }
   packetUBXRXMSFRBX->automaticFlags.flags.all = 0;
-  packetUBXRXMSFRBX->automaticFlags.callbackPointer = NULL;
+  packetUBXRXMSFRBX->callbackPointer = NULL;
+  packetUBXRXMSFRBX->callbackData = NULL;
   packetUBXRXMSFRBX->moduleQueried = false;
   return (true);
 }
@@ -6681,26 +6716,26 @@ boolean SFE_UBLOX_GPS::setAutoRXMRAWX(boolean enable, boolean implicitUpdate, ui
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXRXMRAWXcopy.
-boolean SFE_UBLOX_GPS::setAutoRXMRAWXcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoRXMRAWXcallback(void (*callbackPointer)(UBX_RXM_RAWX_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoRXMRAWX(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXRXMRAWXcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXRXMRAWX->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXRXMRAWXcopy = new UBX_RXM_RAWX_data_t; //Allocate RAM for the main struct
+    packetUBXRXMRAWX->callbackData = new UBX_RXM_RAWX_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXRXMRAWXcopy == NULL)
+  if (packetUBXRXMRAWX->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoRXMRAWXcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXRXMRAWX->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXRXMRAWX->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -6721,7 +6756,7 @@ boolean SFE_UBLOX_GPS::assumeAutoRXMRAWX(boolean enabled, boolean implicitUpdate
   return changes;
 }
 
-// Allocate RAM for packetUBXRXMRAWX and initialize it
+// PRIVATE: Allocate RAM for packetUBXRXMRAWX and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXRXMRAWX()
 {
   packetUBXRXMRAWX = new UBX_RXM_RAWX_t; //Allocate RAM for the main struct
@@ -6732,7 +6767,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXRXMRAWX()
     return (false);
   }
   packetUBXRXMRAWX->automaticFlags.flags.all = 0;
-  packetUBXRXMRAWX->automaticFlags.callbackPointer = NULL;
+  packetUBXRXMRAWX->callbackPointer = NULL;
+  packetUBXRXMRAWX->callbackData = NULL;
   packetUBXRXMRAWX->moduleQueried = false;
   return (true);
 }
@@ -6794,7 +6830,7 @@ boolean SFE_UBLOX_GPS::getNavigationFrequencyInternal(uint16_t maxWait)
   }
 }
 
-// Allocate RAM for packetUBXCFGRATE and initialize it
+// PRIVATE: Allocate RAM for packetUBXCFGRATE and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXCFGRATE()
 {
   packetUBXCFGRATE = new UBX_CFG_RATE_t; //Allocate RAM for the main struct
@@ -6805,7 +6841,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXCFGRATE()
     return (false);
   }
   packetUBXCFGRATE->automaticFlags.flags.all = 0;
-  packetUBXCFGRATE->automaticFlags.callbackPointer = NULL;
+  packetUBXCFGRATE->callbackPointer = NULL;
+  packetUBXCFGRATE->callbackData = NULL;
   packetUBXCFGRATE->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -6887,26 +6924,26 @@ boolean SFE_UBLOX_GPS::setAutoTIMTM2(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXTIMTM2copy.
-boolean SFE_UBLOX_GPS::setAutoTIMTM2callback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoTIMTM2callback(void (*callbackPointer)(UBX_TIM_TM2_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoTIMTM2(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXTIMTM2copy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXTIMTM2->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXTIMTM2copy = new UBX_TIM_TM2_data_t; //Allocate RAM for the main struct
+    packetUBXTIMTM2->callbackData = new UBX_TIM_TM2_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXTIMTM2copy == NULL)
+  if (packetUBXTIMTM2->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoTIMTM2callback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXTIMTM2->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXTIMTM2->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -6927,7 +6964,7 @@ boolean SFE_UBLOX_GPS::assumeAutoTIMTM2(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXTIMTM2 and initialize it
+// PRIVATE: Allocate RAM for packetUBXTIMTM2 and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXTIMTM2()
 {
   packetUBXTIMTM2 = new UBX_TIM_TM2_t; //Allocate RAM for the main struct
@@ -6938,7 +6975,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXTIMTM2()
     return (false);
   }
   packetUBXTIMTM2->automaticFlags.flags.all = 0;
-  packetUBXTIMTM2->automaticFlags.callbackPointer = NULL;
+  packetUBXTIMTM2->callbackPointer = NULL;
+  packetUBXTIMTM2->callbackData = NULL;
   packetUBXTIMTM2->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7058,26 +7096,26 @@ boolean SFE_UBLOX_GPS::setAutoESFALG(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXESFALGcopy.
-boolean SFE_UBLOX_GPS::setAutoESFALGcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoESFALGcallback(void (*callbackPointer)(UBX_ESF_ALG_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoESFALG(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXESFALGcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXESFALG->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXESFALGcopy = new UBX_ESF_ALG_data_t; //Allocate RAM for the main struct
+    packetUBXESFALG->callbackData = new UBX_ESF_ALG_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXESFALGcopy == NULL)
+  if (packetUBXESFALG->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFALGcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXESFALG->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXESFALG->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -7098,7 +7136,7 @@ boolean SFE_UBLOX_GPS::assumeAutoESFALG(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXESFALG and initialize it
+// PRIVATE: Allocate RAM for packetUBXESFALG and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFALG()
 {
   packetUBXESFALG = new UBX_ESF_ALG_t; //Allocate RAM for the main struct
@@ -7109,7 +7147,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFALG()
     return (false);
   }
   packetUBXESFALG->automaticFlags.flags.all = 0;
-  packetUBXESFALG->automaticFlags.callbackPointer = NULL;
+  packetUBXESFALG->callbackPointer = NULL;
+  packetUBXESFALG->callbackData = NULL;
   packetUBXESFALG->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7229,26 +7268,26 @@ boolean SFE_UBLOX_GPS::setAutoESFSTATUS(boolean enable, boolean implicitUpdate, 
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXESFSTATUScopy.
-boolean SFE_UBLOX_GPS::setAutoESFSTATUScallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoESFSTATUScallback(void (*callbackPointer)(UBX_ESF_STATUS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoESFSTATUS(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXESFSTATUScopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXESFSTATUS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXESFSTATUScopy = new UBX_ESF_STATUS_data_t; //Allocate RAM for the main struct
+    packetUBXESFSTATUS->callbackData = new UBX_ESF_STATUS_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXESFSTATUScopy == NULL)
+  if (packetUBXESFSTATUS->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFSTATUScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXESFSTATUS->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXESFSTATUS->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -7269,7 +7308,7 @@ boolean SFE_UBLOX_GPS::assumeAutoESFSTATUS(boolean enabled, boolean implicitUpda
   return changes;
 }
 
-// Allocate RAM for packetUBXESFSTATUS and initialize it
+// PRIVATE: Allocate RAM for packetUBXESFSTATUS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
 {
   packetUBXESFSTATUS = new UBX_ESF_STATUS_t; //Allocate RAM for the main struct
@@ -7280,7 +7319,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
     return (false);
   }
   packetUBXESFSTATUS->automaticFlags.flags.all = 0;
-  packetUBXNAVSTATUS->automaticFlags.callbackPointer = NULL;
+  packetUBXNAVSTATUS->callbackPointer = NULL;
+  packetUBXNAVSTATUS->callbackData = NULL;
   packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7400,26 +7440,26 @@ boolean SFE_UBLOX_GPS::setAutoESFINS(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXESFINScopy.
-boolean SFE_UBLOX_GPS::setAutoESFINScallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoESFINScallback(void (*callbackPointer)(UBX_ESF_INS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoESFINS(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXESFINScopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXESFINS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXESFINScopy = new UBX_ESF_INS_data_t; //Allocate RAM for the main struct
+    packetUBXESFINS->callbackData = new UBX_ESF_INS_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXESFINScopy == NULL)
+  if (packetUBXESFINS->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFINScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXESFINS->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXESFINS->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -7440,7 +7480,7 @@ boolean SFE_UBLOX_GPS::assumeAutoESFINS(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXESFINS and initialize it
+// PRIVATE: Allocate RAM for packetUBXESFINS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFINS()
 {
   packetUBXESFINS = new UBX_ESF_INS_t; //Allocate RAM for the main struct
@@ -7451,7 +7491,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFINS()
     return (false);
   }
   packetUBXESFINS->automaticFlags.flags.all = 0;
-  packetUBXESFINS->automaticFlags.callbackPointer = NULL;
+  packetUBXESFINS->callbackPointer = NULL;
+  packetUBXESFINS->callbackData = NULL;
   packetUBXESFINS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7571,26 +7612,26 @@ boolean SFE_UBLOX_GPS::setAutoESFMEAS(boolean enable, boolean implicitUpdate, ui
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXESFMEAScopy.
-boolean SFE_UBLOX_GPS::setAutoESFMEAScallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoESFMEAScallback(void (*callbackPointer)(UBX_ESF_MEAS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoESFMEAS(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXESFMEAScopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXESFMEAS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXESFMEAScopy = new UBX_ESF_MEAS_data_t; //Allocate RAM for the main struct
+    packetUBXESFMEAS->callbackData = new UBX_ESF_MEAS_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXESFMEAScopy == NULL)
+  if (packetUBXESFMEAS->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFMEAScallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXESFMEAS->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXESFMEAS->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -7611,7 +7652,7 @@ boolean SFE_UBLOX_GPS::assumeAutoESFMEAS(boolean enabled, boolean implicitUpdate
   return changes;
 }
 
-// Allocate RAM for packetUBXESFMEAS and initialize it
+// PRIVATE: Allocate RAM for packetUBXESFMEAS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFMEAS()
 {
   packetUBXESFMEAS = new UBX_ESF_MEAS_t; //Allocate RAM for the main struct
@@ -7622,7 +7663,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFMEAS()
     return (false);
   }
   packetUBXESFMEAS->automaticFlags.flags.all = 0;
-  packetUBXESFMEAS->automaticFlags.callbackPointer = NULL;
+  packetUBXESFMEAS->callbackPointer = NULL;
+  packetUBXESFMEAS->callbackData = NULL;
   packetUBXESFMEAS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7742,26 +7784,26 @@ boolean SFE_UBLOX_GPS::setAutoESFRAW(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXESFRAWcopy.
-boolean SFE_UBLOX_GPS::setAutoESFRAWcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoESFRAWcallback(void (*callbackPointer)(UBX_ESF_RAW_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoESFRAW(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXESFRAWcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXESFRAW->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXESFRAWcopy = new UBX_ESF_RAW_data_t; //Allocate RAM for the main struct
+    packetUBXESFRAW->callbackData = new UBX_ESF_RAW_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXESFRAWcopy == NULL)
+  if (packetUBXESFRAW->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoESFRAWcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXESFRAW->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXESFRAW->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -7782,7 +7824,7 @@ boolean SFE_UBLOX_GPS::assumeAutoESFRAW(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXESFRAW and initialize it
+// PRIVATE: Allocate RAM for packetUBXESFRAW and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXESFRAW()
 {
   packetUBXESFRAW = new UBX_ESF_RAW_t; //Allocate RAM for the main struct
@@ -7793,7 +7835,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFRAW()
     return (false);
   }
   packetUBXESFRAW->automaticFlags.flags.all = 0;
-  packetUBXESFRAW->automaticFlags.callbackPointer = NULL;
+  packetUBXESFRAW->callbackPointer = NULL;
+  packetUBXESFRAW->callbackData = NULL;
   packetUBXESFRAW->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7918,26 +7961,26 @@ boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXHNRATTcopy.
-boolean SFE_UBLOX_GPS::setAutoHNRAttcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRAttcallback(void (*callbackPointer)(UBX_HNR_ATT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoHNRAtt(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXHNRATTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXHNRATT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXHNRATTcopy = new UBX_HNR_ATT_data_t; //Allocate RAM for the main struct
+    packetUBXHNRATT->callbackData = new UBX_HNR_ATT_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXHNRATTcopy == NULL)
+  if (packetUBXHNRATT->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHNRAttcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXHNRATT->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXHNRATT->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -7958,7 +8001,7 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXHNRATT and initialize it
+// PRIVATE: Allocate RAM for packetUBXHNRATT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXHNRATT()
 {
   packetUBXHNRATT = new UBX_HNR_ATT_t; //Allocate RAM for the main struct
@@ -7969,7 +8012,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRATT()
     return (false);
   }
   packetUBXHNRATT->automaticFlags.flags.all = 0;
-  packetUBXHNRATT->automaticFlags.callbackPointer = NULL;
+  packetUBXHNRATT->callbackPointer = NULL;
+  packetUBXHNRATT->callbackData = NULL;
   packetUBXHNRATT->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -8095,26 +8139,26 @@ boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXHNRINScopy.
-boolean SFE_UBLOX_GPS::setAutoHNRDyncallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRDyncallback(void (*callbackPointer)(UBX_HNR_INS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoHNRDyn(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXHNRINScopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXHNRINS->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXHNRINScopy = new UBX_HNR_INS_data_t; //Allocate RAM for the main struct
+    packetUBXHNRINS->callbackData = new UBX_HNR_INS_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXHNRINScopy == NULL)
+  if (packetUBXHNRINS->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHNRDyncallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXHNRINS->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXHNRINS->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -8135,7 +8179,7 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXHNRINS and initialize it
+// PRIVATE: Allocate RAM for packetUBXHNRINS and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXHNRINS()
 {
   packetUBXHNRINS = new UBX_HNR_INS_t; //Allocate RAM for the main struct
@@ -8146,7 +8190,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRINS()
     return (false);
   }
   packetUBXHNRINS->automaticFlags.flags.all = 0;
-  packetUBXHNRINS->automaticFlags.callbackPointer = NULL;
+  packetUBXHNRINS->callbackPointer = NULL;
+  packetUBXHNRINS->callbackData = NULL;
   packetUBXHNRINS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -8271,26 +8316,26 @@ boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, boolean implicitUpdate, uin
 
 //Enable automatic navigation message generation by the GNSS.
 //Data is passed to the callback in packetUBXHNRPVTcopy.
-boolean SFE_UBLOX_GPS::setAutoHNRPVTcallback(void (*callbackPointer)(), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRPVTcallback(void (*callbackPointer)(UBX_HNR_PVT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
   boolean result = setAutoHNRPVT(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
-  if (packetUBXHNRPVTcopy == NULL) //Check if RAM has been allocated for the callback copy
+  if (packetUBXHNRPVT->callbackData == NULL) //Check if RAM has been allocated for the callback copy
   {
-    packetUBXHNRPVTcopy = new UBX_HNR_PVT_data_t; //Allocate RAM for the main struct
+    packetUBXHNRPVT->callbackData = new UBX_HNR_PVT_data_t; //Allocate RAM for the main struct
   }
 
-  if (packetUBXHNRPVTcopy == NULL)
+  if (packetUBXHNRPVT->callbackData == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
       _debugSerial->println(F("setAutoHNRPVTcallback: PANIC! RAM allocation failed!"));
     return (false);
   }
 
-  packetUBXHNRPVT->automaticFlags.callbackPointer = callbackPointer;
+  packetUBXHNRPVT->callbackPointer = callbackPointer;
   return (true);
 }
 
@@ -8311,7 +8356,7 @@ boolean SFE_UBLOX_GPS::assumeAutoHNRPVT(boolean enabled, boolean implicitUpdate)
   return changes;
 }
 
-// Allocate RAM for packetUBXHNRPVT and initialize it
+// PRIVATE: Allocate RAM for packetUBXHNRPVT and initialize it
 boolean SFE_UBLOX_GPS::initPacketUBXHNRPVT()
 {
   packetUBXHNRPVT = new UBX_HNR_PVT_t; //Allocate RAM for the main struct
@@ -8322,7 +8367,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXHNRPVT()
     return (false);
   }
   packetUBXHNRPVT->automaticFlags.flags.all = 0;
-  packetUBXHNRPVT->automaticFlags.callbackPointer = NULL;
+  packetUBXHNRPVT->callbackPointer = NULL;
+  packetUBXHNRPVT->callbackData = NULL;
   packetUBXHNRPVT->moduleQueried.moduleQueried.all = 0;
   return (true);
 }

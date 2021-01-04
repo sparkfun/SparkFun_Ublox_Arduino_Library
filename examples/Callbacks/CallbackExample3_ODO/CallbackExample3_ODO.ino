@@ -27,23 +27,23 @@
 SFE_UBLOX_GPS myGPS;
 
 // Callback: printODOdata will be called when new NAV ODO data arrives
-// See u-blox_structs.h for the full definition of UBX_NAV_ODO_data_t *packetUBXNAVODOcopy
-void printODOdata()
+// See u-blox_structs.h for the full definition of UBX_NAV_ODO_data_t
+void printODOdata(UBX_NAV_ODO_data_t ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("TOW: ")); // Print the Time Of Week
-    unsigned long iTOW = myGPS.packetUBXNAVODOcopy->iTOW; // iTOW is in milliseconds
+    unsigned long iTOW = ubxDataStruct.iTOW; // iTOW is in milliseconds
     Serial.print(iTOW);
     Serial.print(F(" (ms)"));
     
     Serial.print(F(" Distance: "));
-    unsigned long distance = myGPS.packetUBXNAVODOcopy->distance; // Print the distance
+    unsigned long distance = ubxDataStruct.distance; // Print the distance
     Serial.print(distance);
     Serial.print(F(" (m)"));
 
     Serial.print(F(" Total Distance: "));
-    unsigned long totalDistance = myGPS.packetUBXNAVODOcopy->totalDistance; // Print the total distance
+    unsigned long totalDistance = ubxDataStruct.totalDistance; // Print the total distance
     Serial.print(totalDistance);
     Serial.println(F(" (m)"));
 }
@@ -71,7 +71,7 @@ void setup()
 
   //myGPS.resetOdometer(); //Uncomment this line to reset the odometer
   
-  myGPS.setAutoNAVODOcallback(printODOdata); // Enable automatic NAV ODO messages with callback to printODOdata
+  myGPS.setAutoNAVODOcallback(&printODOdata); // Enable automatic NAV ODO messages with callback to printODOdata
 }
 
 void loop()

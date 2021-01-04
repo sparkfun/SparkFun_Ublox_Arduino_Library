@@ -40,31 +40,31 @@
 SFE_UBLOX_GPS myGPS;
 
 // Callback: printTIMTM2data will be called when new TIM TM2 data arrives
-// See u-blox_structs.h for the full definition of UBX_TIM_TM2_data_t *packetUBXTIMTM2copy
-void printTIMTM2data()
+// See u-blox_structs.h for the full definition of UBX_TIM_TM2_data_t
+void printTIMTM2data(UBX_TIM_TM2_data_t ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("newFallingEdge: ")); // 1 if a new falling edge was detected
-    Serial.print(myGPS.packetUBXTIMTM2copy->flags.bits.newFallingEdge);
+    Serial.print(ubxDataStruct.flags.bits.newFallingEdge);
     
     Serial.print(F(" newRisingEdge: ")); // 1 if a new rising edge was detected
-    Serial.print(myGPS.packetUBXTIMTM2copy->flags.bits.newRisingEdge);
+    Serial.print(ubxDataStruct.flags.bits.newRisingEdge);
     
     Serial.print(F(" Rising Edge Counter: ")); // Rising edge counter
-    Serial.print(myGPS.packetUBXTIMTM2copy->count);
+    Serial.print(ubxDataStruct.count);
 
     Serial.print(F(" towMsR: ")); // Time Of Week of rising edge (ms)
-    Serial.print(myGPS.packetUBXTIMTM2copy->towMsR);
+    Serial.print(ubxDataStruct.towMsR);
 
     Serial.print(F(" towSubMsR: ")); // Millisecond fraction of Time Of Week of rising edge in nanoseconds
-    Serial.print(myGPS.packetUBXTIMTM2copy->towSubMsR);
+    Serial.print(ubxDataStruct.towSubMsR);
 
     Serial.print(F(" towMsF: ")); // Time Of Week of falling edge (ms)
-    Serial.print(myGPS.packetUBXTIMTM2copy->towMsF);
+    Serial.print(ubxDataStruct.towMsF);
 
     Serial.print(F(" towSubMsF: ")); // Millisecond fraction of Time Of Week of falling edge in nanoseconds
-    Serial.println(myGPS.packetUBXTIMTM2copy->towSubMsF);
+    Serial.println(ubxDataStruct.towSubMsF);
 }
 
 void setup()
@@ -88,14 +88,20 @@ void setup()
   
   myGPS.setNavigationFrequency(1); //Produce one solution per second
 
-  myGPS.setAutoTIMTM2callback(printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
+  myGPS.setAutoTIMTM2callback(&printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
 }
 
 void loop()
 {
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-  
+
+  static int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 message
   Serial.print(".");
   delay(50);
+  if (++dotsPrinted > 50)
+  {
+    Serial.println();
+    dotsPrinted = 0;
+  }
 }

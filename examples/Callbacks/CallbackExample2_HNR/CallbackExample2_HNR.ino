@@ -32,40 +32,40 @@
 SFE_UBLOX_GPS myGPS;
 
 // Callback: printHNRATTdata will be called when new HNR ATT data arrives
-// See u-blox_structs.h for the full definition of UBX_HNR_ATT_data_t *packetUBXHNRATTcopy
-void printHNRATTdata()
+// See u-blox_structs.h for the full definition of UBX_HNR_ATT_data_t
+void printHNRATTdata(UBX_HNR_ATT_data_t ubxDataStruct)
 {
   Serial.println();
   Serial.print(F("Roll: ")); // Print selected data
-  Serial.print(myGPS.packetUBXHNRATTcopy->roll);
+  Serial.print(ubxDataStruct.roll);
   Serial.print(F(" Pitch: "));
-  Serial.print(myGPS.packetUBXHNRATTcopy->pitch);
+  Serial.print(ubxDataStruct.pitch);
   Serial.print(F(" Heading: "));
-  Serial.println(myGPS.packetUBXHNRATTcopy->heading);
+  Serial.println(ubxDataStruct.heading);
 }
 
 // Callback: printHNRINSdata will be called when new HNR INS data arrives
-// See u-blox_structs.h for the full definition of UBX_HNR_INS_data_t *packetUBXHNRINScopy
-void printHNRINSdata()
+// See u-blox_structs.h for the full definition of UBX_HNR_INS_data_t
+void printHNRINSdata(UBX_HNR_INS_data_t ubxDataStruct)
 {
   Serial.print(F("xAccel: ")); // Print selected data
-  Serial.print(myGPS.packetUBXHNRINScopy->xAccel);
+  Serial.print(ubxDataStruct.xAccel);
   Serial.print(F(" yAccel: "));
-  Serial.print(myGPS.packetUBXHNRINScopy->yAccel);
+  Serial.print(ubxDataStruct.yAccel);
   Serial.print(F(" zAccel: "));
-  Serial.println(myGPS.packetUBXHNRINScopy->zAccel);
+  Serial.println(ubxDataStruct.zAccel);
 }
 
 // Callback: printHNRPVTdata will be called when new HNR PVT data arrives
-// See u-blox_structs.h for the full definition of UBX_HNR_PVT_data_t *packetUBXHNRPVTcopy
-void printHNRPVTdata()
+// See u-blox_structs.h for the full definition of UBX_HNR_PVT_data_t
+void printHNRPVTdata(UBX_HNR_PVT_data_t ubxDataStruct)
 {
   Serial.print(F("ns: ")); // Print selected data
-  Serial.print(myGPS.packetUBXHNRPVTcopy->nano);
+  Serial.print(ubxDataStruct.nano);
   Serial.print(F(" Lat: "));
-  Serial.print(myGPS.packetUBXHNRPVTcopy->lat);
+  Serial.print(ubxDataStruct.lat);
   Serial.print(F(" Lon: "));
-  Serial.println(myGPS.packetUBXHNRPVTcopy->lon);
+  Serial.println(ubxDataStruct.lon);
 }
 
 void setup()
@@ -92,13 +92,13 @@ void setup()
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
     
-  if (myGPS.setAutoHNRAttcallback(printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
+  if (myGPS.setAutoHNRAttcallback(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
     Serial.println(F("setAutoHNRAttcallback successful"));
 
-  if (myGPS.setAutoHNRDyncallback(printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
+  if (myGPS.setAutoHNRDyncallback(&printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
     Serial.println(F("setAutoHNRDyncallback successful"));
 
-  if (myGPS.setAutoHNRPVTcallback(printHNRPVTdata) == true) // Enable automatic HNR PVT messages with callback to printHNRPVTdata
+  if (myGPS.setAutoHNRPVTcallback(&printHNRPVTdata) == true) // Enable automatic HNR PVT messages with callback to printHNRPVTdata
     Serial.println(F("setAutoHNRPVTcallback successful"));
 }
 
