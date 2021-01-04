@@ -27,39 +27,39 @@
 SFE_UBLOX_GPS myGPS;
 
 // Callback: printPVTdata will be called when new NAV PVT data arrives
-// See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t *packetUBXNAVPVTcopy
-void printPVTdata()
+// See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t
+void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("Time: ")); // Print the time
-    uint8_t hms = myGPS.packetUBXNAVPVTcopy->hour; // Print the hours
+    uint8_t hms = ubxDataStruct.hour; // Print the hours
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = myGPS.packetUBXNAVPVTcopy->min; // Print the minutes
+    hms = ubxDataStruct.min; // Print the minutes
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = myGPS.packetUBXNAVPVTcopy->sec; // Print the seconds
+    hms = ubxDataStruct.sec; // Print the seconds
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F("."));
-    unsigned long millisecs = myGPS.packetUBXNAVPVTcopy->iTOW % 1000; // Print the milliseconds
+    unsigned long millisecs = ubxDataStruct.iTOW % 1000; // Print the milliseconds
     if (millisecs < 100) Serial.print(F("0")); // Print the trailing zeros correctly
     if (millisecs < 10) Serial.print(F("0"));
     Serial.print(millisecs);
     
-    long latitude = myGPS.packetUBXNAVPVTcopy->lat; // Print the latitude
+    long latitude = ubxDataStruct.lat; // Print the latitude
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.packetUBXNAVPVTcopy->lon; // Print the longitude
+    long longitude = ubxDataStruct.lon; // Print the longitude
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
     
-    long altitude = myGPS.packetUBXNAVPVTcopy->hMSL; // Print the height above mean sea level
+    long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
     Serial.println(F(" (mm)"));  
@@ -85,8 +85,8 @@ void setup()
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
   
   myGPS.setNavigationFrequency(2); //Produce two solutions per second
-  
-  myGPS.setAutoPVTcallback(printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+
+  myGPS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
 }
 
 void loop()

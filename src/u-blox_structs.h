@@ -488,6 +488,8 @@ typedef struct
 	ubxAutomaticFlags automaticFlags;
   UBX_NAV_PVT_data_t data;
   UBX_NAV_PVT_moduleQueried_t moduleQueried;
+  void (*callbackPointer)(UBX_NAV_PVT_data_t);
+  UBX_NAV_PVT_data_t  *callbackData;
 } UBX_NAV_PVT_t;
 
 // UBX-NAV-ODO (0x01 0x09): Odometer solution
