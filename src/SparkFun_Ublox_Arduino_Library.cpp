@@ -9355,6 +9355,12 @@ boolean SFE_UBLOX_GPS::getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sen
   return (true);
 }
 
+boolean SFE_UBLOX_GPS::getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, UBX_ESF_MEAS_data_t ubxDataStruct, uint8_t sensor)
+{
+  sensorData->data.all = ubxDataStruct.data[sensor].data.all;
+  return (true);
+}
+
 boolean SFE_UBLOX_GPS::getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait)
 {
   if (packetUBXESFRAW == NULL) initPacketUBXESFRAW(); //Check that RAM has been allocated for the ESF RAW data
@@ -9367,6 +9373,13 @@ boolean SFE_UBLOX_GPS::getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorD
   packetUBXESFRAW->moduleQueried.moduleQueried.bits.all = false;
   sensorData->data.all = packetUBXESFRAW->data.data[sensor].data.all;
   sensorData->sTag = packetUBXESFRAW->data.data[sensor].sTag;
+  return (true);
+}
+
+boolean SFE_UBLOX_GPS::getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorData, UBX_ESF_RAW_data_t ubxDataStruct, uint8_t sensor)
+{
+  sensorData->data.all = ubxDataStruct.data[sensor].data.all;
+  sensorData->sTag = ubxDataStruct.data[sensor].sTag;
   return (true);
 }
 
@@ -9384,6 +9397,15 @@ boolean SFE_UBLOX_GPS::getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sens
   sensorStatus->sensStatus2.all = packetUBXESFSTATUS->data.status[sensor].sensStatus2.all;
   sensorStatus->freq = packetUBXESFSTATUS->data.status[sensor].freq;
   sensorStatus->faults.all = packetUBXESFSTATUS->data.status[sensor].faults.all;
+  return (true);
+}
+
+boolean SFE_UBLOX_GPS::getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sensorStatus, UBX_ESF_STATUS_data_t ubxDataStruct, uint8_t sensor)
+{
+  sensorStatus->sensStatus1.all = ubxDataStruct.status[sensor].sensStatus1.all;
+  sensorStatus->sensStatus2.all = ubxDataStruct.status[sensor].sensStatus2.all;
+  sensorStatus->freq = ubxDataStruct.status[sensor].freq;
+  sensorStatus->faults.all = ubxDataStruct.status[sensor].faults.all;
   return (true);
 }
 

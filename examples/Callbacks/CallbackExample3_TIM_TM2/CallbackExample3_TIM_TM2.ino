@@ -26,7 +26,7 @@
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
   NEO-M8P RTK: https://www.sparkfun.com/products/15005
-  SAM-M8Q: https://www.sparkfun.com/products/15106
+  NEO-M9N: https://www.sparkfun.com/products/17285
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a BlackBoard
@@ -38,6 +38,8 @@
 
 #include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
+
+int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 message
 
 // Callback: printTIMTM2data will be called when new TIM TM2 data arrives
 // See u-blox_structs.h for the full definition of UBX_TIM_TM2_data_t
@@ -65,6 +67,8 @@ void printTIMTM2data(UBX_TIM_TM2_data_t ubxDataStruct)
 
     Serial.print(F(" towSubMsF: ")); // Millisecond fraction of Time Of Week of falling edge in nanoseconds
     Serial.println(ubxDataStruct.towSubMsF);
+
+    dotsPrinted = 0; // Reset dotsPrinted
 }
 
 void setup()
@@ -96,7 +100,6 @@ void loop()
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
-  static int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 message
   Serial.print(".");
   delay(50);
   if (++dotsPrinted > 50)

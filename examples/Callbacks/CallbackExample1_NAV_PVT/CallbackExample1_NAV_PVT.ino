@@ -75,8 +75,6 @@ void setup()
 
   //myGPS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
-  myGPS.disableUBX7Fcheck();
-
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
     Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
