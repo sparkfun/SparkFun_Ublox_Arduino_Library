@@ -139,6 +139,8 @@ getDynamicModel	KEYWORD2
 
 resetOdometer	KEYWORD2
 
+enableGNSS	KEYWORD2
+
 createKey	KEYWORD2
 getVal	KEYWORD2
 getVal8	KEYWORD2
