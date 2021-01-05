@@ -159,9 +159,9 @@ void setup()
 
   delay(2000); // Give the module some extra time to get ready
 
-  //Produce 8 navigation solutions per second. That's a LOT of RAWX data!
-  //The SD library and card need to be able to cope with the data rate too! You may need a faster SD library to go above 8Hz.
-  myGPS.setNavigationFrequency(8);
+  //Produce 7 navigation solutions per second. That's a lot of RAWX data - especially when using both GPS bands L1 and L2.
+  //The SD library and card need to be able to cope with the data rate too. You may need a faster SD library to go above 7Hz.
+  myGPS.setNavigationFrequency(7);
 
   myGPS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
   
