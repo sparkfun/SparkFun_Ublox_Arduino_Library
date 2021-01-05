@@ -638,6 +638,7 @@ public:
 	//Note: you must leave at least one major GNSS enabled! If in doubt, enable GPS before disabling the others
 	//TO DO: Add support for sigCfgMask and maxTrkCh. (Need to resolve ambiguity with maxWait)
 	boolean enableGNSS(boolean enable, sfe_ublox_gnss_ids_e id, uint16_t maxWait = defaultMaxWait);
+	boolean isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait = defaultMaxWait);
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 

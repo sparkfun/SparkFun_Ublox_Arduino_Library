@@ -4204,6 +4204,34 @@ boolean SFE_UBLOX_GPS::enableGNSS(boolean enable, sfe_ublox_gnss_ids_e id, uint1
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
+//Check if an individual GNSS system is enabled
+boolean SFE_UBLOX_GPS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_GNSS;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+    return (false);
+
+  boolean retVal = false;
+
+  uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
+
+  for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
+  {
+    if (payloadCfg[(block * 8) + 4] == (uint8_t)id) // Check the gnssId for this block. Do we have a match?
+    {
+      // We have a match so check the enable bit in flags
+      if ((payloadCfg[(block * 8) + 4 + 4] & 0x01) > 0) // Check the enable bit in flags (Little Endian)
+        retVal = true;
+    }
+  }
+
+  return (retVal);
+}
+
 // CONFIGURATION INTERFACE (protocol v27 and above)
 
 //Form 32-bit key from group/id/size
