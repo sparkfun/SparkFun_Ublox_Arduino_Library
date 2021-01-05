@@ -4179,8 +4179,8 @@ boolean SFE_UBLOX_GPS::resetOdometer(uint16_t maxWait)
 //Enable/Disable individual GNSS systems using UBX-CFG-GNSS
 boolean SFE_UBLOX_GPS::enableGNSS(boolean enable, sfe_ublox_gnss_ids_e id, uint16_t maxWait)
 {
-  packetCfg.cls = UBX_CLASS_NAV;
-  packetCfg.id = UBX_NAV_RESETODO;
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_GNSS;
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
@@ -4189,15 +4189,15 @@ boolean SFE_UBLOX_GPS::enableGNSS(boolean enable, sfe_ublox_gnss_ids_e id, uint1
 
   uint8_t numConfigBlocks = payloadCfg[3]; // Extract the numConfigBlocks
 
-  for (uint8_t id = 0; id < numConfigBlocks; id++) // Check each configuration block
+  for (uint8_t block = 0; block < numConfigBlocks; block++) // Check each configuration block
   {
-    if (payloadCfg[(id * 8) + 4] == (uint8_t)id) // Check the gnssId for this block. Do we have a match?
+    if (payloadCfg[(block * 8) + 4] == (uint8_t)id) // Check the gnssId for this block. Do we have a match?
     {
       // We have a match so set/clear the enable bit in flags
       if (enable)
-        payloadCfg[(id * 8) + 4 + 4] |= 0x01; // Set the enable bit in flags (Little Endian)
+        payloadCfg[(block * 8) + 4 + 4] |= 0x01; // Set the enable bit in flags (Little Endian)
       else
-        payloadCfg[(id * 8) + 4 + 4] &= 0xFE; // Clear the enable bit in flags (Little Endian)
+        payloadCfg[(block * 8) + 4 + 4] &= 0xFE; // Clear the enable bit in flags (Little Endian)
     }
   }
 
