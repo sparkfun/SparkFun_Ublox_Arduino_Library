@@ -393,6 +393,18 @@ enum dynModel // Possible values for the dynamic platform model, which provide m
 	DYN_MODEL_BIKE,			  // Supported in protocol versions 19.2
 };
 
+// The GNSS identifiers - used by UBX-CFG-GNSS (0x06 0x3E) GNSS system configuration
+enum sfe_ublox_gnss_ids_e
+{
+	SFE_UBLOX_GNSS_ID_GPS,
+	SFE_UBLOX_GNSS_ID_SBAS,
+	SFE_UBLOX_GNSS_ID_GALILEO,
+	SFE_UBLOX_GNSS_ID_BEIDOU,
+	SFE_UBLOX_GNSS_ID_IMES,
+	SFE_UBLOX_GNSS_ID_QZSS,
+	SFE_UBLOX_GNSS_ID_GLONASS
+};
+
 #ifndef MAX_PAYLOAD_SIZE
 // v2.0: keep this for backwards-compatibility, but this is largely superseded by setPacketCfgPayloadSize
 #define MAX_PAYLOAD_SIZE 256 //We need ~220 bytes for getProtocolVersion on most ublox modules
@@ -621,6 +633,11 @@ public:
 
 	//Reset the odometer
 	boolean resetOdometer(uint16_t maxWait = defaultMaxWait); // Reset the odometer
+
+	//Enable/Disable individual GNSS systems using UBX-CFG-GNSS
+	//Note: you must leave at least one major GNSS enabled! If in doubt, enable GPS before disabling the others
+	//TO DO: Add support for sigCfgMask and maxTrkCh. (Need to resolve ambiguity with maxWait)
+	boolean enableGNSS(boolean enable, sfe_ublox_gnss_ids_e id, uint16_t maxWait = defaultMaxWait);
 
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
