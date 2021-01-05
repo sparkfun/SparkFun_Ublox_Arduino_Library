@@ -147,15 +147,13 @@ void setup()
   // Modules like the ZED-F9P can produce RAW navigation data at rates of up to 25Hz but not while using all of the GNSS constellations.
   // Please consult the data sheet for the Performance figures for your module.
   // In this example we make sure GPS is enabled and then disable Galileo, GLONASS, BeiDou, SBAS and QZSS to achieve 25Hz.
-  boolean success = true;
-  success &= myGPS.enableGNSS(true, SFE_UBLOX_GNSS_ID_GPS); // Make sure GPS is enabled (we must leave at least one major GNSS enabled!)
-  success &= myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_SBAS); // Disable SBAS
-  success &= myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GALILEO); // Disable Galileo
-  success &= myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_BEIDOU); // Disable BeiDou
-  success &= myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_IMES); // Disable IMES
-  success &= myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_QZSS); // Disable QZSS
-  success &= myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GLONASS); // Disable GLONASS
-  if (!success) Serial.println(F("Warning: at least one call to enableGNSS failed!")); // Warn the user if any call to enableGNSS failed
+  myGPS.enableGNSS(true, SFE_UBLOX_GNSS_ID_GPS); // Make sure GPS is enabled (we must leave at least one major GNSS enabled!)
+  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_SBAS); // Disable SBAS
+  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GALILEO); // Disable Galileo
+  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_BEIDOU); // Disable BeiDou
+  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_IMES); // Disable IMES
+  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_QZSS); // Disable QZSS
+  myGPS.enableGNSS(false, SFE_UBLOX_GNSS_ID_GLONASS); // Disable GLONASS
 
   delay(2000); // Give the module some extra time to get ready
 
