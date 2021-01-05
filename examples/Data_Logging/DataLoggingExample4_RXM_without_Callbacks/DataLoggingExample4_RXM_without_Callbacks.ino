@@ -164,7 +164,6 @@ void loop()
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
-  myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -182,7 +181,6 @@ void loop()
 
     // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
     myGPS.checkUblox(); // Check for the arrival of new data and process it.
-    myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
     digitalWrite(LED_BUILTIN, LOW); // Turn LED_BUILTIN off again
   }
