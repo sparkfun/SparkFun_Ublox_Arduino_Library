@@ -80,13 +80,13 @@ void printESFMEASdata(UBX_ESF_MEAS_data_t ubxDataStruct)
   Serial.print(F(" numMeas: "));
   Serial.println(ubxDataStruct.flags.bits.numMeas);
 
-  for (uint8_t num = 0; num < ubxDataStruct.flags.bits.numMeas; num++)
+  for (uint8_t num = 0; num < ubxDataStruct.flags.bits.numMeas; num++) // For each sensor
   {
     Serial.print(F("Sensor "));
     Serial.print(num);
 
     UBX_ESF_MEAS_sensorData_t sensorData;
-    myGPS.getSensorFusionMeasurement(&sensorData, ubxDataStruct, num);
+    myGPS.getSensorFusionMeasurement(&sensorData, ubxDataStruct, num); // Extract the data for one sensor
     
     Serial.print(F(": Type: "));
     Serial.print(sensorData.data.bits.dataType);
@@ -106,13 +106,13 @@ void printESFSTATUSdata(UBX_ESF_STATUS_data_t ubxDataStruct)
   Serial.print(F(" numSens: "));
   Serial.println(ubxDataStruct.numSens);
 
-  for (uint8_t num = 0; num < ubxDataStruct.numSens; num++)
+  for (uint8_t num = 0; num < ubxDataStruct.numSens; num++) // For each sensor
   {
     Serial.print(F("Sensor "));
     Serial.print(num);
 
     UBX_ESF_STATUS_sensorStatus_t sensorStatus;
-    myGPS.getSensorFusionStatus(&sensorStatus, ubxDataStruct, num);
+    myGPS.getSensorFusionStatus(&sensorStatus, ubxDataStruct, num); // Extract the data for one sensor
     
     Serial.print(F(": Type: "));
     Serial.print(sensorStatus.sensStatus1.bits.type);

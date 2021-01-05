@@ -1,5 +1,6 @@
 /*
   Configuring the GNSS to automatically send RXM SFRBX and RAWX reports over I2C and log them to file on SD card
+  ** without using callbacks **
   By: Paul Clark
   SparkFun Electronics
   Date: December 30th, 2020
@@ -7,7 +8,7 @@
   basically do whatever you want with this code.
 
   This example shows how to configure the u-blox GNSS to send RXM SFRBX and RAWX reports automatically
-  and log the data to SD card in UBX format.
+  and log the data to SD card in UBX format ** without using callbacks **
 
   ** Please note: this example will only work on u-blox ADR or High Precision GNSS or Time Sync products **
 
@@ -63,27 +64,7 @@ File myFile; //File that all GNSS data is written to
 #define fileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
 
 unsigned long lastPrint; // Record when the last Serial print took place
-
-// Note: we'll keep a count of how many SFRBX and RAWX messages arrive - but the count will not be completely accurate.
-// If two or more SFRBX messages arrive together as a group and are processed by one call to checkUblox, the count will
-// only increase by one.
-
-int numSFRBX = 0; // Keep count of how many SFRBX message groups have been received (see note above)
-int numRAWX = 0; // Keep count of how many RAWX message groups have been received (see note above)
-
-// Callback: newSFRBX will be called when new RXM SFRBX data arrives
-// See u-blox_structs.h for the full definition of UBX_RXMSFRBX_data_t
-void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
-{
-  numSFRBX++; // Increment the count
-}
-
-// Callback: newRAWX will be called when new RXM RAWX data arrives
-// See u-blox_structs.h for the full definition of UBX_RXMRAWX_data_t
-void newRAWX(UBX_RXM_RAWX_data_t ubxDataStruct)
-{
-  numRAWX++; // Increment the count
-}
+unsigned long bytesWritten = 0; // Record how many bytes have been written to SD card
 
 void setup()
 {
@@ -165,11 +146,11 @@ void setup()
   
   myGPS.setNavigationFrequency(1); //Produce one navigation solution per second (that's plenty for Precise Point Positioning)
 
-  myGPS.setAutoRXMSFRBXcallback(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
+  myGPS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
   
   myGPS.logRXMSFRBX(); // Enable RXM SFRBX data logging
 
-  myGPS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
+  myGPS.setAutoRXMRAWX(true, false); // Enable automatic RXM RAWX messages: without callback; without implicit update
   
   myGPS.logRXMRAWX(); // Enable RXM RAWX data logging
 
@@ -197,6 +178,8 @@ void loop()
 
     myFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
+    bytesWritten += sdWriteSize; // Update bytesWritten
+
     // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
     myGPS.checkUblox(); // Check for the arrival of new data and process it.
     myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
@@ -206,12 +189,10 @@ void loop()
 
   // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  if (millis() > (lastPrint + 1000)) // Print the message count once per second
+  if (millis() > (lastPrint + 1000)) // Print bytesWritten once per second
   {
-    Serial.print(F("Number of message groups received: SFRBX: ")); // Print how many message groups have been received (see note above)
-    Serial.print(numSFRBX);
-    Serial.print(F(" RAWX: "));
-    Serial.println(numRAWX);
+    Serial.print(F("The number of bytes written to SD card is ")); // Print how many bytes have been written to SD card
+    Serial.println(bytesWritten);
 
     uint16_t maxBufferBytes = myGPS.getMaxFileBufferAvail(); // Get how full the file buffer has been (not how full it is now)
     
@@ -248,10 +229,15 @@ void loop()
 
       myFile.write(myBuffer, bytesToWrite); // Write bytesToWrite bytes from myBuffer to the ubxDataFile on the SD card
 
+      bytesWritten += bytesToWrite; // Update bytesWritten
+
       remainingBytes -= bytesToWrite; // Decrement remainingBytes
     }
 
     digitalWrite(LED_BUILTIN, LOW); // Turn LED_BUILTIN off
+
+    Serial.print(F("The total number of bytes written to SD card is ")); // Print how many bytes have been written to SD card
+    Serial.println(bytesWritten);
 
     myFile.close(); // Close the data file
     

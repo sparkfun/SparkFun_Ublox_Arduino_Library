@@ -38,6 +38,8 @@
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
   NEO-M8P RTK: https://www.sparkfun.com/products/15005
+  SAM-M8Q: https://www.sparkfun.com/products/15106
+
 */
 
 #include <SPI.h>
@@ -54,39 +56,39 @@ File myFile; //File that all GNSS data is written to
 #define packetLength 100 // NAV PVT is 92 + 8 bytes in length (including the sync chars, class, id, length and checksum bytes)
 
 // Callback: printPVTdata will be called when new NAV PVT data arrives
-// See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t *packetUBXNAVPVTcopy
-void printPVTdata()
+// See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t
+void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("Time: ")); // Print the time
-    uint8_t hms = myGPS.packetUBXNAVPVTcopy->hour; // Print the hours
+    uint8_t hms = ubxDataStruct.hour; // Print the hours
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = myGPS.packetUBXNAVPVTcopy->min; // Print the minutes
+    hms = ubxDataStruct.min; // Print the minutes
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F(":"));
-    hms = myGPS.packetUBXNAVPVTcopy->sec; // Print the seconds
+    hms = ubxDataStruct.sec; // Print the seconds
     if (hms < 10) Serial.print(F("0")); // Print a leading zero if required
     Serial.print(hms);
     Serial.print(F("."));
-    unsigned long millisecs = myGPS.packetUBXNAVPVTcopy->iTOW % 1000; // Print the milliseconds
+    unsigned long millisecs = ubxDataStruct.iTOW % 1000; // Print the milliseconds
     if (millisecs < 100) Serial.print(F("0")); // Print the trailing zeros correctly
     if (millisecs < 10) Serial.print(F("0"));
     Serial.print(millisecs);
     
-    long latitude = myGPS.packetUBXNAVPVTcopy->lat; // Print the latitude
+    long latitude = ubxDataStruct.lat; // Print the latitude
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
 
-    long longitude = myGPS.packetUBXNAVPVTcopy->lon; // Print the longitude
+    long longitude = ubxDataStruct.lon; // Print the longitude
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
     
-    long altitude = myGPS.packetUBXNAVPVTcopy->hMSL; // Print the height above mean sea level
+    long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
     Serial.println(F(" (mm)"));  
@@ -145,8 +147,6 @@ void setup()
 
   //myGPS.enableDebugging(); // Uncomment this line to enable helpful GNSS debug messages on Serial
 
-  //myGPS.disableUBX7Fcheck(); // Advanced users only: uncomment this line to disable the "7F" check in checkUbloxI2C
-
   // NAV PVT messages are 100 bytes long.
   // In this example, the data will arrive no faster than one message per second.
   // So, setting the file buffer size to 301 bytes should be more than adequate.
@@ -159,12 +159,16 @@ void setup()
     while (1);
   }
 
+  // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
+  // (This will also disable any "auto" messages that were enabled and saved by other examples and reduce the load on the I2C bus)
+  //myGPS.factoryDefault(); delay(5000);
+
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
   
   myGPS.setNavigationFrequency(1); //Produce one navigation solution per second
 
-  myGPS.setAutoPVTcallback(printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
+  myGPS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
   
   myGPS.logNAVPVT(); // Enable NAV PVT data logging
 
@@ -180,29 +184,11 @@ void loop()
   {
     uint8_t myBuffer[packetLength]; // Create our own buffer to hold the data while we write it to SD card
 
-    uint16_t numBytesExtracted = myGPS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
+    myGPS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
 
-    if (numBytesExtracted != packetLength) // Check that we did extract exactly packetLength bytes
-    {
-      Serial.println(F("numBytesExtracted does not match packetLength! Something really bad has happened! Freezing..."));
-      myFile.close(); // Close the data file
-      while (1); // Do nothing more
-    }
+    myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
 
-    uint16_t numBytesWritten = myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
-
-    //printBuffer(myBuffer); // Uncomment this line to print the data
-    
-    if (numBytesWritten != packetLength) // Check that we did write exactly packetLength bytes
-    {
-      Serial.println(F("numBytesWritten does not match packetLength! Something really bad has happened! Freezing..."));
-      myFile.close(); // Close the data file
-      while (1);      
-    }
-
-    Serial.print(F("Wrote "));
-    Serial.print(packetLength);
-    Serial.println(F(" bytes of data to NAV_PVT.ubx"));
+    //printBuffer(myBuffer); // Uncomment this line to print the data as Hexadecimal bytes
   }
 
   if (Serial.available()) // Check if the user wants to stop logging
@@ -216,7 +202,7 @@ void loop()
   delay(50);
 }
 
-// Print the buffer contents as Hexadecimal
+// Print the buffer contents as Hexadecimal bytes
 // You should see:
 // SYNC CHAR 1: 0xB5
 // SYNC CHAR 2: 0x62

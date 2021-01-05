@@ -34,6 +34,15 @@
   will cause a TIM TM2 message to be produced once per second. You can then study the timing of the
   pulse edges with nanosecond resolution!
 
+  Note: TIM TM2 can only capture the timing of one rising edge and one falling edge per
+  navigation solution. So with setNavigationFrequency set to 1Hz, we can only see the timing
+  of one rising and one falling edge per second. If the frequency of the signal on the INT pin
+  is higher than 1Hz, we will only be able to see the timing of the most recent edges.
+  However, the module can count the number of rising edges too, at rates faster than the navigation rate.
+
+  TIM TM2 messages are only produced when a rising or falling edge is detected on the INT pin.
+  If you disconnect your PPS to INT jumper wire, the messages will stop.
+
   Data is logged in u-blox UBX format. Please see the u-blox protocol specification for more details.
   You can replay and analyze the data using u-center:
   https://www.u-blox.com/en/product/u-center
@@ -42,6 +51,8 @@
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
   NEO-M8P RTK: https://www.sparkfun.com/products/15005
+  NEO-M9N: https://www.sparkfun.com/products/17285
+
 */
 
 #include <SPI.h>
@@ -57,32 +68,36 @@ File myFile; //File that all GNSS data is written to
 
 #define packetLength 36 // TIM TM2 is 28 + 8 bytes in length (including the sync chars, class, id, length and checksum bytes)
 
+int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 message
+
 // Callback: printTIMTM2data will be called when new TIM TM2 data arrives
-// See u-blox_structs.h for the full definition of UBX_TIM_TM2_data_t *packetUBXTIMTM2copy
-void printTIMTM2data()
+// See u-blox_structs.h for the full definition of UBX_TIM_TM2_data_t
+void printTIMTM2data(UBX_TIM_TM2_data_t ubxDataStruct)
 {
   Serial.println();
 
   Serial.print(F("newFallingEdge: ")); // 1 if a new falling edge was detected
-  Serial.print(myGPS.packetUBXTIMTM2copy->flags.bits.newFallingEdge);
+  Serial.print(ubxDataStruct.flags.bits.newFallingEdge);
   
   Serial.print(F(" newRisingEdge: ")); // 1 if a new rising edge was detected
-  Serial.print(myGPS.packetUBXTIMTM2copy->flags.bits.newRisingEdge);
+  Serial.print(ubxDataStruct.flags.bits.newRisingEdge);
   
   Serial.print(F(" Rising Edge Counter: ")); // Rising edge counter
-  Serial.print(myGPS.packetUBXTIMTM2copy->count);
+  Serial.print(ubxDataStruct.count);
 
   Serial.print(F(" towMsR: ")); // Time Of Week of rising edge (ms)
-  Serial.print(myGPS.packetUBXTIMTM2copy->towMsR);
+  Serial.print(ubxDataStruct.towMsR);
 
   Serial.print(F(" towSubMsR: ")); // Millisecond fraction of Time Of Week of rising edge in nanoseconds
-  Serial.print(myGPS.packetUBXTIMTM2copy->towSubMsR);
+  Serial.print(ubxDataStruct.towSubMsR);
 
   Serial.print(F(" towMsF: ")); // Time Of Week of falling edge (ms)
-  Serial.print(myGPS.packetUBXTIMTM2copy->towMsF);
+  Serial.print(ubxDataStruct.towMsF);
 
   Serial.print(F(" towSubMsF: ")); // Millisecond fraction of Time Of Week of falling edge in nanoseconds
-  Serial.println(myGPS.packetUBXTIMTM2copy->towSubMsF);
+  Serial.println(ubxDataStruct.towSubMsF);
+
+  dotsPrinted = 0; // Reset dotsPrinted
 }
 
 void setup()
@@ -138,8 +153,6 @@ void setup()
 
   //myGPS.enableDebugging(); // Uncomment this line to enable helpful GNSS debug messages on Serial
 
-  //myGPS.disableUBX7Fcheck(); // Advanced users only: uncomment this line to disable the "7F" check in checkUbloxI2C
-
   // TIM TM2 messages are 36 bytes long.
   // In this example, the data will arrive no faster than one message per second.
   // So, setting the file buffer size to 109 bytes should be more than adequate.
@@ -152,12 +165,16 @@ void setup()
     while (1);
   }
 
+  // Uncomment the next line if you want to reset your module back to the default settings with 1Hz navigation rate
+  // (This will also disable any "auto" messages that were enabled and saved by other examples and reduce the load on the I2C bus)
+  //myGPS.factoryDefault(); delay(5000);
+
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
   
   myGPS.setNavigationFrequency(1); //Produce one navigation solution per second
 
-  myGPS.setAutoTIMTM2callback(printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
+  myGPS.setAutoTIMTM2callback(&printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data
   
   myGPS.logTIMTM2(); // Enable TIM TM2 data logging
 
@@ -173,29 +190,11 @@ void loop()
   {
     uint8_t myBuffer[packetLength]; // Create our own buffer to hold the data while we write it to SD card
 
-    uint16_t numBytesExtracted = myGPS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
+    myGPS.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
 
-    if (numBytesExtracted != packetLength) // Check that we did extract exactly packetLength bytes
-    {
-      Serial.println(F("numBytesExtracted does not match packetLength! Something really bad has happened! Freezing..."));
-      myFile.close(); // Close the data file
-      while (1); // Do nothing more
-    }
-
-    uint16_t numBytesWritten = myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
+    myFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
 
     //printBuffer(myBuffer); // Uncomment this line to print the data
-    
-    if (numBytesWritten != packetLength) // Check that we did write exactly packetLength bytes
-    {
-      Serial.println(F("numBytesWritten does not match packetLength! Something really bad has happened! Freezing..."));
-      myFile.close(); // Close the data file
-      while (1);      
-    }
-
-    Serial.print(F("Wrote "));
-    Serial.print(packetLength);
-    Serial.println(F(" bytes of data to TIM_TM2.ubx"));
   }
 
   if (Serial.available()) // Check if the user wants to stop logging
@@ -205,8 +204,13 @@ void loop()
     while(1); // Do nothing more
   }
   
-  Serial.print(".");
+  Serial.print("."); // Print dots in rows of 50
   delay(50);
+  if (++dotsPrinted > 50)
+  {
+    Serial.println();
+    dotsPrinted = 0;
+  }
 }
 
 // Print the buffer contents as Hexadecimal
