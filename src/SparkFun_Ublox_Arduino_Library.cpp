@@ -835,6 +835,7 @@ void SFE_UBLOX_GPS::process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t re
             packetAuto.cls = packetBuf.cls; //Copy the class and ID into packetAuto
             packetAuto.id = packetBuf.id;
             packetAuto.counter = packetBuf.counter; //Copy over the .counter too
+            packetAuto.startingSpot = packetBuf.startingSpot; //And the starting spot? (Probably redundant)
             if (_printDebug == true)
             {
               _debugSerial->print(F("process: incoming \"automatic\" message: Class: 0x"));
@@ -3061,7 +3062,7 @@ boolean SFE_UBLOX_GPS::createFileBuffer(void)
   {
     if (_printDebug == true)
     {
-      _debugSerial->println(F("createFileBuffer: fileBufferSize is zero!"));
+      _debugSerial->println(F("createFileBuffer: Warning. FileBufferSize is zero. Data logging is not possible."));
     }
     return(false);
   }
@@ -3272,7 +3273,9 @@ boolean SFE_UBLOX_GPS::setPortInput(uint8_t portID, uint8_t inStreamSettings, ui
 boolean SFE_UBLOX_GPS::setI2CAddress(uint8_t deviceAddress, uint16_t maxWait)
 {
   //Get the current config values for the I2C port
-  getPortSettings(COM_PORT_I2C, maxWait); //This will load the payloadCfg array with current port settings
+  //This will load the payloadCfg array with current port settings
+  if (getPortSettings(COM_PORT_I2C, maxWait) == false)
+    return (false); //Something went wrong. Bail.
 
   packetCfg.cls = UBX_CLASS_CFG;
   packetCfg.id = UBX_CFG_PRT;
@@ -3296,7 +3299,9 @@ boolean SFE_UBLOX_GPS::setI2CAddress(uint8_t deviceAddress, uint16_t maxWait)
 void SFE_UBLOX_GPS::setSerialRate(uint32_t baudrate, uint8_t uartPort, uint16_t maxWait)
 {
   //Get the current config values for the UART port
-  getPortSettings(uartPort, maxWait); //This will load the payloadCfg array with current port settings
+  //This will load the payloadCfg array with current port settings
+  if (getPortSettings(uartPort, maxWait) == false)
+    return; //Something went wrong. Bail.
 
   if (_printDebug == true)
   {
@@ -3727,6 +3732,8 @@ boolean SFE_UBLOX_GPS::initModuleSWVersion()
       _debugSerial->println(F("initModuleSWVersion: PANIC! RAM allocation failed! This will end _very_ badly..."));
     return (false);
   }
+  moduleSWVersion->versionHigh = 0;
+  moduleSWVersion->versionLow = 0;
   moduleSWVersion->moduleQueried = false;
   return (true);
 }
