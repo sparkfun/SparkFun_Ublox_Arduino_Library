@@ -32,7 +32,7 @@ void setup()
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
@@ -42,14 +42,16 @@ void setup()
 
   myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
-  if (myGPS.begin() == false) //Attempt to re-connect
+  delay(5000); // Wait while the module restarts
+
+  while (myGPS.begin() == false) //Attempt to re-connect
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
+    delay(1000);
+    Serial.println(F("Attempting to re-connect to u-blox GNSS..."));
   }
 
   Serial.println("Unit has now been factory reset. Freezing...");
-  while(1);
+  while(1); // Do nothing more
 }
 
 void loop()

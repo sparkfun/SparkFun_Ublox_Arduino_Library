@@ -31,7 +31,7 @@
 SFE_UBLOX_GPS myGPS;
 
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(10, 11); // RX, TX. Pin 10 on Uno goes to TX pin on GPS module.
+SoftwareSerial mySerial(10, 11); // RX, TX. Pin 10 on Uno goes to TX pin on GNSS module.
 
 long lastTime = 0; //Simple local timer. Limits amount of I2C traffic to u-blox module.
 
@@ -41,18 +41,18 @@ void setup()
   while (!Serial); //Wait for user to open terminal
   Serial.println("SparkFun u-blox Example");
 
-  //Assume that the U-Blox GPS is running at 9600 baud (the default) or at 38400 baud.
+  //Assume that the U-Blox GNSS is running at 9600 baud (the default) or at 38400 baud.
   //Loop until we're in sync and then ensure it's at 38400 baud.
   do {
-    Serial.println("GPS: trying 38400 baud");
+    Serial.println("GNSS: trying 38400 baud");
     mySerial.begin(38400);
     if (myGPS.begin(mySerial) == true) break;
 
     delay(100);
-    Serial.println("GPS: trying 9600 baud");
+    Serial.println("GNSS: trying 9600 baud");
     mySerial.begin(9600);
     if (myGPS.begin(mySerial) == true) {
-        Serial.println("GPS: connected at 9600 baud, switching to 38400");
+        Serial.println("GNSS: connected at 9600 baud, switching to 38400");
         myGPS.setSerialRate(38400);
         delay(100);
     } else {
@@ -60,7 +60,7 @@ void setup()
         delay(2000); //Wait a bit before trying again to limit the Serial output
     }
   } while(1);
-  Serial.println("GPS serial connected");
+  Serial.println("GNSS serial connected");
 
   myGPS.setUART1Output(COM_TYPE_UBX); //Set the UART port to output UBX only
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)

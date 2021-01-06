@@ -15,12 +15,12 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a BlackBoard
+  Plug a Qwiic cable into the GNSS and a BlackBoard
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
@@ -42,14 +42,18 @@ void setup()
   Serial.print("Press a key to change address to 0x");
   Serial.println(newAddress, HEX);
   while (Serial.available() == false) ; //Wait for user to send character
+
+  //myGPS.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
   
   if (myGPS.begin(Wire, oldAddress) == true) //Connect to the u-blox module using Wire port and the old address
   {
-    Serial.print("GPS found at address 0x");
+    Serial.print("GNSS found at address 0x");
     Serial.println(oldAddress, HEX);
 
     myGPS.setI2CAddress(newAddress); //Change I2C address of this device
     //Device's I2C address is stored to memory and loaded on each power-on
+
+    delay(2000); // Allow time for the change to take
 
     if (myGPS.begin(Wire, newAddress) == true)
     {
@@ -66,7 +70,7 @@ void setup()
   }
 
   //Something went wrong, begin looking for the I2C device
-  Serial.println("Address change failed. Beginning an I2C scan.");
+  Serial.println("Address change probably failed. Beginning an I2C scan.");
 
   Wire.begin();
 }
@@ -94,13 +98,13 @@ void loop() {
 
       nDevices++;
     }
-    else if (error == 4)
-    {
-      Serial.print("Unknown error at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.println(address, HEX);
-    }
+//    else if (error == 4)
+//    {
+//      Serial.print("Unknown error at address 0x");
+//      if (address < 16)
+//        Serial.print("0");
+//      Serial.println(address, HEX);
+//    }
   }
 
   if (nDevices == 0)
