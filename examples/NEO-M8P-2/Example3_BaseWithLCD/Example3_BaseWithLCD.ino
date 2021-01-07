@@ -1,4 +1,6 @@
 /*
+  Note: compiles OK with v2.0 but is currently untested
+  
   Send UBX binary commands to enable RTCM sentences on u-blox NEO-M8P-2 module
   By: Nathan Seidle
   SparkFun Electronics
@@ -19,7 +21,7 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a BlackBoard
+  Plug a Qwiic cable into the GNSS and a BlackBoard
   Plug a SerLCD onto the Qwiic bus
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Watch the output on the LCD or open the serial monitor at 115200 baud to see the output
@@ -27,9 +29,9 @@
 
 #define STAT_LED 13
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Ublox_GPS
+#include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
 #include <SerLCD.h> //Click here to get the library: http://librarymanager/All#SparkFun_SerLCD
@@ -39,7 +41,7 @@ void setup()
 {
   Serial.begin(115200);
   while (!Serial); //Wait for user to open terminal
-  Serial.println("u-blox GPS I2C Test");
+  Serial.println(F("u-blox GNSS I2C Test"));
 
   Wire.begin();
 
@@ -54,18 +56,22 @@ void setup()
   myGPS.begin(Wire);
   if (myGPS.isConnected() == false)
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     lcd.setCursor(0, 1);
-    lcd.print(F("No GPS detected"));
+    lcd.print(F("No GNSS detected"));
     while (1);
   }
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
   lcd.setCursor(0, 1);
-  lcd.print("GPS Detected");
+  lcd.print("GNSS Detected");
 
   //Check if Survey is in Progress before initiating one
+  // From v2.0, the data from getSurveyStatus (UBX-NAV-SVIN) is returned in UBX_NAV_SVIN_t packetUBXNAVSVIN
+  // Please see u-blox_structs.h for the full definition of UBX_NAV_SVIN_t
+  // You can either read the data from packetUBXNAVSVIN directly
+  // or can use the helper functions: getSurveyInActive; getSurveyInValid; getSurveyInObservationTime; and getSurveyInMeanAccuracy
   boolean response;
   response = myGPS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (request can take a long time)
   if (response == false)
@@ -74,7 +80,7 @@ void setup()
     while (1); //Freeze
   }
 
-  if (myGPS.svin.active == true)
+  if (myGPS.getSurveyInActive() == true) // Use the helper function
   {
     Serial.print(F("Survey already in progress."));
     lcd.setCursor(0, 2);
@@ -100,7 +106,7 @@ void setup()
   lcd.print(F("Survey in progress"));
 
   //Begin waiting for survey to complete
-  while (myGPS.svin.valid == false)
+  while (myGPS.getSurveyInValid() == false) // Call the helper function
   {
     if (Serial.available())
     {
@@ -114,24 +120,28 @@ void setup()
       }
     }
 
+    // From v2.0, the data from getSurveyStatus (UBX-NAV-SVIN) is returned in UBX_NAV_SVIN_t packetUBXNAVSVIN
+    // Please see u-blox_structs.h for the full definition of UBX_NAV_SVIN_t
+    // You can either read the data from packetUBXNAVSVIN directly
+    // or can use the helper functions: getSurveyInActive; getSurveyInValid; getSurveyInObservationTime; and getSurveyInMeanAccuracy
     response = myGPS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (req can take a long time)
     if (response == true)
     {
       Serial.print(F("Press x to end survey - "));
       Serial.print(F("Time elapsed: "));
-      Serial.print((String)myGPS.svin.observationTime);
+      Serial.print((String)myGPS.getSurveyInObservationTime());
 
       lcd.setCursor(0, 1);
       lcd.print(F("Elapsed: "));
-      lcd.print((String)myGPS.svin.observationTime);
+      lcd.print((String)myGPS.getSurveyInObservationTime());
 
       Serial.print(F(" Accuracy: "));
-      Serial.print((String)myGPS.svin.meanAccuracy);
+      Serial.print((String)myGPS.getSurveyInMeanAccuracy());
       Serial.println();
 
       lcd.setCursor(0, 2);
       lcd.print(F("Accuracy: "));
-      lcd.print((String)myGPS.svin.meanAccuracy);
+      lcd.print((String)myGPS.getSurveyInMeanAccuracy());
     }
     else
     {
@@ -143,10 +153,10 @@ void setup()
   Serial.println(F("Survey valid!"));
 
   response = true;
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, UBX_RTCM_I2C_PORT, 1); //Enable message 1005 to output through I2C port, message every second
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1077, UBX_RTCM_I2C_PORT, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1087, UBX_RTCM_I2C_PORT, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, UBX_RTCM_I2C_PORT, 10); //Enable message every 10 seconds
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through I2C port, message every second
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1077, COM_PORT_I2C, 1);
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1087, COM_PORT_I2C, 1);
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_I2C, 10); //Enable message every 10 seconds
 
   if (response == true)
   {

@@ -16,12 +16,12 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a RedBoard Qwiic or BlackBoard
+  Plug a Qwiic cable into the GNSS and a RedBoard Qwiic or BlackBoard
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
@@ -46,7 +46,7 @@ void setup()
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
@@ -62,76 +62,80 @@ void setup()
 
 void loop()
 {
+  // From v2.0, the data from getRELPOSNED (UBX-NAV-RELPOSNED) is returned in UBX_NAV_RELPOSNED_t packetUBXNAVRELPOSNED
+  // Please see u-blox_structs.h for the full definition of UBX_NAV_RELPOSNED_t
+  // You can either read the data from packetUBXNAVRELPOSNED directly
+  // or can use the helper functions: getRelPosN/E/D; getRelPosAccN/E/D
   if (myGPS.getRELPOSNED() == true)
   {
     Serial.print("relPosN: ");
-    Serial.println(myGPS.relPosInfo.relPosN, 4);
+    Serial.println(myGPS.getRelPosN(), 4); // Use the helper functions to get the rel. pos. as m
     Serial.print("relPosE: ");
-    Serial.println(myGPS.relPosInfo.relPosE, 4);
+    Serial.println(myGPS.getRelPosE(), 4);
     Serial.print("relPosD: ");
-    Serial.println(myGPS.relPosInfo.relPosD, 4);
+    Serial.println(myGPS.getRelPosD(), 4);
 
     Serial.print("relPosLength: ");
-    Serial.println(myGPS.relPosInfo.relPosLength);
+    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosLength);
     Serial.print("relPosHeading: ");
-    Serial.println(myGPS.relPosInfo.relPosHeading);
+    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHeading);
 
     Serial.print("relPosHPN: ");
-    Serial.println(myGPS.relPosInfo.relPosHPN);
+    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPN);
     Serial.print("relPosHPE: ");
-    Serial.println(myGPS.relPosInfo.relPosHPE);
+    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPE);
     Serial.print("relPosHPD: ");
-    Serial.println(myGPS.relPosInfo.relPosHPD);
+    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPD);
     Serial.print("relPosHPLength: ");
-    Serial.println(myGPS.relPosInfo.relPosHPLength);
+    Serial.println(myGPS.packetUBXNAVRELPOSNED->data.relPosHPLength);
 
     Serial.print("accN: ");
-    Serial.println(myGPS.relPosInfo.accN, 4);
+    Serial.println(myGPS.getRelPosAccN(), 4); // Use the helper functions to get the rel. pos. accuracy as m
     Serial.print("accE: ");
-    Serial.println(myGPS.relPosInfo.accE, 4);
+    Serial.println(myGPS.getRelPosAccE(), 4);
     Serial.print("accD: ");
-    Serial.println(myGPS.relPosInfo.accD, 4);
+    Serial.println(myGPS.getRelPosAccD(), 4);
 
     Serial.print("gnssFixOk: ");
-    if (myGPS.relPosInfo.gnssFixOk == true)
+    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.gnssFixOK == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("diffSolution: ");
-    if (myGPS.relPosInfo.diffSoln == true)
+    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.diffSoln == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("relPosValid: ");
-    if (myGPS.relPosInfo.relPosValid == true)
+    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.relPosValid == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("carrier Solution Type: ");
-    if (myGPS.relPosInfo.carrSoln == 0)
+    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 0)
       Serial.println("None");
-    else if (myGPS.relPosInfo.carrSoln == 1)
+    else if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 1)
       Serial.println("Float");
-    else if (myGPS.relPosInfo.carrSoln == 2)
+    else if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.carrSoln == 2)
       Serial.println("Fixed");
 
     Serial.print("isMoving: ");
-    if (myGPS.relPosInfo.isMoving == true)
+    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.isMoving == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("refPosMiss: ");
-    if (myGPS.relPosInfo.refPosMiss == true)
+    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.refPosMiss == true)
       Serial.println("x");
     else
       Serial.println("");
 
     Serial.print("refObsMiss: ");
-    if (myGPS.relPosInfo.refObsMiss == true)
+    if (myGPS.packetUBXNAVRELPOSNED->data.flags.bits.refObsMiss == true)
       Serial.println("x");
     else
       Serial.println("");

@@ -18,13 +18,13 @@
   NEO-M8P RTK: https://www.sparkfun.com/products/15005
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and (e.g.) a Redboard Artemis https://www.sparkfun.com/products/15444
+  Plug a Qwiic cable into the GNSS and (e.g.) a Redboard Artemis https://www.sparkfun.com/products/15444
   or an Artemis Thing Plus https://www.sparkfun.com/products/15574
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <Wire.h> // Needed for I2C to GPS
+#include <Wire.h> // Needed for I2C to GNSS
 
 #define myWire Wire // This will work on the Redboard Artemis and the Artemis Thing Plus using Qwiic
 //#define myWire Wire1 // Uncomment this line if you are using the extra SCL1/SDA1 pins (D17 and D16) on the Thing Plus
@@ -45,7 +45,7 @@ void setup()
 
   if (myGPS.begin(myWire) == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }

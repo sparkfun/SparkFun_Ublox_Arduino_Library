@@ -16,12 +16,12 @@
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a RedBoard
+  Plug a Qwiic cable into the GNSS and a RedBoard
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
@@ -37,7 +37,7 @@ void setup()
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
