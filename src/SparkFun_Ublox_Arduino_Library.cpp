@@ -9318,7 +9318,7 @@ float SFE_UBLOX_GPS::getSurveyInMeanAccuracy(uint16_t maxWait) // Returned as m
   packetUBXNAVSVIN->moduleQueried.moduleQueried.bits.all = false;
 
   // meanAcc is U4 (uint32_t) in 0.1mm. We convert this to float.
-  uint32_t tempFloat = packetUBXNAVSVIN->data.dur;
+  uint32_t tempFloat = packetUBXNAVSVIN->data.meanAcc;
   return (((float)tempFloat) / 10000.0); //Convert 0.1mm to m
 }
 

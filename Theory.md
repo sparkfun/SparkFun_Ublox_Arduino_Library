@@ -98,3 +98,4 @@ Other changes include:
   - svin.observationTime is replaced with packetUBXNAVSVIN->data.dur and is now uint32_t (not uint16_t)
   - svin.MeanAccuracy is replaced with packetUBXNAVSVIN->data.meanAcc and is now uint32_t * 0.1mm (not float * m)
   - New helper functions (getSurveyInActive, getSurveyInValid, getSurveyInObservationTime, getSurveyInMeanAccuracy) provide backward-compatibility
+  - Please see the [**ZED-F9P/Example3_StartRTCMBase**](./examples/ZED-F9P/Example3_StartRTCMBase) example for more details

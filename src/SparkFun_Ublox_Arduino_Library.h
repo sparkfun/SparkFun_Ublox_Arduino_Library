@@ -765,7 +765,7 @@ public:
 	void logNAVCLOCK(boolean enabled = true); // Log data to file buffer
 
 	// Add "auto" support for NAV SVIN - to avoid needing 'global' storage
-	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status and sets the global variables
+	boolean getSurveyStatus(uint16_t maxWait); //Reads survey in status
 
 	boolean getRELPOSNED(uint16_t maxWait = defaultMaxWait); //Get Relative Positioning Information of the NED frame
 	boolean setAutoRELPOSNED(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic RELPOSNED reports
