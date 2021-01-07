@@ -1,5 +1,5 @@
 /*
-  Reading lat and long via UBX binary commands using UART @38400 baud - free from I2C
+  Debug Output
   By: Nathan Seidle, Adapted from Example3_GetPosition by Thorsten von Eicken
   SparkFun Electronics
   Date: January 28rd, 2019
@@ -10,6 +10,10 @@
   Debug shows various packet and status outputs. These prints can be directed
   towards Serial (as in Serial.print) or any other port (Serial1, SerialUSB, etc).
 
+  You can also limit the debug messages to the "critical" ones by adding an extra argument.
+
+  The debug messages can be disabled again by calling disableDebugging()
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun!
   ZED-F9P RTK2: https://www.sparkfun.com/products/15136
@@ -17,15 +21,16 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Connect the U-Blox serial TX pin to Uno pin 10
-  Connect the U-Blox serial RX pin to Uno pin 11
+  Plug a Qwiic cable into the GNSS and a BlackBoard
+  If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
 
-long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
+unsigned long lastTime = 0; //Simple local timer. Limits amount if I2C traffic to u-blox module.
+int counter = 0; // Disable the debug messages when counter reaches 20
 
 void setup()
 {
@@ -37,16 +42,19 @@ void setup()
 
   if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  //myGPS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
 
-  myGPS.enableDebugging(); //Enable debug messages over Serial (default)
+  myGPS.enableDebugging(); //Enable all the debug messages over Serial (default)
+  
   //myGPS.enableDebugging(SerialUSB); //Enable debug messages over Serial USB
 
+  //myGPS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+  
 }
 
 void loop()
@@ -75,19 +83,25 @@ void loop()
     Serial.print(F(" SIV: "));
     Serial.print(SIV);
 
-    Serial.println();
+    Serial.print(F("   "));
     Serial.print(myGPS.getYear());
-    Serial.print("-");
+    Serial.print(F("-"));
     Serial.print(myGPS.getMonth());
-    Serial.print("-");
+    Serial.print(F("-"));
     Serial.print(myGPS.getDay());
-    Serial.print(" ");
+    Serial.print(F(" "));
     Serial.print(myGPS.getHour());
-    Serial.print(":");
+    Serial.print(F(":"));
     Serial.print(myGPS.getMinute());
-    Serial.print(":");
+    Serial.print(F(":"));
     Serial.println(myGPS.getSecond());
     
     Serial.println();
+
+    counter++; // Increment counter
+    if (counter == 20)
+    {
+      myGPS.disableDebugging(); // Disable the debug messages when counter reaches 20
+    }
   }
 }

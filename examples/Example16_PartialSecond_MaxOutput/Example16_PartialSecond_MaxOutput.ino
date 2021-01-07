@@ -9,6 +9,8 @@
   This example shows how to use the Millisecond and Nanosecond output as well as increase the
   I2C speed (100 to 400kHz), and serial output (115200 to 500kbps).
 
+  Note: you will need to set your Serial Monitor to 500000 Baud to see the output
+
   Leave NMEA parsing behind. Now you can simply ask the module for the datums you want!
 
   Feel like supporting open source hardware?
@@ -18,12 +20,12 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a BlackBoard
+  Plug a Qwiic cable into the GNSS and a BlackBoard
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
@@ -38,28 +40,28 @@ void setup()
   Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
-  Wire.setClock(400000);
+  Wire.setClock(400000); // Increase I2C clock speed to 400kHz
+
+  //myGPS.enableDebugging(); //Uncomment this line to enable debug messages over Serial
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1)
       ;
   }
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
 
-  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
-
+  // Note: not all u-blox modules can output solutions at 10Hz - or not while tracking all satellite constellations
+  // If the rate drops back to 1Hz, you're asking too much of your module
   myGPS.setNavigationFrequency(10);           //Set output to 10 times a second
+  
   byte rate = myGPS.getNavigationFrequency(); //Get the update rate of this module
   Serial.print("Current update rate:");
   Serial.println(rate);
 
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
-
-  pinMode(2, OUTPUT); //For debug capture
-  digitalWrite(2, HIGH);
+  //myGPS.saveConfiguration(); //Optional: Save the current settings to flash and BBR
 }
 
 void loop()

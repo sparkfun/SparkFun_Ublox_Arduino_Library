@@ -30,12 +30,12 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a BlackBoard
+  Plug a Qwiic cable into the GNSS and a BlackBoard
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 */
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 
@@ -71,7 +71,7 @@ void setup()
 
     if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
     {
-        Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+        Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
         while (1)
             ;
     }

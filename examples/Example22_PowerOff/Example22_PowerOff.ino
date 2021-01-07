@@ -1,5 +1,5 @@
 /*
-  Powering off a ublox GPS module
+  Powering off a ublox GNSS module
   By: bjorn
   unsurv.org
   Date: July 20th, 2020
@@ -7,7 +7,7 @@
   basically do whatever you want with this code.
 
   This example shows you how to turn off the ublox module to lower the power consumption.
-  There are two functions: one just specifies a duration in milliseconds the other also specifies a pin on the GPS device to wake it up with.
+  There are two functions: one just specifies a duration in milliseconds the other also specifies a pin on the GNSS device to wake it up with.
   By driving a voltage from LOW to HIGH or HIGH to LOW on the chosen module pin you wake the device back up.
   Note: Doing so on the INT0 pin when using the regular powerOff(durationInMs) function will wake the device anyway. (tested on SAM-M8Q)
   Note: While powered off, you should not query the device for data or it might wake up. This can be used to wake the device but is not recommended.
@@ -20,7 +20,7 @@
   SAM-M8Q: https://www.sparkfun.com/products/15106
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a BlackBoard.
+  Plug a Qwiic cable into the GNSS and a BlackBoard.
   To force the device to wake up you need to connect to a pin (for example INT0) seperately on the module.
   If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
@@ -67,7 +67,7 @@ void setup() {
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 

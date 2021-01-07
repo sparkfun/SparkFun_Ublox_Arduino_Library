@@ -16,7 +16,7 @@
   SAM-M8Q: https://www.sparkfun.com/products/15210
   ZOE-M8Q: https://www.sparkfun.com/products/15193
 
-  This example powers up the GPS and reads the fix.
+  This example powers up the GNSS and reads the fix.
   Once a valid 3D fix has been found, the code reads the latitude and longitude.
   The code then sets four geofences around that position with a radii of 5m, 10m, 15m and 20m with 95% confidence.
   The code then monitors the geofence status.
@@ -49,11 +49,11 @@ void setup()
   Serial.println();
   Serial.println();
 
-  delay(1000); // Let the GPS power up
+  delay(1000); // Let the GNSS power up
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
