@@ -90,8 +90,10 @@ The biggest change in v2.0 is that data is now stored in a _struct_ which matche
 Other changes include:
 - In v1, NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.relPosN (etc.) as (int32_t)cm.
   - New helper functions (getRelPosN, getRelPosE, getRelPosD) provide backward-compatibility
+  - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation) example for more details
 - In v1, NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.accN (etc.) as (uint32_t)mm*0.1.
   - New helper functions (getRelPosAccN, getRelPosAccE, getRelPosAccD) provide backward-compatibility
+  - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation) example for more details
 - getSurveyStatus now returns data via UBX_NAV_SVIN_t *packetUBXNAVSVIN
   - svin.active is replaced with (boolean)packetUBXNAVSVIN->data.active
   - svin.valid is replaced with (boolean)packetUBXNAVSVIN->data.valid
