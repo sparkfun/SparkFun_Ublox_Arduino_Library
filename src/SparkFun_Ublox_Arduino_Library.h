@@ -391,6 +391,7 @@ enum dynModel // Possible values for the dynamic platform model, which provide m
 	DYN_MODEL_AIRBORNE4g,	  //Airborne <4g acceleration. Only recommended for extremely dynamic environments. No 2D position fixes supported.
 	DYN_MODEL_WRIST,		  // Not supported in protocol versions less than 18. Only recommended for wrist worn applications. Receiver will filter out arm motion.
 	DYN_MODEL_BIKE,			  // Supported in protocol versions 19.2
+	DYN_MODEL_UNKNOWN = 255 // getDynamicModel will return 255 if sendCommand fails
 };
 
 // The GNSS identifiers - used by UBX-CFG-GNSS (0x06 0x3E) GNSS system configuration

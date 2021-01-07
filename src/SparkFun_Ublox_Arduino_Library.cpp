@@ -4157,7 +4157,7 @@ boolean SFE_UBLOX_GPS::setDynamicModel(dynModel newDynamicModel, uint16_t maxWai
 }
 
 //Get the dynamic platform model using UBX-CFG-NAV5
-//Returns 255 if the sendCommand fails
+//Returns DYN_MODEL_UNKNOWN (255) if the sendCommand fails
 uint8_t SFE_UBLOX_GPS::getDynamicModel(uint16_t maxWait)
 {
   packetCfg.cls = UBX_CLASS_CFG;
@@ -4167,7 +4167,7 @@ uint8_t SFE_UBLOX_GPS::getDynamicModel(uint16_t maxWait)
 
   //Ask module for the current navigation model settings. Loads into payloadCfg.
   if (sendCommand(&packetCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-    return (255);
+    return (DYN_MODEL_UNKNOWN);
 
   return (payloadCfg[2]); // Return the dynamic model
 }
