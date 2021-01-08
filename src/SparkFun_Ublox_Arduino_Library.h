@@ -343,6 +343,7 @@ const uint8_t UBX_ACK_NONE = 0x02; //Not a real value
 const uint8_t UBX_ESF_MEAS = 0x02;
 const uint8_t UBX_ESF_RAW = 0x03;
 const uint8_t UBX_ESF_STATUS = 0x10;
+const uint8_t UBX_ESF_RESETALG = 0x13;
 const uint8_t UBX_ESF_ALG = 0x14;
 const uint8_t UBX_ESF_INS = 0x15; //36 bytes
 
@@ -641,6 +642,9 @@ public:
 	boolean enableGNSS(boolean enable, sfe_ublox_gnss_ids_e id, uint16_t maxWait = defaultMaxWait);
 	boolean isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait = defaultMaxWait);
 
+	//Reset ESF automatic IMU-mount alignment
+	boolean resetIMUalignment(uint16_t maxWait = defaultMaxWait);
+
 	//General configuration (used only on protocol v27 and higher - ie, ZED-F9P)
 
 	//It is probably safe to assume that users of the ZED-F9P will be using I2C / Qwiic.
@@ -810,7 +814,8 @@ public:
 
 	// Sensor fusion (dead reckoning) (ESF)
 
-	boolean getEsfAlignment(uint16_t maxWait = defaultMaxWait); // ESF ALG
+	boolean getEsfAlignment(uint16_t maxWait = defaultMaxWait); // ESF ALG Helper
+	boolean getESFALG(uint16_t maxWait = defaultMaxWait); // ESF ALG
 	boolean setAutoESFALG(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF ALG reports
   boolean setAutoESFALG(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF ALG reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean setAutoESFALGcallback(void (*callbackPointer)(UBX_ESF_ALG_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic ALG reports at the navigation frequency. Data is accessed from the callback.
@@ -818,7 +823,8 @@ public:
 	void flushESFALG(); //Mark all the data as read/stale
 	void logESFALG(boolean enabled = true); // Log data to file buffer
 
-	boolean getEsfInfo(uint16_t maxWait = defaultMaxWait); // ESF STATUS
+	boolean getEsfInfo(uint16_t maxWait = defaultMaxWait); // ESF STATUS Helper
+	boolean getESFSTATUS(uint16_t maxWait = defaultMaxWait); // ESF STATUS
 	boolean setAutoESFSTATUS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF STATUS reports
   boolean setAutoESFSTATUS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF STATUS reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean setAutoESFSTATUScallback(void (*callbackPointer)(UBX_ESF_STATUS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic STATUS reports at the navigation frequency. Data is accessed from the callback.
@@ -826,7 +832,8 @@ public:
 	void flushESFSTATUS(); //Mark all the data as read/stale
 	void logESFSTATUS(boolean enabled = true); // Log data to file buffer
 
-	boolean getEsfIns(uint16_t maxWait = defaultMaxWait); // ESF INS
+	boolean getEsfIns(uint16_t maxWait = defaultMaxWait); // ESF INS Helper
+	boolean getESFINS(uint16_t maxWait = defaultMaxWait); // ESF INS
 	boolean setAutoESFINS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF INS reports
   boolean setAutoESFINS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF INS reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean setAutoESFINScallback(void (*callbackPointer)(UBX_ESF_INS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic INS reports at the navigation frequency. Data is accessed from the callback.
@@ -834,7 +841,8 @@ public:
 	void flushESFINS(); //Mark all the data as read/stale
 	void logESFINS(boolean enabled = true); // Log data to file buffer
 
-	boolean getEsfDataInfo(uint16_t maxWait = defaultMaxWait); // ESF MEAS
+	boolean getEsfDataInfo(uint16_t maxWait = defaultMaxWait); // ESF MEAS Helper
+	boolean getESFMEAS(uint16_t maxWait = defaultMaxWait); // ESF MEAS
 	boolean setAutoESFMEAS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF MEAS reports
   boolean setAutoESFMEAS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF MEAS reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean setAutoESFMEAScallback(void (*callbackPointer)(UBX_ESF_MEAS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic MEAS reports at the navigation frequency. Data is accessed from the callback.
@@ -842,7 +850,8 @@ public:
 	void flushESFMEAS(); //Mark all the data as read/stale
 	void logESFMEAS(boolean enabled = true); // Log data to file buffer
 
-	boolean getEsfRawDataInfo(uint16_t maxWait = defaultMaxWait); // ESF RAW
+	boolean getEsfRawDataInfo(uint16_t maxWait = defaultMaxWait); // ESF RAW Helper
+	boolean getESFRAW(uint16_t maxWait = defaultMaxWait); // ESF RAW
 	boolean setAutoESFRAW(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF RAW reports
   boolean setAutoESFRAW(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic ESF RAW reports, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean setAutoESFRAWcallback(void (*callbackPointer)(UBX_ESF_RAW_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic RAW reports at the navigation frequency. Data is accessed from the callback.

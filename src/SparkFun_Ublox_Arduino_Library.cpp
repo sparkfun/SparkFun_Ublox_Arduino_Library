@@ -4180,6 +4180,7 @@ boolean SFE_UBLOX_GPS::resetOdometer(uint16_t maxWait)
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
+  // This is a special case as we are only expecting an ACK but this is not a CFG message
   return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
@@ -4237,6 +4238,18 @@ boolean SFE_UBLOX_GPS::isGNSSenabled(sfe_ublox_gnss_ids_e id, uint16_t maxWait)
   }
 
   return (retVal);
+}
+
+//Reset ESF automatic IMU-mount alignment
+boolean SFE_UBLOX_GPS::resetIMUalignment(uint16_t maxWait)
+{
+  packetCfg.cls = UBX_CLASS_ESF;
+  packetCfg.id = UBX_ESF_RESETALG;
+  packetCfg.len = 0;
+  packetCfg.startingSpot = 0;
+
+  // This is a special case as we are only expecting an ACK but this is not a CFG message
+  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 // CONFIGURATION INTERFACE (protocol v27 and above)
@@ -4728,7 +4741,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVPOSECEF(boolean enable, boolean implicitUpdate,
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVPOSECEFcopy.
 boolean SFE_UBLOX_GPS::setAutoNAVPOSECEFcallback(void (*callbackPointer)(UBX_NAV_POSECEF_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -4877,7 +4889,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVSTATUS(boolean enable, boolean implicitUpdate, 
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVSTATUScopy.
 boolean SFE_UBLOX_GPS::setAutoNAVSTATUScallback(void (*callbackPointer)(UBX_NAV_STATUS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -5048,7 +5059,6 @@ boolean SFE_UBLOX_GPS::setAutoDOP(boolean enable, boolean implicitUpdate, uint16
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVDOPcopy.
 boolean SFE_UBLOX_GPS::setAutoDOPcallback(void (*callbackPointer)(UBX_NAV_DOP_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -5198,7 +5208,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVATT(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVATTcopy.
 boolean SFE_UBLOX_GPS::setAutoNAVATTcallback(void (*callbackPointer)(UBX_NAV_ATT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -5520,7 +5529,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVODO(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVODOcopy.
 boolean SFE_UBLOX_GPS::setAutoNAVODOcallback(void (*callbackPointer)(UBX_NAV_ODO_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -5668,7 +5676,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELECEF(boolean enable, boolean implicitUpdate,
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVVELECEFcopy.
 boolean SFE_UBLOX_GPS::setAutoNAVVELECEFcallback(void (*callbackPointer)(UBX_NAV_VELECEF_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -5816,7 +5823,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVVELNED(boolean enable, boolean implicitUpdate, 
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVVELNEDcopy.
 boolean SFE_UBLOX_GPS::setAutoNAVVELNEDcallback(void (*callbackPointer)(UBX_NAV_VELNED_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -5964,7 +5970,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEF(boolean enable, boolean implicitUpdat
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVHPPOSECEFcopy.
 boolean SFE_UBLOX_GPS::setAutoNAVHPPOSECEFcallback(void (*callbackPointer)(UBX_NAV_HPPOSECEF_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -6134,7 +6139,6 @@ boolean SFE_UBLOX_GPS::setAutoHPPOSLLH(boolean enable, boolean implicitUpdate, u
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVHPPOSLLHcopy.
 boolean SFE_UBLOX_GPS::setAutoHPPOSLLHcallback(void (*callbackPointer)(UBX_NAV_HPPOSLLH_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -6282,7 +6286,6 @@ boolean SFE_UBLOX_GPS::setAutoNAVCLOCK(boolean enable, boolean implicitUpdate, u
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVCLOCKcopy.
 boolean SFE_UBLOX_GPS::setAutoNAVCLOCKcallback(void (*callbackPointer)(UBX_NAV_CLOCK_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -6482,7 +6485,6 @@ boolean SFE_UBLOX_GPS::setAutoRELPOSNED(boolean enable, boolean implicitUpdate, 
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXNAVRELPOSNEDcopy.
 boolean SFE_UBLOX_GPS::setAutoRELPOSNEDcallback(void (*callbackPointer)(UBX_NAV_RELPOSNED_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -6630,7 +6632,6 @@ boolean SFE_UBLOX_GPS::setAutoRXMSFRBX(boolean enable, boolean implicitUpdate, u
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXRXMSFRBXcopy.
 boolean SFE_UBLOX_GPS::setAutoRXMSFRBXcallback(void (*callbackPointer)(UBX_RXM_SFRBX_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -6778,7 +6779,6 @@ boolean SFE_UBLOX_GPS::setAutoRXMRAWX(boolean enable, boolean implicitUpdate, ui
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXRXMRAWXcopy.
 boolean SFE_UBLOX_GPS::setAutoRXMRAWXcallback(void (*callbackPointer)(UBX_RXM_RAWX_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -6986,7 +6986,6 @@ boolean SFE_UBLOX_GPS::setAutoTIMTM2(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXTIMTM2copy.
 boolean SFE_UBLOX_GPS::setAutoTIMTM2callback(void (*callbackPointer)(UBX_TIM_TM2_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -7061,6 +7060,11 @@ void SFE_UBLOX_GPS::logTIMTM2(boolean enabled)
 // ***** ESF ALG automatic support
 
 boolean SFE_UBLOX_GPS::getEsfAlignment(uint16_t maxWait)
+{
+  return (getESFALG(maxWait));
+}
+
+boolean SFE_UBLOX_GPS::getESFALG(uint16_t maxWait)
 {
   if (packetUBXESFALG == NULL) initPacketUBXESFALG(); //Check that RAM has been allocated for the ESF alignment data
   if (packetUBXESFALG == NULL) //Only attempt this if RAM allocation was successful
@@ -7158,7 +7162,6 @@ boolean SFE_UBLOX_GPS::setAutoESFALG(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXESFALGcopy.
 boolean SFE_UBLOX_GPS::setAutoESFALGcallback(void (*callbackPointer)(UBX_ESF_ALG_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -7233,6 +7236,11 @@ void SFE_UBLOX_GPS::logESFALG(boolean enabled)
 // ***** ESF STATUS automatic support
 
 boolean SFE_UBLOX_GPS::getEsfInfo(uint16_t maxWait)
+{
+  return (getESFSTATUS(maxWait));
+}
+
+boolean SFE_UBLOX_GPS::getESFSTATUS(uint16_t maxWait)
 {
   if (packetUBXESFSTATUS == NULL) initPacketUBXESFSTATUS(); //Check that RAM has been allocated for the ESF status data
   if (packetUBXESFSTATUS == NULL) //Only attempt this if RAM allocation was successful
@@ -7330,7 +7338,6 @@ boolean SFE_UBLOX_GPS::setAutoESFSTATUS(boolean enable, boolean implicitUpdate, 
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXESFSTATUScopy.
 boolean SFE_UBLOX_GPS::setAutoESFSTATUScallback(void (*callbackPointer)(UBX_ESF_STATUS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -7375,6 +7382,7 @@ boolean SFE_UBLOX_GPS::assumeAutoESFSTATUS(boolean enabled, boolean implicitUpda
 boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
 {
   packetUBXESFSTATUS = new UBX_ESF_STATUS_t; //Allocate RAM for the main struct
+
   if (packetUBXESFSTATUS == NULL)
   {
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
@@ -7382,8 +7390,8 @@ boolean SFE_UBLOX_GPS::initPacketUBXESFSTATUS()
     return (false);
   }
   packetUBXESFSTATUS->automaticFlags.flags.all = 0;
-  packetUBXNAVSTATUS->callbackPointer = NULL;
-  packetUBXNAVSTATUS->callbackData = NULL;
+  packetUBXESFSTATUS->callbackPointer = NULL;
+  packetUBXESFSTATUS->callbackData = NULL;
   packetUBXESFSTATUS->moduleQueried.moduleQueried.all = 0;
   return (true);
 }
@@ -7405,6 +7413,11 @@ void SFE_UBLOX_GPS::logESFSTATUS(boolean enabled)
 // ***** ESF INS automatic support
 
 boolean SFE_UBLOX_GPS::getEsfIns(uint16_t maxWait)
+{
+  return (getESFINS(maxWait));
+}
+
+boolean SFE_UBLOX_GPS::getESFINS(uint16_t maxWait)
 {
   if (packetUBXESFINS == NULL) initPacketUBXESFINS(); //Check that RAM has been allocated for the ESF INS data
   if (packetUBXESFINS == NULL) //Only attempt this if RAM allocation was successful
@@ -7502,7 +7515,6 @@ boolean SFE_UBLOX_GPS::setAutoESFINS(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXESFINScopy.
 boolean SFE_UBLOX_GPS::setAutoESFINScallback(void (*callbackPointer)(UBX_ESF_INS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -7577,6 +7589,11 @@ void SFE_UBLOX_GPS::logESFINS(boolean enabled)
 // ***** ESF MEAS automatic support
 
 boolean SFE_UBLOX_GPS::getEsfDataInfo(uint16_t maxWait)
+{
+  return (getESFMEAS(maxWait));
+}
+
+boolean SFE_UBLOX_GPS::getESFMEAS(uint16_t maxWait)
 {
   if (packetUBXESFMEAS == NULL) initPacketUBXESFMEAS(); //Check that RAM has been allocated for the ESF MEAS data
   if (packetUBXESFMEAS == NULL) //Only attempt this if RAM allocation was successful
@@ -7674,7 +7691,6 @@ boolean SFE_UBLOX_GPS::setAutoESFMEAS(boolean enable, boolean implicitUpdate, ui
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXESFMEAScopy.
 boolean SFE_UBLOX_GPS::setAutoESFMEAScallback(void (*callbackPointer)(UBX_ESF_MEAS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -7749,6 +7765,11 @@ void SFE_UBLOX_GPS::logESFMEAS(boolean enabled)
 // ***** ESF RAW automatic support
 
 boolean SFE_UBLOX_GPS::getEsfRawDataInfo(uint16_t maxWait)
+{
+  return (getESFRAW(maxWait));
+}
+
+boolean SFE_UBLOX_GPS::getESFRAW(uint16_t maxWait)
 {
   if (packetUBXESFRAW == NULL) initPacketUBXESFRAW(); //Check that RAM has been allocated for the ESF RAW data
   if (packetUBXESFRAW == NULL) //Only attempt this if RAM allocation was successful
@@ -7846,7 +7867,6 @@ boolean SFE_UBLOX_GPS::setAutoESFRAW(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXESFRAWcopy.
 boolean SFE_UBLOX_GPS::setAutoESFRAWcallback(void (*callbackPointer)(UBX_ESF_RAW_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -8023,7 +8043,6 @@ boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXHNRATTcopy.
 boolean SFE_UBLOX_GPS::setAutoHNRAttcallback(void (*callbackPointer)(UBX_HNR_ATT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -8201,7 +8220,6 @@ boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXHNRINScopy.
 boolean SFE_UBLOX_GPS::setAutoHNRDyncallback(void (*callbackPointer)(UBX_HNR_INS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -8378,7 +8396,6 @@ boolean SFE_UBLOX_GPS::setAutoHNRPVT(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-//Data is passed to the callback in packetUBXHNRPVTcopy.
 boolean SFE_UBLOX_GPS::setAutoHNRPVTcallback(void (*callbackPointer)(UBX_HNR_PVT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
@@ -9411,7 +9428,7 @@ boolean SFE_UBLOX_GPS::getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sen
     return (false);
 
   if (packetUBXESFMEAS->moduleQueried.moduleQueried.bits.data & (1 << sensor) == 0)
-    getEsfDataInfo(maxWait);
+    getESFMEAS(maxWait);
   packetUBXESFMEAS->moduleQueried.moduleQueried.bits.data &= ~(1 << sensor); //Since we are about to give this to user, mark this data as stale
   packetUBXESFMEAS->moduleQueried.moduleQueried.bits.all = false;
   sensorData->data.all = packetUBXESFMEAS->data.data[sensor].data.all;
@@ -9431,7 +9448,7 @@ boolean SFE_UBLOX_GPS::getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorD
     return (false);
 
   if (packetUBXESFRAW->moduleQueried.moduleQueried.bits.data & (1 << sensor) == 0)
-    getEsfRawDataInfo(maxWait);
+    getESFRAW(maxWait);
   packetUBXESFRAW->moduleQueried.moduleQueried.bits.data &= ~(1 << sensor); //Since we are about to give this to user, mark this data as stale
   packetUBXESFRAW->moduleQueried.moduleQueried.bits.all = false;
   sensorData->data.all = packetUBXESFRAW->data.data[sensor].data.all;
@@ -9453,7 +9470,7 @@ boolean SFE_UBLOX_GPS::getSensorFusionStatus(UBX_ESF_STATUS_sensorStatus_t *sens
     return (false);
 
   if (packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.status & (1 << sensor) == 0)
-    getEsfInfo(maxWait);
+    getESFSTATUS(maxWait);
   packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.status &= ~(1 << sensor); //Since we are about to give this to user, mark this data as stale
   packetUBXESFSTATUS->moduleQueried.moduleQueried.bits.all = false;
   sensorStatus->sensStatus1.all = packetUBXESFSTATUS->data.status[sensor].sensStatus1.all;
