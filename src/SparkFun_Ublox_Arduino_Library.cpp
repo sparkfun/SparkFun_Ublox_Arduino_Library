@@ -2209,7 +2209,7 @@ void SFE_UBLOX_GPS::addToChecksum(uint8_t incoming)
 }
 
 //Given a packet and payload, send everything including CRC bytes via I2C port
-sfe_ublox_status_e SFE_UBLOX_GPS::sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait)
+sfe_ublox_status_e SFE_UBLOX_GPS::sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait, boolean expectACKonly)
 {
   sfe_ublox_status_e retVal = SFE_UBLOX_STATUS_SUCCESS;
 
@@ -2241,7 +2241,7 @@ sfe_ublox_status_e SFE_UBLOX_GPS::sendCommand(ubxPacket *outgoingUBX, uint16_t m
   if (maxWait > 0)
   {
     //Depending on what we just sent, either we need to look for an ACK or not
-    if (outgoingUBX->cls == UBX_CLASS_CFG)
+    if ((outgoingUBX->cls == UBX_CLASS_CFG) || (expectACKonly == true))
     {
       if (_printDebug == true)
       {
@@ -4181,7 +4181,7 @@ boolean SFE_UBLOX_GPS::resetOdometer(uint16_t maxWait)
   packetCfg.startingSpot = 0;
 
   // This is a special case as we are only expecting an ACK but this is not a CFG message
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return (sendCommand(&packetCfg, maxWait, true) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 //Enable/Disable individual GNSS systems using UBX-CFG-GNSS
@@ -4249,7 +4249,7 @@ boolean SFE_UBLOX_GPS::resetIMUalignment(uint16_t maxWait)
   packetCfg.startingSpot = 0;
 
   // This is a special case as we are only expecting an ACK but this is not a CFG message
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
+  return (sendCommand(&packetCfg, maxWait, true) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
 }
 
 // CONFIGURATION INTERFACE (protocol v27 and above)
@@ -5133,6 +5133,11 @@ void SFE_UBLOX_GPS::logNAVDOP(boolean enabled)
 // ***** VEH ATT automatic support
 
 boolean SFE_UBLOX_GPS::getVehAtt(uint16_t maxWait)
+{
+  return (getNAVATT(maxWait));
+}
+
+boolean SFE_UBLOX_GPS::getNAVATT(uint16_t maxWait)
 {
   if (packetUBXNAVATT == NULL) initPacketUBXNAVATT(); //Check that RAM has been allocated for the ESF RAW data
   if (packetUBXNAVATT == NULL) //Only attempt this if RAM allocation was successful
@@ -7940,12 +7945,17 @@ void SFE_UBLOX_GPS::logESFRAW(boolean enabled)
 
 // ***** HNR ATT automatic support
 
+boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
+{
+  return (getHNRATT(maxWait));
+}
+
 //Get the HNR Attitude data
 // Returns true if the get HNR attitude is successful. Data is returned in hnrAtt
 // Note: if hnrAttQueried is true, it gets set to false by this function since we assume
 //       that the user will read hnrAtt immediately after this. I.e. this function will
 //       only return true _once_ after each auto HNR Att is processed
-boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
+boolean SFE_UBLOX_GPS::getHNRATT(uint16_t maxWait)
 {
   if (packetUBXHNRATT == NULL) initPacketUBXHNRATT(); //Check that RAM has been allocated for the data
   if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
@@ -8011,14 +8021,14 @@ boolean SFE_UBLOX_GPS::getHNRAtt(uint16_t maxWait)
 
 //Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getHNRAtt
 //works.
-boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRATT(boolean enable, uint16_t maxWait)
 {
-  return setAutoHNRAtt(enable, true, maxWait);
+  return setAutoHNRATT(enable, true, maxWait);
 }
 
 //Enable or disable automatic HNR attitude message generation by the GNSS. This changes the way getHNRAtt
 //works.
-boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRATT(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
   if (packetUBXHNRATT == NULL) initPacketUBXHNRATT(); //Check that RAM has been allocated for the data
   if (packetUBXHNRATT == NULL) //Only attempt this if RAM allocation was successful
@@ -8043,10 +8053,10 @@ boolean SFE_UBLOX_GPS::setAutoHNRAtt(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-boolean SFE_UBLOX_GPS::setAutoHNRAttcallback(void (*callbackPointer)(UBX_HNR_ATT_data_t), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRATTcallback(void (*callbackPointer)(UBX_HNR_ATT_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
-  boolean result = setAutoHNRAtt(true, false, maxWait);
+  boolean result = setAutoHNRATT(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
@@ -8068,7 +8078,7 @@ boolean SFE_UBLOX_GPS::setAutoHNRAttcallback(void (*callbackPointer)(UBX_HNR_ATT
 
 //In case no config access to the GNSS is possible and HNR attitude is send cyclically already
 //set config to suitable parameters
-boolean SFE_UBLOX_GPS::assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate)
+boolean SFE_UBLOX_GPS::assumeAutoHNRATT(boolean enabled, boolean implicitUpdate)
 {
   if (packetUBXHNRATT == NULL) initPacketUBXHNRATT(); //Check that RAM has been allocated for the data
   if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
@@ -8117,12 +8127,17 @@ void SFE_UBLOX_GPS::logHNRATT(boolean enabled)
 
 // ***** HNR DYN automatic support
 
+boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
+{
+  return (getHNRINS(maxWait));
+}
+
 //Get the HNR vehicle dynamics data
 // Returns true if the get HNR vehicle dynamics is successful. Data is returned in hnrVehDyn
 // Note: if hnrDynQueried is true, it gets set to false by this function since we assume
 //       that the user will read hnrVehDyn immediately after this. I.e. this function will
 //       only return true _once_ after each auto HNR Dyn is processed
-boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
+boolean SFE_UBLOX_GPS::getHNRINS(uint16_t maxWait)
 {
   if (packetUBXHNRINS == NULL) initPacketUBXHNRINS(); //Check that RAM has been allocated for the data
   if (packetUBXHNRINS == NULL) //Bail if the RAM allocation failed
@@ -8188,14 +8203,14 @@ boolean SFE_UBLOX_GPS::getHNRDyn(uint16_t maxWait)
 
 //Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRDyn
 //works.
-boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRINS(boolean enable, uint16_t maxWait)
 {
-  return setAutoHNRDyn(enable, true, maxWait);
+  return setAutoHNRINS(enable, true, maxWait);
 }
 
 //Enable or disable automatic HNR vehicle dynamics message generation by the GNSS. This changes the way getHNRDyn
 //works.
-boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRINS(boolean enable, boolean implicitUpdate, uint16_t maxWait)
 {
   if (packetUBXHNRINS == NULL) initPacketUBXHNRINS(); //Check that RAM has been allocated for the data
   if (packetUBXHNRINS == NULL) //Only attempt this if RAM allocation was successful
@@ -8220,10 +8235,10 @@ boolean SFE_UBLOX_GPS::setAutoHNRDyn(boolean enable, boolean implicitUpdate, uin
 }
 
 //Enable automatic navigation message generation by the GNSS.
-boolean SFE_UBLOX_GPS::setAutoHNRDyncallback(void (*callbackPointer)(UBX_HNR_INS_data_t), uint16_t maxWait)
+boolean SFE_UBLOX_GPS::setAutoHNRINScallback(void (*callbackPointer)(UBX_HNR_INS_data_t), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
-  boolean result = setAutoHNRDyn(true, false, maxWait);
+  boolean result = setAutoHNRINS(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
@@ -8245,7 +8260,7 @@ boolean SFE_UBLOX_GPS::setAutoHNRDyncallback(void (*callbackPointer)(UBX_HNR_INS
 
 //In case no config access to the GNSS is possible and HNR vehicle dynamics is send cyclically already
 //set config to suitable parameters
-boolean SFE_UBLOX_GPS::assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate)
+boolean SFE_UBLOX_GPS::assumeAutoHNRINS(boolean enabled, boolean implicitUpdate)
 {
   if (packetUBXHNRINS == NULL) initPacketUBXHNRINS(); //Check that RAM has been allocated for the data
   if (packetUBXHNRINS == NULL) //Bail if the RAM allocation failed
@@ -8607,6 +8622,47 @@ uint16_t SFE_UBLOX_GPS::getEastingDOP(uint16_t maxWait)
   packetUBXNAVDOP->moduleQueried.moduleQueried.bits.eDOP = false; //Since we are about to give this to user, mark this data as stale
   packetUBXNAVDOP->moduleQueried.moduleQueried.bits.all = false;
   return (packetUBXNAVDOP->data.eDOP);
+}
+
+// ***** ATT Helper Functions
+
+float SFE_UBLOX_GPS::getATTroll(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXNAVATT == NULL) initPacketUBXNAVATT(); //Check that RAM has been allocated for the NAV ATT data
+  if (packetUBXNAVATT == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXNAVATT->moduleQueried.moduleQueried.bits.roll == false)
+    getNAVATT(maxWait);
+  packetUBXNAVATT->moduleQueried.moduleQueried.bits.roll = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVATT->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXNAVATT->data.roll) / 100000.0); // Convert to degrees
+}
+
+float SFE_UBLOX_GPS::getATTpitch(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXNAVATT == NULL) initPacketUBXNAVATT(); //Check that RAM has been allocated for the NAV ATT data
+  if (packetUBXNAVATT == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXNAVATT->moduleQueried.moduleQueried.bits.pitch == false)
+    getNAVATT(maxWait);
+  packetUBXNAVATT->moduleQueried.moduleQueried.bits.pitch = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVATT->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXNAVATT->data.pitch) / 100000.0); // Convert to degrees
+}
+
+float SFE_UBLOX_GPS::getATTheading(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXNAVATT == NULL) initPacketUBXNAVATT(); //Check that RAM has been allocated for the NAV ATT data
+  if (packetUBXNAVATT == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXNAVATT->moduleQueried.moduleQueried.bits.heading == false)
+    getNAVATT(maxWait);
+  packetUBXNAVATT->moduleQueried.moduleQueried.bits.heading = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXNAVATT->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXNAVATT->data.heading) / 100000.0); // Convert to degrees
 }
 
 // ***** PVT Helper Functions
@@ -9421,6 +9477,45 @@ float SFE_UBLOX_GPS::getRelPosAccD(uint16_t maxWait) // Returned as m
 
 // ***** ESF Helper Functions
 
+float SFE_UBLOX_GPS::getESFroll(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXESFALG == NULL) initPacketUBXESFALG(); //Check that RAM has been allocated for the ESF ALG data
+  if (packetUBXESFALG == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXESFALG->moduleQueried.moduleQueried.bits.roll == false)
+    getESFALG(maxWait);
+  packetUBXESFALG->moduleQueried.moduleQueried.bits.roll = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXESFALG->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXESFALG->data.roll) / 100.0); // Convert to degrees
+}
+
+float SFE_UBLOX_GPS::getESFpitch(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXESFALG == NULL) initPacketUBXESFALG(); //Check that RAM has been allocated for the ESF ALG data
+  if (packetUBXESFALG == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXESFALG->moduleQueried.moduleQueried.bits.pitch == false)
+    getESFALG(maxWait);
+  packetUBXESFALG->moduleQueried.moduleQueried.bits.pitch = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXESFALG->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXESFALG->data.pitch) / 100.0); // Convert to degrees
+}
+
+float SFE_UBLOX_GPS::getESFyaw(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXESFALG == NULL) initPacketUBXESFALG(); //Check that RAM has been allocated for the ESF ALG data
+  if (packetUBXESFALG == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXESFALG->moduleQueried.moduleQueried.bits.yaw == false)
+    getESFALG(maxWait);
+  packetUBXESFALG->moduleQueried.moduleQueried.bits.yaw = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXESFALG->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXESFALG->data.yaw) / 100.0); // Convert to degrees
+}
+
 boolean SFE_UBLOX_GPS::getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait)
 {
   if (packetUBXESFMEAS == NULL) initPacketUBXESFMEAS(); //Check that RAM has been allocated for the ESF MEAS data
@@ -9532,6 +9627,45 @@ uint8_t SFE_UBLOX_GPS::getHNRNavigationRate(uint16_t maxWait)
 
   //Return the navigation rate
   return (payloadCfg[0]);
+}
+
+float SFE_UBLOX_GPS::getHNRroll(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXHNRATT == NULL) initPacketUBXHNRATT(); //Check that RAM has been allocated for the HNR ATT data
+  if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXHNRATT->moduleQueried.moduleQueried.bits.roll == false)
+    getHNRATT(maxWait);
+  packetUBXHNRATT->moduleQueried.moduleQueried.bits.roll = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXHNRATT->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXHNRATT->data.roll) / 100000.0); // Convert to degrees
+}
+
+float SFE_UBLOX_GPS::getHNRpitch(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXHNRATT == NULL) initPacketUBXHNRATT(); //Check that RAM has been allocated for the HNR ATT data
+  if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXHNRATT->moduleQueried.moduleQueried.bits.pitch == false)
+    getHNRATT(maxWait);
+  packetUBXHNRATT->moduleQueried.moduleQueried.bits.pitch = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXHNRATT->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXHNRATT->data.pitch) / 100000.0); // Convert to degrees
+}
+
+float SFE_UBLOX_GPS::getHNRheading(uint16_t maxWait) // Returned as degrees
+{
+  if (packetUBXHNRATT == NULL) initPacketUBXHNRATT(); //Check that RAM has been allocated for the HNR ATT data
+  if (packetUBXHNRATT == NULL) //Bail if the RAM allocation failed
+    return (0);
+
+  if (packetUBXHNRATT->moduleQueried.moduleQueried.bits.heading == false)
+    getHNRATT(maxWait);
+  packetUBXHNRATT->moduleQueried.moduleQueried.bits.heading = false; //Since we are about to give this to user, mark this data as stale
+  packetUBXHNRATT->moduleQueried.moduleQueried.bits.all = false;
+  return (((float)packetUBXHNRATT->data.heading) / 100000.0); // Convert to degrees
 }
 
 // Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket

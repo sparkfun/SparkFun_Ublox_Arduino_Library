@@ -528,15 +528,15 @@ public:
 
 	void process(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID);	//Processes NMEA and UBX binary sentences one byte at a time
 	void processNMEA(char incoming) __attribute__((weak)); //Given a NMEA character, do something with it. User can overwrite if desired to use something like tinyGPS or MicroNMEA libraries
-	void processRTCMframe(uint8_t incoming);																//Monitor the incoming bytes for start and length bytes
-	void processRTCM(uint8_t incoming) __attribute__((weak));												//Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
+	void processRTCMframe(uint8_t incoming); //Monitor the incoming bytes for start and length bytes
+	void processRTCM(uint8_t incoming) __attribute__((weak)); //Given rtcm byte, do something with it. User can overwrite if desired to pipe bytes to radio, internet, etc.
 	void processUBX(uint8_t incoming, ubxPacket *incomingUBX, uint8_t requestedClass, uint8_t requestedID); //Given a character, file it away into the uxb packet structure
-	void processUBXpacket(ubxPacket *msg);				   //Once a packet has been received and validated, identify this packet's class/id and update internal flags
+	void processUBXpacket(ubxPacket *msg); //Once a packet has been received and validated, identify this packet's class/id and update internal flags
 
 	// Send I2C/Serial commands to the module
 
-	void calcChecksum(ubxPacket *msg);														   //Sets the checksumA and checksumB of a given messages
-	sfe_ublox_status_e sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
+	void calcChecksum(ubxPacket *msg); //Sets the checksumA and checksumB of a given messages
+	sfe_ublox_status_e sendCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait, boolean expectACKonly = false); //Given a packet and payload, send everything including CRC bytes, return true if we got a response
 	sfe_ublox_status_e sendI2cCommand(ubxPacket *outgoingUBX, uint16_t maxWait = defaultMaxWait);
 	void sendSerialCommand(ubxPacket *outgoingUBX);
 
@@ -544,7 +544,7 @@ public:
 
 	// After sending a message to the module, wait for the expected response (data+ACK or just data)
 
-	sfe_ublox_status_e waitForACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);	 //Poll the module until a config packet and an ACK is received
+	sfe_ublox_status_e waitForACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait);	 //Poll the module until a config packet and an ACK is received, or just an ACK
 	sfe_ublox_status_e waitForNoACKResponse(ubxPacket *outgoingUBX, uint8_t requestedClass, uint8_t requestedID, uint16_t maxTime = defaultMaxWait); //Poll the module until a config packet is received
 
 	// Check if any callbacks need to be called
@@ -704,7 +704,8 @@ public:
   void flushDOP(); //Mark all the DOP data as read/stale
 	void logNAVDOP(boolean enabled = true); // Log data to file buffer
 
-	boolean getVehAtt(uint16_t maxWait = defaultMaxWait); // NAV ATT
+	boolean getVehAtt(uint16_t maxWait = defaultMaxWait); // NAV ATT Helper
+	boolean getNAVATT(uint16_t maxWait = defaultMaxWait); // NAV ATT
 	boolean setAutoNAVATT(boolean enabled, uint16_t maxWait = defaultMaxWait);  //Enable/disable automatic vehicle attitude reports at the navigation frequency
   boolean setAutoNAVATT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic vehicle attitude reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean setAutoNAVATTcallback(void (*callbackPointer)(UBX_NAV_ATT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic ATT reports at the navigation frequency. Data is accessed from the callback.
@@ -861,23 +862,25 @@ public:
 
 	// High navigation rate (HNR)
 
-	boolean getHNRAtt(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR attitude is successful. Data is returned in hnrAtt
-  boolean setAutoHNRAtt(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR Attitude reports at the HNR rate
-  boolean setAutoHNRAtt(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR Attitude reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-	boolean setAutoHNRAttcallback(void (*callbackPointer)(UBX_HNR_ATT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic ATT reports at the navigation frequency. Data is accessed from the callback.
-	boolean assumeAutoHNRAtt(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HNR Attitude is send cyclically already
+	boolean getHNRAtt(uint16_t maxWait = defaultMaxWait); // HNR ATT Helper
+	boolean getHNRATT(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR attitude is successful
+  boolean setAutoHNRATT(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR Attitude reports at the HNR rate
+  boolean setAutoHNRATT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR Attitude reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean setAutoHNRATTcallback(void (*callbackPointer)(UBX_HNR_ATT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic ATT reports at the navigation frequency. Data is accessed from the callback.
+	boolean assumeAutoHNRATT(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HNR Attitude is send cyclically already
 	void flushHNRATT(); //Mark all the data as read/stale
 	void logHNRATT(boolean enabled = true); // Log data to file buffer
 
-	boolean getHNRDyn(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR dynamics is successful. Data is returned in hnrVehDyn
-  boolean setAutoHNRDyn(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR dynamics reports at the HNR rate
-  boolean setAutoHNRDyn(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR dynamics reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-	boolean setAutoHNRDyncallback(void (*callbackPointer)(UBX_HNR_INS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic INS reports at the navigation frequency. Data is accessed from the callback.
-	boolean assumeAutoHNRDyn(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HNR dynamics is send cyclically already
+	boolean getHNRDyn(uint16_t maxWait = defaultMaxWait); // HNR INS Helper
+	boolean getHNRINS(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR dynamics is successful
+  boolean setAutoHNRINS(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR dynamics reports at the HNR rate
+  boolean setAutoHNRINS(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR dynamics reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+	boolean setAutoHNRINScallback(void (*callbackPointer)(UBX_HNR_INS_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic INS reports at the navigation frequency. Data is accessed from the callback.
+	boolean assumeAutoHNRINS(boolean enabled, boolean implicitUpdate = true); //In case no config access to the GPS is possible and HNR dynamics is send cyclically already
 	void flushHNRINS(); //Mark all the data as read/stale
 	void logHNRINS(boolean enabled = true); // Log data to file buffer
 
-	boolean getHNRPVT(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR PVT is successful. Data is returned in hnrPVT
+	boolean getHNRPVT(uint16_t maxWait = defaultMaxWait); // Returns true if the get HNR PVT is successful
   boolean setAutoHNRPVT(boolean enabled, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR PVT reports at the HNR rate
   boolean setAutoHNRPVT(boolean enabled, boolean implicitUpdate, uint16_t maxWait = defaultMaxWait); //Enable/disable automatic HNR PVT reports at the HNR rate, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
 	boolean setAutoHNRPVTcallback(void (*callbackPointer)(UBX_HNR_PVT_data_t), uint16_t maxWait = defaultMaxWait); //Enable automatic PVT reports at the navigation frequency. Data is accessed from the callback.
@@ -900,6 +903,12 @@ public:
   uint16_t getNorthingDOP(uint16_t maxWait = defaultMaxWait);
   uint16_t getEastingDOP(uint16_t maxWait = defaultMaxWait);
 
+	// Helper functions for ATT
+
+	float getATTroll(uint16_t maxWait = defaultMaxWait); // Returned as degrees
+	float getATTpitch(uint16_t maxWait = defaultMaxWait); // Returned as degrees
+	float getATTheading(uint16_t maxWait = defaultMaxWait); // Returned as degrees
+
 	// Helper functions for PVT
 
 	uint32_t getTimeOfWeek(uint16_t maxWait = defaultMaxWait);
@@ -915,28 +924,28 @@ public:
 	bool getDateValid(uint16_t maxWait = defaultMaxWait);
 	bool getTimeValid(uint16_t maxWait = defaultMaxWait);
 
-	uint8_t getFixType(uint16_t maxWait = defaultMaxWait);			  //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
+	uint8_t getFixType(uint16_t maxWait = defaultMaxWait); //Returns the type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning
 
-	bool getGnssFixOk(uint16_t maxWait = defaultMaxWait);          //Get whether we have a valid fix (i.e within DOP & accuracy masks)
-	bool getDiffSoln(uint16_t maxWait = defaultMaxWait);           //Get whether differential corrections were applied
+	bool getGnssFixOk(uint16_t maxWait = defaultMaxWait); //Get whether we have a valid fix (i.e within DOP & accuracy masks)
+	bool getDiffSoln(uint16_t maxWait = defaultMaxWait); //Get whether differential corrections were applied
 	bool getHeadVehValid(uint16_t maxWait = defaultMaxWait);
 	uint8_t getCarrierSolutionType(uint16_t maxWait = defaultMaxWait); //Returns RTK solution: 0=no, 1=float solution, 2=fixed solution
 
-	uint8_t getSIV(uint16_t maxWait = defaultMaxWait);				  //Returns number of sats used in fix
-	int32_t getLongitude(uint16_t maxWait = defaultMaxWait);			  //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getLatitude(uint16_t maxWait = defaultMaxWait);			  //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
-	int32_t getAltitude(uint16_t maxWait = defaultMaxWait);			  //Returns the current altitude in mm above ellipsoid
-	int32_t getAltitudeMSL(uint16_t maxWait = defaultMaxWait);		  //Returns the current altitude in mm above mean sea level
+	uint8_t getSIV(uint16_t maxWait = defaultMaxWait); //Returns number of sats used in fix
+	int32_t getLongitude(uint16_t maxWait = defaultMaxWait); //Returns the current longitude in degrees * 10-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getLatitude(uint16_t maxWait = defaultMaxWait); //Returns the current latitude in degrees * 10^-7. Auto selects between HighPrecision and Regular depending on ability of module.
+	int32_t getAltitude(uint16_t maxWait = defaultMaxWait); //Returns the current altitude in mm above ellipsoid
+	int32_t getAltitudeMSL(uint16_t maxWait = defaultMaxWait); //Returns the current altitude in mm above mean sea level
 	int32_t getHorizontalAccEst(uint16_t maxWait = defaultMaxWait);
 	int32_t getVerticalAccEst(uint16_t maxWait = defaultMaxWait);
 	int32_t getNedNorthVel(uint16_t maxWait = defaultMaxWait);
 	int32_t getNedEastVel(uint16_t maxWait = defaultMaxWait);
 	int32_t getNedDownVel(uint16_t maxWait = defaultMaxWait);
-	int32_t getGroundSpeed(uint16_t maxWait = defaultMaxWait);		  //Returns speed in mm/s
-	int32_t getHeading(uint16_t maxWait = defaultMaxWait);			  //Returns heading in degrees * 10^-5
+	int32_t getGroundSpeed(uint16_t maxWait = defaultMaxWait); //Returns speed in mm/s
+	int32_t getHeading(uint16_t maxWait = defaultMaxWait); //Returns heading in degrees * 10^-5
 	uint32_t getSpeedAccEst(uint16_t maxWait = defaultMaxWait);
 	uint32_t getHeadingAccEst(uint16_t maxWait = defaultMaxWait);
-	uint16_t getPDOP(uint16_t maxWait = defaultMaxWait);				  //Returns positional dillution of precision * 10^-2 (dimensionless)
+	uint16_t getPDOP(uint16_t maxWait = defaultMaxWait); //Returns positional dillution of precision * 10^-2 (dimensionless)
 
 	bool getInvalidLlh(uint16_t maxWait = defaultMaxWait);
 
@@ -982,6 +991,9 @@ public:
 
 	// Helper functions for ESF
 
+	float getESFroll(uint16_t maxWait = defaultMaxWait); // Returned as degrees
+	float getESFpitch(uint16_t maxWait = defaultMaxWait); // Returned as degrees
+	float getESFyaw(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 	boolean getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
 	boolean getSensorFusionMeasurement(UBX_ESF_MEAS_sensorData_t *sensorData, UBX_ESF_MEAS_data_t ubxDataStruct, uint8_t sensor);
 	boolean getRawSensorMeasurement(UBX_ESF_RAW_sensorData_t *sensorData, uint8_t sensor, uint16_t maxWait = defaultMaxWait);
@@ -993,6 +1005,9 @@ public:
 
 	boolean setHNRNavigationRate(uint8_t rate, uint16_t maxWait = 1100); // Returns true if the setHNRNavigationRate is successful
 	uint8_t getHNRNavigationRate(uint16_t maxWait = 1100); // Returns 0 if the getHNRNavigationRate fails
+	float getHNRroll(uint16_t maxWait = defaultMaxWait); // Returned as degrees
+	float getHNRpitch(uint16_t maxWait = defaultMaxWait); // Returned as degrees
+	float getHNRheading(uint16_t maxWait = defaultMaxWait); // Returned as degrees
 
 	// Functions to extract signed and unsigned 8/16/32-bit data from a ubxPacket
 	// From v2.0: These are public. The user can call these to extract data from custom packets
