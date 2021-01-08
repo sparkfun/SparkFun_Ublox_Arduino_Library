@@ -73,6 +73,11 @@ int numRAWX = 0; // Keep count of how many RAWX message groups have been receive
 
 // Callback: newSFRBX will be called when new RXM SFRBX data arrives
 // See u-blox_structs.h for the full definition of UBX_RXMSFRBX_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoRXMSFRBXcallback
+//        /                  _____  This _must_ be UBX_RXM_SFRBX_data_t
+//        |                 /                   _____ You can use any name you like for the struct
+//        |                 |                  /
+//        |                 |                  |
 void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
 {
   numSFRBX++; // Increment the count
@@ -80,6 +85,11 @@ void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
 
 // Callback: newRAWX will be called when new RXM RAWX data arrives
 // See u-blox_structs.h for the full definition of UBX_RXMRAWX_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoRXMRAWXcallback
+//        /             _____  This _must_ be UBX_RXM_RAWX_data_t
+//        |            /                _____ You can use any name you like for the struct
+//        |            |               /
+//        |            |               |
 void newRAWX(UBX_RXM_RAWX_data_t ubxDataStruct)
 {
   numRAWX++; // Increment the count
@@ -113,7 +123,7 @@ void setup()
   }
 
   delay(100); // Wait, just in case multiple characters were sent
-  
+
   while (Serial.available()) // Empty the Serial buffer
   {
     Serial.read();
@@ -162,15 +172,15 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
-  
+
   myGPS.setNavigationFrequency(1); //Produce one navigation solution per second (that's plenty for Precise Point Positioning)
 
   myGPS.setAutoRXMSFRBXcallback(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
-  
+
   myGPS.logRXMSFRBX(); // Enable RXM SFRBX data logging
 
   myGPS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
-  
+
   myGPS.logRXMRAWX(); // Enable RXM RAWX data logging
 
   Serial.println(F("Press any key to stop logging."));
@@ -190,7 +200,7 @@ void loop()
   while (myGPS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
   {
     digitalWrite(LED_BUILTIN, HIGH); // Flash LED_BUILTIN each time we write to the SD card
-  
+
     uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
 
     myGPS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
@@ -214,7 +224,7 @@ void loop()
     Serial.println(numRAWX);
 
     uint16_t maxBufferBytes = myGPS.getMaxFileBufferAvail(); // Get how full the file buffer has been (not how full it is now)
-    
+
     //Serial.print(F("The maximum number of bytes which the file buffer has contained is: ")); // It is a fun thing to watch how full the buffer gets
     //Serial.println(maxBufferBytes);
 
@@ -222,7 +232,7 @@ void loop()
     {
       Serial.println(F("Warning: the file buffer has been over 80% full. Some data may have been lost."));
     }
-    
+
     lastPrint = millis(); // Update lastPrint
   }
 
@@ -231,11 +241,11 @@ void loop()
   if (Serial.available()) // Check if the user wants to stop logging
   {
     uint16_t remainingBytes = myGPS.fileBufferAvailable(); // Check if there are any bytes remaining in the file buffer
-    
+
     while (remainingBytes > 0) // While there is still data in the file buffer
     {
       digitalWrite(LED_BUILTIN, HIGH); // Flash LED_BUILTIN while we write to the SD card
-      
+
       uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
 
       uint16_t bytesToWrite = remainingBytes; // Write the remaining bytes to SD card sdWriteSize bytes at a time
@@ -243,7 +253,7 @@ void loop()
       {
         bytesToWrite = sdWriteSize;
       }
-  
+
       myGPS.extractFileBufferData((uint8_t *)&myBuffer, bytesToWrite); // Extract bytesToWrite bytes from the UBX file buffer and put them into myBuffer
 
       myFile.write(myBuffer, bytesToWrite); // Write bytesToWrite bytes from myBuffer to the ubxDataFile on the SD card
@@ -254,7 +264,7 @@ void loop()
     digitalWrite(LED_BUILTIN, LOW); // Turn LED_BUILTIN off
 
     myFile.close(); // Close the data file
-    
+
     Serial.println(F("Logging stopped. Freezing..."));
     while(1); // Do nothing more
   }

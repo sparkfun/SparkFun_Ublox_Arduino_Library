@@ -28,6 +28,11 @@ SFE_UBLOX_GPS myGPS;
 
 // Callback: printPVTdata will be called when new NAV PVT data arrives
 // See u-blox_structs.h for the full definition of UBX_NAV_PVT_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoPVTcallback
+//        /                  _____  This _must_ be UBX_NAV_PVT_data_t
+//        |                 /               _____ You can use any name you like for the struct
+//        |                 |              /
+//        |                 |              |
 void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
 {
     Serial.println();
@@ -49,7 +54,7 @@ void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
     if (millisecs < 100) Serial.print(F("0")); // Print the trailing zeros correctly
     if (millisecs < 10) Serial.print(F("0"));
     Serial.print(millisecs);
-    
+
     long latitude = ubxDataStruct.lat; // Print the latitude
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
@@ -58,7 +63,7 @@ void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
-    
+
     long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
@@ -83,7 +88,7 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
-  
+
   myGPS.setNavigationFrequency(2); //Produce two solutions per second
 
   myGPS.setAutoPVTcallback(&printPVTdata); // Enable automatic NAV PVT messages with callback to printPVTdata
@@ -93,7 +98,7 @@ void loop()
 {
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-  
+
   Serial.print(".");
   delay(50);
 }

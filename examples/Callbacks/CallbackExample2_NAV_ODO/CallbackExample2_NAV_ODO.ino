@@ -28,6 +28,11 @@ SFE_UBLOX_GPS myGPS;
 
 // Callback: printODOdata will be called when new NAV ODO data arrives
 // See u-blox_structs.h for the full definition of UBX_NAV_ODO_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoNAVODOcallback
+//        /                  _____  This _must_ be UBX_NAV_ODO_data_t
+//        |                 /                   _____ You can use any name you like for the struct
+//        |                 |                  /
+//        |                 |                  |
 void printODOdata(UBX_NAV_ODO_data_t ubxDataStruct)
 {
     Serial.println();
@@ -36,7 +41,7 @@ void printODOdata(UBX_NAV_ODO_data_t ubxDataStruct)
     unsigned long iTOW = ubxDataStruct.iTOW; // iTOW is in milliseconds
     Serial.print(iTOW);
     Serial.print(F(" (ms)"));
-    
+
     Serial.print(F(" Distance: "));
     unsigned long distance = ubxDataStruct.distance; // Print the distance
     Serial.print(distance);
@@ -66,11 +71,11 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
-  
+
   myGPS.setNavigationFrequency(1); //Produce one solution per second
 
   //myGPS.resetOdometer(); //Uncomment this line to reset the odometer
-  
+
   myGPS.setAutoNAVODOcallback(&printODOdata); // Enable automatic NAV ODO messages with callback to printODOdata
 }
 
@@ -78,7 +83,7 @@ void loop()
 {
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-  
+
   Serial.print(".");
   delay(50);
 }

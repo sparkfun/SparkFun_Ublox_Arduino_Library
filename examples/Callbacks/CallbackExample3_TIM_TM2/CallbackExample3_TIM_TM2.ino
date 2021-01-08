@@ -43,16 +43,21 @@ int dotsPrinted = 0; // Print dots in rows of 50 while waiting for a TIM TM2 mes
 
 // Callback: printTIMTM2data will be called when new TIM TM2 data arrives
 // See u-blox_structs.h for the full definition of UBX_TIM_TM2_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoTIMTM2callback
+//        /                  _____  This _must_ be UBX_TIM_TM2_data_t
+//        |                 /                   _____ You can use any name you like for the struct
+//        |                 |                  /
+//        |                 |                  |
 void printTIMTM2data(UBX_TIM_TM2_data_t ubxDataStruct)
 {
     Serial.println();
 
     Serial.print(F("newFallingEdge: ")); // 1 if a new falling edge was detected
     Serial.print(ubxDataStruct.flags.bits.newFallingEdge);
-    
+
     Serial.print(F(" newRisingEdge: ")); // 1 if a new rising edge was detected
     Serial.print(ubxDataStruct.flags.bits.newRisingEdge);
-    
+
     Serial.print(F(" Rising Edge Counter: ")); // Rising edge counter
     Serial.print(ubxDataStruct.count);
 
@@ -89,7 +94,7 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
-  
+
   myGPS.setNavigationFrequency(1); //Produce one solution per second
 
   myGPS.setAutoTIMTM2callback(&printTIMTM2data); // Enable automatic TIM TM2 messages with callback to printTIMTM2data

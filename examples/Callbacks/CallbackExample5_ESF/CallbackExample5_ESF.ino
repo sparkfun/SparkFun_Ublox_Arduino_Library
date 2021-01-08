@@ -17,7 +17,7 @@
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a Redboard Qwiic
-  If you don't have a platform with a Qwiic connection use the 
+  If you don't have a platform with a Qwiic connection use the
 	SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 
@@ -30,6 +30,11 @@ SFE_UBLOX_GPS myGPS;
 
 // Callback: printESFALGdata will be called when new ESF ALG data arrives
 // See u-blox_structs.h for the full definition of UBX_ESF_ALG_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoESFALGcallback
+//        /                  _____  This _must_ be UBX_ESF_ALG_data_t
+//        |                 /                   _____ You can use any name you like for the struct
+//        |                 |                  /
+//        |                 |                  |
 void printESFALGdata(UBX_ESF_ALG_data_t ubxDataStruct)
 {
   Serial.println();
@@ -38,13 +43,13 @@ void printESFALGdata(UBX_ESF_ALG_data_t ubxDataStruct)
   unsigned long iTOW = ubxDataStruct.iTOW; // iTOW is in milliseconds
   Serial.print(iTOW);
   Serial.print(F(" (ms)"));
-    
+
   Serial.print(F(" Roll: ")); // Print selected data
   Serial.print((float)ubxDataStruct.roll / 100.0, 2); // Convert roll to degrees
-  
+
   Serial.print(F(" Pitch: "));
   Serial.print((float)ubxDataStruct.pitch / 100.0, 2); // Convert pitch to degrees
-  
+
   Serial.print(F(" Yaw: "));
   Serial.print((float)ubxDataStruct.yaw / 100.0, 2); // Convert yaw to degrees
 
@@ -57,10 +62,10 @@ void printESFINSdata(UBX_ESF_INS_data_t ubxDataStruct)
 {
   Serial.print(F("xAccel: ")); // Print selected data
   Serial.print(ubxDataStruct.xAccel);
-  
+
   Serial.print(F(" yAccel: "));
   Serial.print(ubxDataStruct.yAccel);
-  
+
   Serial.print(F(" zAccel: "));
   Serial.print(ubxDataStruct.zAccel);
 
@@ -76,7 +81,7 @@ void printESFMEASdata(UBX_ESF_MEAS_data_t ubxDataStruct)
 
   Serial.print(F("id: ")); // Print selected data
   Serial.print(ubxDataStruct.id);
-  
+
   Serial.print(F(" numMeas: "));
   Serial.println(ubxDataStruct.flags.bits.numMeas);
 
@@ -87,7 +92,7 @@ void printESFMEASdata(UBX_ESF_MEAS_data_t ubxDataStruct)
 
     UBX_ESF_MEAS_sensorData_t sensorData;
     myGPS.getSensorFusionMeasurement(&sensorData, ubxDataStruct, num); // Extract the data for one sensor
-    
+
     Serial.print(F(": Type: "));
     Serial.print(sensorData.data.bits.dataType);
     Serial.print(F(" Data: "));
@@ -102,7 +107,7 @@ void printESFSTATUSdata(UBX_ESF_STATUS_data_t ubxDataStruct)
 {
   Serial.print(F("fusionMode: ")); // Print selected data
   Serial.print(ubxDataStruct.fusionMode);
-  
+
   Serial.print(F(" numSens: "));
   Serial.println(ubxDataStruct.numSens);
 
@@ -113,7 +118,7 @@ void printESFSTATUSdata(UBX_ESF_STATUS_data_t ubxDataStruct)
 
     UBX_ESF_STATUS_sensorStatus_t sensorStatus;
     myGPS.getSensorFusionStatus(&sensorStatus, ubxDataStruct, num); // Extract the data for one sensor
-    
+
     Serial.print(F(": Type: "));
     Serial.print(sensorStatus.sensStatus1.bits.type);
     Serial.print(F(" Used: "));
@@ -145,7 +150,7 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
-  
+
   myGPS.setNavigationFrequency(1); //Produce one solution per second
   myGPS.setHNRNavigationRate(1); //Set the High Navigation Rate to 1Hz
 
@@ -168,7 +173,7 @@ void loop()
 {
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-  
+
   Serial.print(".");
   delay(25);
 }

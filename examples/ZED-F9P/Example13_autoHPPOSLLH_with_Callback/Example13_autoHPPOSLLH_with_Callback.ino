@@ -1,5 +1,6 @@
 /*
   Configuring the GNSS to automatically send HPPOSLLH position reports over I2C
+  and uses callbacks to process and display the data automatically
   By: Paul Clark
   Date: October 27th 2020
 
@@ -11,8 +12,7 @@
   basically do whatever you want with this code.
 
   This example shows how to configure the U-Blox GNSS the send navigation reports automatically
-  and retrieving the latest one via getHPPOSLLH. This eliminates the blocking in getHPPOSLLH while the GNSS
-  produces a fresh navigation solution at the expense of returning a slighly old solution.
+  and and uses callbacks to process and display the data automatically. No more polling!
 
   This can be used over serial or over I2C, this example shows the I2C use. With serial the GNSS
   simply outputs the UBX_NAV_HPPOSLLH packet. With I2C it queues it into its internal I2C buffer (4KB in
@@ -44,23 +44,23 @@ SFE_UBLOX_GPS myGPS;
 void printHPdata(UBX_NAV_HPPOSLLH_data_t ubxDataStruct)
 {
   Serial.println();
-  
+
   long highResLatitude = ubxDataStruct.lat;
   Serial.print(F("Hi Res Lat: "));
   Serial.print(highResLatitude);
-  
+
   int highResLatitudeHp = ubxDataStruct.latHp;
   Serial.print(F(" "));
   Serial.print(highResLatitudeHp);
-  
+
   long highResLongitude = ubxDataStruct.lon;
   Serial.print(F(" Hi Res Long: "));
   Serial.print(highResLongitude);
-  
+
   int highResLongitudeHp = ubxDataStruct.lonHp;
   Serial.print(F(" "));
   Serial.print(highResLongitudeHp);
-  
+
   unsigned long horizAccuracy = ubxDataStruct.hAcc;
   Serial.print(F(" Horiz accuracy: "));
   Serial.println(horizAccuracy);
@@ -94,7 +94,7 @@ void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
     if (millisecs < 100) Serial.print(F("0")); // Print the trailing zeros correctly
     if (millisecs < 10) Serial.print(F("0"));
     Serial.print(millisecs);
-    
+
     long latitude = ubxDataStruct.lat; // Print the latitude
     Serial.print(F(" Lat: "));
     Serial.print(latitude);
@@ -103,7 +103,7 @@ void printPVTdata(UBX_NAV_PVT_data_t ubxDataStruct)
     Serial.print(F(" Long: "));
     Serial.print(longitude);
     Serial.print(F(" (degrees * 10^-7)"));
-    
+
     long altitude = ubxDataStruct.hMSL; // Print the height above mean sea level
     Serial.print(F(" Height above MSL: "));
     Serial.print(altitude);
@@ -144,7 +144,7 @@ void loop()
 {
   myGPS.checkUblox(); // Check for the arrival of new data and process it. You could set up a timer interrupt to do this for you.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-  
+
   Serial.print(".");
   delay(50);
 }

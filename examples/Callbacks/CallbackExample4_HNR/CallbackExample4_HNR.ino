@@ -8,7 +8,7 @@
   This example configures the High Navigation Rate on the NEO-M8U and then
   reads and displays the attitude solution, vehicle dynamics information
   and high rate position, velocity and time.
-  
+
   This example uses callbacks to process the HNR data automatically. No more polling!
 
   Please make sure your NEO-M8U is running UDR firmware >= 1.31. Please update using u-center if necessary:
@@ -20,7 +20,7 @@
 
   Hardware Connections:
   Plug a Qwiic cable into the GPS and a Redboard Qwiic
-  If you don't have a platform with a Qwiic connection use the 
+  If you don't have a platform with a Qwiic connection use the
 	SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 
@@ -33,6 +33,11 @@ SFE_UBLOX_GPS myGPS;
 
 // Callback: printHNRATTdata will be called when new HNR ATT data arrives
 // See u-blox_structs.h for the full definition of UBX_HNR_ATT_data_t
+//         _____  You can use any name you like for the callback. Use the same name when you call setAutoHNRATTcallback
+//        /                  _____  This _must_ be UBX_HNR_ATT_data_t
+//        |                 /                   _____ You can use any name you like for the struct
+//        |                 |                  /
+//        |                 |                  |
 void printHNRATTdata(UBX_HNR_ATT_data_t ubxDataStruct)
 {
   Serial.println();
@@ -86,12 +91,12 @@ void setup()
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   myGPS.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT); //Save (only) the communications port settings to flash and BBR
-  
+
   if (myGPS.setHNRNavigationRate(10) == true) //Set the High Navigation Rate to 10Hz
     Serial.println(F("setHNRNavigationRate was successful"));
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
-    
+
   if (myGPS.setAutoHNRATTcallback(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
     Serial.println(F("setAutoHNRATTcallback successful"));
 
@@ -106,7 +111,7 @@ void loop()
 {
   myGPS.checkUblox(); // Check for the arrival of new data and process it.
   myGPS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-  
+
   Serial.print(".");
   delay(25);
 }
