@@ -56,8 +56,8 @@ void setup()
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
 
-  myGPS.setAutoHNRAtt(false); //Make sure auto HNR attitude messages are disabled
-  myGPS.setAutoHNRDyn(false); //Make sure auto HNR vehicle dynamics messages are disabled
+  myGPS.setAutoHNRATT(false); //Make sure auto HNR attitude messages are disabled
+  myGPS.setAutoHNRINS(false); //Make sure auto HNR vehicle dynamics messages are disabled
   myGPS.setAutoHNRPVT(false); //Make sure auto HNR PVT messages are disabled
 }
 
@@ -67,11 +67,11 @@ void loop()
   if (myGPS.getHNRAtt(125) == true) // Request HNR Att data using a 125ms timeout
   {
     Serial.print(F("Roll: "));
-    Serial.print(myGPS.packetUBXHNRATT->data.roll);
+    Serial.print(myGPS.getHNRroll(), 2); // Use the helper function to get the roll in degrees
     Serial.print(F(" Pitch: "));
-    Serial.print(myGPS.packetUBXHNRATT->data.pitch);
+    Serial.print(myGPS.getHNRpitch(), 2); // Use the helper function to get the pitch in degrees
     Serial.print(F(" Heading: "));
-    Serial.println(myGPS.packetUBXHNRATT->data.heading);
+    Serial.println(myGPS.getHNRheading(), 2); // Use the helper function to get the heading in degrees
   }
   if (myGPS.getHNRDyn(125) == true) // Request HNR Dyn data using a 125ms timeout
   {

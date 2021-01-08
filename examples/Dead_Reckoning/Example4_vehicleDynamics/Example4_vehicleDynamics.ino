@@ -11,7 +11,7 @@
   ZED-F9R: https://www.sparkfun.com/products/16344  
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a Redboard Qwiic
+  Plug a Qwiic cable into the GNSS and a Redboard Qwiic
   If you don't have a platform with a Qwiic connection use the 
 	SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
@@ -24,7 +24,7 @@
 
 */
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
 #include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
@@ -39,7 +39,7 @@ void setup()
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
@@ -48,35 +48,36 @@ void setup()
   if (myGPS.getEsfInfo()){
 
     Serial.print(F("Fusion Mode: "));  
-    Serial.println(myGPS.imuMeas.fusionMode);  
+    Serial.println(myGPS.packetUBXESFSTATUS->data.fusionMode);  
 
-    if (myGPS.imuMeas.fusionMode == 1){
+    if (myGPS.packetUBXESFSTATUS->data.fusionMode == 1){
       Serial.println(F("Fusion Mode is Initialized!"));  
 		}
 		else {
-      Serial.println(F("Fusion Mode is either disabled or not initialized - Freezing!"));  
-			Serial.println(F("Please see Example 1 description at top for more information."));
+      Serial.println(F("Fusion Mode is either disabled or not initialized!"));  
+			Serial.println(F("Please see the previous example for more information."));
 		}
   }
 }
 
 void loop()
 {
-		myGPS.getVehAtt(); // Give the sensor you want to check on. 
-		Serial.print(F("Roll: ")); 
-		Serial.println(myGPS.vehAtt.roll);
-		Serial.print(F("Pitch: ")); 
-		Serial.println(myGPS.vehAtt.pitch);
-		Serial.print(F("Heading: ")); 
-		Serial.println(myGPS.vehAtt.heading);
-		Serial.print(F("Roll Accuracy: ")); 
-		Serial.println(myGPS.vehAtt.accRoll);
-		Serial.print(F("Pitch Accuracy: ")); 
-		Serial.println(myGPS.vehAtt.accPitch);
-		Serial.print(F("Heading Accuracy: ")); 
-		Serial.println(myGPS.vehAtt.accHeading);
+  // ESF data is produced at the navigation rate, so by default we'll get fresh data once per second
+	if (myGPS.getEsfAlignment()) // Poll new ESF ALG data
+  {
+  	Serial.print(F("Status: ")); 
+  	Serial.print(myGPS.packetUBXESFALG->data.flags.bits.status);
+    Serial.print(F(" Roll: ")); 
+    Serial.print(myGPS.getESFroll(), 2); // Use the helper function to get the roll in degrees
+  	Serial.print(F(" Pitch: ")); 
+  	Serial.print(myGPS.getESFpitch(), 2); // Use the helper function to get the pitch in degrees
+  	Serial.print(F(" Heading: ")); 
+  	Serial.print(myGPS.getESFyaw(), 2); // Use the helper function to get the yaw in degrees
+  	Serial.print(F(" Errors: ")); 
+  	Serial.print(myGPS.packetUBXESFALG->data.error.bits.tiltAlgError);
+  	Serial.print(myGPS.packetUBXESFALG->data.error.bits.yawAlgError);
+  	Serial.println(myGPS.packetUBXESFALG->data.error.bits.angleError);
+  }
 
-    delay(250);
+  delay(250);
 }
-
-

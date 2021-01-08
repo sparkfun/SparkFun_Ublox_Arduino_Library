@@ -37,11 +37,11 @@ void printHNRATTdata(UBX_HNR_ATT_data_t ubxDataStruct)
 {
   Serial.println();
   Serial.print(F("Roll: ")); // Print selected data
-  Serial.print(ubxDataStruct.roll);
+  Serial.print((float)ubxDataStruct.roll / 100000.0, 2); // Convert roll to degrees
   Serial.print(F(" Pitch: "));
-  Serial.print(ubxDataStruct.pitch);
+  Serial.print((float)ubxDataStruct.pitch / 100000.0, 2); // Convert pitch to degrees
   Serial.print(F(" Heading: "));
-  Serial.println(ubxDataStruct.heading);
+  Serial.println((float)ubxDataStruct.heading / 100000.0, 2); // Convert heading to degrees
 }
 
 // Callback: printHNRINSdata will be called when new HNR INS data arrives
@@ -92,11 +92,11 @@ void setup()
   else
     Serial.println(F("setHNRNavigationRate was NOT successful"));
     
-  if (myGPS.setAutoHNRAttcallback(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
-    Serial.println(F("setAutoHNRAttcallback successful"));
+  if (myGPS.setAutoHNRATTcallback(&printHNRATTdata) == true) // Enable automatic HNR ATT messages with callback to printHNRATTdata
+    Serial.println(F("setAutoHNRATTcallback successful"));
 
-  if (myGPS.setAutoHNRDyncallback(&printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
-    Serial.println(F("setAutoHNRDyncallback successful"));
+  if (myGPS.setAutoHNRINScallback(&printHNRINSdata) == true) // Enable automatic HNR INS messages with callback to printHNRINSdata
+    Serial.println(F("setAutoHNRINScallback successful"));
 
   if (myGPS.setAutoHNRPVTcallback(&printHNRPVTdata) == true) // Enable automatic HNR PVT messages with callback to printHNRPVTdata
     Serial.println(F("setAutoHNRPVTcallback successful"));

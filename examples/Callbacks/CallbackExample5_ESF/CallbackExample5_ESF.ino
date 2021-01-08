@@ -40,15 +40,15 @@ void printESFALGdata(UBX_ESF_ALG_data_t ubxDataStruct)
   Serial.print(F(" (ms)"));
     
   Serial.print(F(" Roll: ")); // Print selected data
-  Serial.print(ubxDataStruct.roll);
+  Serial.print((float)ubxDataStruct.roll / 100.0, 2); // Convert roll to degrees
   
   Serial.print(F(" Pitch: "));
-  Serial.print(ubxDataStruct.pitch);
+  Serial.print((float)ubxDataStruct.pitch / 100.0, 2); // Convert pitch to degrees
   
   Serial.print(F(" Yaw: "));
-  Serial.print(ubxDataStruct.yaw);
+  Serial.print((float)ubxDataStruct.yaw / 100.0, 2); // Convert yaw to degrees
 
-  Serial.println(F(" (Degrees*0.01)"));
+  Serial.println(F(" (Degrees)"));
 }
 
 // Callback: printESFINSdata will be called when new ESF INS data arrives

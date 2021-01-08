@@ -50,6 +50,8 @@ void setup()
   }
 
   myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+
+  //myGPS.resetIMUalignment(); // Uncomment this line to reset the IMU alignment
 }
 
 void loop()
