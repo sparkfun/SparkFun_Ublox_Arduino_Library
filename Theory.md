@@ -104,16 +104,16 @@ The biggest change in v2.0 is that data is now stored in a _struct_ which matche
   - "auto" data can be marked as stale by calling (e.g.) ```myGPS.flushHNRATT()```
 
 Other changes include:
-- In v1, NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.relPosN (etc.) as (int32_t)cm.
-  - New helper functions (getRelPosN, getRelPosE, getRelPosD) provide backward-compatibility
-  - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation) example for more details
-- In v1, NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.accN (etc.) as (uint32_t)mm*0.1.
-  - New helper functions (getRelPosAccN, getRelPosAccE, getRelPosAccD) provide backward-compatibility
-  - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation) example for more details
+- In v1, NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via <strong>packetUBXNAVRELPOSNED->data.relPosN</strong> (etc.) as (int32_t)cm.
+  - New helper functions (```getRelPosN```, ```getRelPosE``` and ```getRelPosD```) provide backward-compatibility
+  - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation/Example5_RelativePositioningInformation.ino) example for more details
+- In v1, NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned via <strong>packetUBXNAVRELPOSNED->data.accN</strong> (etc.) as (uint32_t)mm*0.1.
+  - New helper functions (```getRelPosAccN```, ```getRelPosAccE``` and ```getRelPosAccD```) provide backward-compatibility
+  - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation/Example5_RelativePositioningInformation.ino) example for more details
 - getSurveyStatus now returns data via <strong>UBX_NAV_SVIN_t *packetUBXNAVSVIN</strong>
-  - svin.active is replaced with (boolean)packetUBXNAVSVIN->data.active
-  - svin.valid is replaced with (boolean)packetUBXNAVSVIN->data.valid
-  - svin.observationTime is replaced with packetUBXNAVSVIN->data.dur and is now uint32_t (not uint16_t)
-  - svin.MeanAccuracy is replaced with packetUBXNAVSVIN->data.meanAcc and is now uint32_t * 0.1mm (not float * m)
-  - New helper functions (getSurveyInActive, getSurveyInValid, getSurveyInObservationTime, getSurveyInMeanAccuracy) provide backward-compatibility
-  - Please see the [**ZED-F9P/Example3_StartRTCMBase**](./examples/ZED-F9P/Example3_StartRTCMBase) example for more details
+  - ```myGPS.svin.active``` becomes ```myGPS.packetUBXNAVSVIN->data.active```
+  - ```myGPS.svin.valid``` becomes ```myGPS.packetUBXNAVSVIN->data.valid```
+  - ```myGPS.svin.observationTime``` becomes ```myGPS.packetUBXNAVSVIN->data.dur``` and is now uint32_t (not uint16_t)
+  - ```myGPS.svin.MeanAccuracy``` becomes ```myGPS.packetUBXNAVSVIN->data.meanAcc``` and is now uint32_t * 0.1mm (not float * m)
+  - New helper functions (```getSurveyInActive```, ```getSurveyInValid```, ```getSurveyInObservationTime``` and ```getSurveyInMeanAccuracy```) provide backward-compatibility
+  - Please see the [**ZED-F9P/Example3_StartRTCMBase**](./examples/ZED-F9P/Example3_StartRTCMBase/Example3_StartRTCMBase.ino) example for more details
