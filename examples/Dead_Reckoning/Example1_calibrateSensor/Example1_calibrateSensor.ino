@@ -11,13 +11,13 @@
   ZED-F9R: https://www.sparkfun.com/products/16344  
 
   Hardware Connections:
-  Plug a Qwiic cable into the GPS and a Redboard Qwiic
+  Plug a Qwiic cable into the GNSS and a Redboard Qwiic
   If you don't have a platform with a Qwiic connection use the 
   SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
   Open the serial monitor at 115200 baud to see the output
 
-  To take advantage of the internal IMU of either the Dead Reckoning GPS
-  boards (ZED-F9R, NEO-M8U), you must first calibrate it. This includes securing the GPS module
+  To take advantage of the internal IMU of either the Dead Reckoning GNSS
+  boards (ZED-F9R, NEO-M8U), you must first calibrate it. This includes securing the GNSS module
   to your vehicle so that it is stable within 2 degrees and that the frame of
   reference of the board is consistent with the picture outlined in the
   Receiver-Description-Prot-Spec Datasheet under Automotive/Untethered Dead
@@ -27,10 +27,10 @@
   stopping for a few minutes, getting to a speed over 30km/h all under a clear sky 
   with good GNSS signal. This example simply looks at the
   "fusionMode" status which indicates whether the SparkFun Dead Reckoning is
-  not-calibrated - 0, or calibrated - 1.  
+  initializing - 0, calibrated - 1, or if an error has occurred - 2,3.  
 */
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
 #include <SparkFun_Ublox_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GPS myGPS;
@@ -45,7 +45,7 @@ void setup()
 
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
@@ -54,12 +54,19 @@ void setup()
 
 void loop()
 {
-
-  if (myGPS.getEsfInfo()){
+  // ESF data is produced at the navigation rate, so by default we'll get fresh data once per second
+  if (myGPS.getEsfInfo()) // Poll new ESF STATUS data
+  {
     Serial.print(F("Fusion Mode: "));  
-    Serial.println(myGPS.imuMeas.fusionMode);  
-    if (myGPS.imuMeas.fusionMode == 1)
-      Serial.println(F("Sensor is calibrated!"));  
+    Serial.print(myGPS.packetUBXESFSTATUS->data.fusionMode);  
+    if (myGPS.packetUBXESFSTATUS->data.fusionMode == 0)
+      Serial.println(F("  Sensor is initializing..."));  
+    else if (myGPS.packetUBXESFSTATUS->data.fusionMode == 1)
+      Serial.println(F("  Sensor is calibrated!"));  
+    else if (myGPS.packetUBXESFSTATUS->data.fusionMode == 2)
+      Serial.println(F("  Sensor fusion is suspended!"));  
+    else if (myGPS.packetUBXESFSTATUS->data.fusionMode == 3)
+      Serial.println(F("  Sensor fusion is disabled!"));  
   }
 
   delay(250);

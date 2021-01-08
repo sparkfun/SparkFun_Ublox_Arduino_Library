@@ -82,10 +82,26 @@ Migrating your code to v2.0
 
 The biggest change in v2.0 is that data is now stored in a _struct_ which matches the u-blox interface description for that message. For example:
 - In v1, the NAV PVT (Position Velocity Time) latitude and longitude were stored in 'global' _int32_t_ variables called ```latitude``` and ```longitude```
-- In v2.0, the data is now stored in UBX_NAV_PVT_t *packetUBXNAVPVT
+  - In v2.0, the data is now stored in **UBX_NAV_PVT_t *packetUBXNAVPVT**
   - ```myGPS.latitude``` becomes ```myGPS.packetUBXNAVPVT->data.lat```
   - ```myGPS.longitude``` becomes ```myGPS.packetUBXNAVPVT->data.lon```
-- The helper functions ```myGPS.getLatitude()``` and ```myGPS.getLongitude()``` are still available and work in the same way.
+  - The helper functions ```myGPS.getLatitude()``` and ```myGPS.getLongitude()``` are still available and work in the same way.
+- In v1, the ESF Sensor Fusion data for the Dead Reckoning modules was stored in 'global' variables ```imuMeas```, ```ubloxSen``` and ```vehAtt```
+  - In v2.0, the data is now stored in:
+  - **UBX_ESF_ALG_t *packetUBXESFALG** contains the IMU alignment information (roll, pitch and yaw)
+  - **UBX_ESF_INS_t *packetUBXESFINS** contains the vehicle dynamics information (acceleration and angular rate)
+  - **UBX_ESF_MEAS_t *packetUBXESFMEAS** contains the sensor fusion measurements
+  - **UBX_ESF_RAW_t *packetUBXESFRAW** contains the raw sensor measurements
+  - **UBX_ESF_STATUS_t *packetUBXESFSTATUS** contains the sensor fusion status
+  - e.g. ```myGPS.imuMeas.fusionMode``` becomes ```myGPS.packetUBXESFSTATUS->data.fusionMode```
+  - The helper functions ```getSensorFusionMeasurement```, ```getRawSensorMeasurement``` and ```getSensorFusionStatus``` can be used to extract the sensor data for an individual sensor
+  - "auto" data can be marked as stale by calling (e.g.) ```myGPS.flushESFALG()```
+- In v1, the HNR (High Navigation Rate) data for the Dead Reckoning modules was stored in 'global' variables ```hnrAtt```, ```hnrVehDyn``` and ```hnrPVT```
+  - In v2.0, e.g.:
+  - ```myGPS.hnrAtt.roll``` becomes ```myGPS.packetUBXHNRATT->data.roll```
+  - ```myGPS.hnrVehDyn.xAccel``` becomes ```myGPS.packetUBXHNRINS->data.xAccel```
+  - ```myGPS.hnrPVT.lat``` becomes ```myGPS.packetUBXHNRPVT->data.lat```
+  - "auto" data can be marked as stale by calling (e.g.) ```myGPS.flushHNRATT()```
 
 Other changes include:
 - In v1, NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.relPosN (etc.) as (int32_t)cm.
@@ -94,7 +110,7 @@ Other changes include:
 - In v1, NAV_RELPOSNED accN, accE and accD were returned as (float)m. In v2.0 they are returned via packetUBXNAVRELPOSNED->data.accN (etc.) as (uint32_t)mm*0.1.
   - New helper functions (getRelPosAccN, getRelPosAccE, getRelPosAccD) provide backward-compatibility
   - Please see the [**ZED-F9P/Example5_RelativePositioningInformation**](./examples/ZED-F9P/Example5_RelativePositioningInformation) example for more details
-- getSurveyStatus now returns data via UBX_NAV_SVIN_t *packetUBXNAVSVIN
+- getSurveyStatus now returns data via **UBX_NAV_SVIN_t *packetUBXNAVSVIN**
   - svin.active is replaced with (boolean)packetUBXNAVSVIN->data.active
   - svin.valid is replaced with (boolean)packetUBXNAVSVIN->data.valid
   - svin.observationTime is replaced with packetUBXNAVSVIN->data.dur and is now uint32_t (not uint16_t)
