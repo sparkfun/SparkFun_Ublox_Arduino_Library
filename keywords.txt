@@ -454,6 +454,9 @@ getSensorFusionStatus	KEYWORD2
 
 setHNRNavigationRate	KEYWORD2
 getHNRNavigationRate	KEYWORD2
+getHNRroll	KEYWORD2
+getHNRpitch	KEYWORD2
+getHNRheading	KEYWORD2
 
 extractLong	KEYWORD2
 extractSignedLong	KEYWORD2

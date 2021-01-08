@@ -96,12 +96,14 @@ The biggest change in v2.0 is that data is now stored in a _struct_ which matche
   - e.g. ```myGPS.imuMeas.fusionMode``` becomes ```myGPS.packetUBXESFSTATUS->data.fusionMode```
   - The helper functions ```getSensorFusionMeasurement```, ```getRawSensorMeasurement``` and ```getSensorFusionStatus``` can be used to extract the sensor data for an individual sensor
   - "auto" data can be marked as stale by calling (e.g.) ```myGPS.flushESFALG()```
+  - Please see the [**Dead_Reckoning/Example4_vehicleDynamics**](./examples/Dead_Reckoning/Example4_vehicleDynamics/Example4_vehicleDynamics.ino) example for more details
 - In v1, the HNR (High Navigation Rate) data for the Dead Reckoning modules was stored in 'global' variables ```hnrAtt```, ```hnrVehDyn``` and ```hnrPVT```
   - In v2.0, e.g.:
   - ```myGPS.hnrAtt.roll``` becomes ```myGPS.packetUBXHNRATT->data.roll```
   - ```myGPS.hnrVehDyn.xAccel``` becomes ```myGPS.packetUBXHNRINS->data.xAccel```
   - ```myGPS.hnrPVT.lat``` becomes ```myGPS.packetUBXHNRPVT->data.lat```
   - "auto" data can be marked as stale by calling (e.g.) ```myGPS.flushHNRATT()```
+  - Please see the [**Dead_Reckoning/Example6_getAutoHNRData**](./examples/Dead_Reckoning/Example6_getAutoHNRData/Example6_getAutoHNRData.ino) example for more details
 
 Other changes include:
 - In v1, NAV_RELPOSNED relPosN, relPosE and relPosD were returned as (float)m. In v2.0 they are returned via <strong>packetUBXNAVRELPOSNED->data.relPosN</strong> (etc.) as (int32_t)cm.
