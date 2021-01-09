@@ -1,5 +1,4 @@
-How I<sup>2</sup>C (aka DDC) communication works with a u-blox module
-===========================================================
+## How I<sup>2</sup>C (aka DDC) communication works with a u-blox module
 
 When the user calls one of the methods the library will poll the u-blox module for new data.
 
@@ -12,8 +11,7 @@ When the user calls one of the methods the library will poll the u-blox module f
 
 This library was originally written to use the I<sup>2</sup>C interface but Serial has been implemented as well.
 
-How data is processed by this library
-===========================================================
+## How data is processed by this library
 
 In Version 1 of this library, we tried to minimize memory usage by being very careful about how much RAM we allocated to UBX packet storage and processing. We used only three buffers or containers to store the incoming data: **packetBuf** (packetBuffer); **packetCfg** (packetConfiguration); and **packetAck** (packetAcknowledge). Incoming packets were stored in **packetBuf** initially and then diverted into **packetAck** or **packetCfg** as necessary. Once data was received and validated, it would be copied out of **packetCfg** and into 'global' variables with names like ```gpsSecond``` or ```latitude```. We also introduced the concept of _Polling vs. Auto-Reporting_ where messages like PVT (Position, Velocity, Time) could be generated and parsed "automatically". This meant that functions like ```getLatitude``` could be non-blocking, returning the most recent data and requesting fresh data when necessary. But it also meant that _polled_ messages could be _overwritten_ (in **packetCfg**) by any _auto-reported_ messages. The library dealt with this successfully, but it was a headache.
 
@@ -44,8 +42,7 @@ Version 2 of the library does things differently. Whilst of course trying to kee
 
 In terms of RAM, you may find that your total RAM use is lower using v2 compared to v1, but it does of course depend on how many message types are being processed. The downside to this is that it is difficult to know in advance how much RAM is required, since it is only allocated if/when required. If the processor runs out of RAM (i.e. the _new_ fails) then a debug error message is generated.
 
-"Auto" messages
-===========================================================
+## "Auto" messages
 
 In v2.0, the full list of messages which can be processed and logged automatically is:
 - UBX-NAV-POSECEF (0x01 0x01): Position solution in ECEF
@@ -77,8 +74,7 @@ Notes:
 - UBX-NAV-POSLLH is not supported as UBX-NAV-PVT contains the same information
 - UBX-NAV-TIMEUTC is not supported as UBX-NAV-PVT contains the same information
 
-Migrating your code to v2.0
-===========================================================
+## Migrating your code to v2.0
 
 The biggest change in v2.0 is that data is now stored in a _struct_ which matches the u-blox interface description for that message. For example:
 - In v1, the NAV PVT (Position Velocity Time) latitude and longitude were stored in 'global' _int32_t_ variables called ```latitude``` and ```longitude```
