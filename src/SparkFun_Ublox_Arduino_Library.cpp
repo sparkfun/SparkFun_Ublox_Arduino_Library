@@ -2746,8 +2746,8 @@ void SFE_UBLOX_GPS::checkCallbacks(void)
     && (packetUBXNAVPVT->callbackPointer != NULL) // If the pointer to the callback has been defined
     && (packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid == true)) // If the copy of the data is valid
   {
-    if (_printDebug == true)
-      _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
+    //if (_printDebug == true)
+    //  _debugSerial->println(F("checkCallbacks: calling callback for NAV PVT"));
     packetUBXNAVPVT->callbackPointer(*packetUBXNAVPVT->callbackData); // Call the callback
     packetUBXNAVPVT->automaticFlags.flags.bits.callbackCopyValid = false; // Mark the data as stale
   }
