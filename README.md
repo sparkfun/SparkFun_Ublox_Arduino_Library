@@ -60,6 +60,8 @@ Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module]
 
 Need a library for the u-blox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
 
+Need a C++ version which runs on Linux? Checkout the [Ublox_Linux_Library](https://github.com/balamuruganky/Ublox_Linux_Library).
+
 Contributing
 --------------
 
