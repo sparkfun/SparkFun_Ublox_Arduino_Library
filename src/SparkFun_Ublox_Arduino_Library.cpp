@@ -92,7 +92,16 @@ boolean SFE_UBLOX_GPS::begin(TwoWire &wirePort, uint8_t deviceAddress)
 
   _gpsI2Caddress = deviceAddress; //Store the I2C address from user
 
-  return (isConnected());
+  // Attempt isConnected up to 3 times if required
+  boolean success = isConnected();
+
+  if (!success)
+    success = isConnected();
+
+  if (!success)
+    success = isConnected();
+
+  return (success);
 }
 
 //Initialize the Serial port
@@ -101,7 +110,16 @@ boolean SFE_UBLOX_GPS::begin(Stream &serialPort)
   commType = COMM_TYPE_SERIAL;
   _serialPort = &serialPort; //Grab which port the user wants us to use
 
-  return (isConnected());
+  // Attempt isConnected up to 3 times if required
+  boolean success = isConnected();
+
+  if (!success)
+    success = isConnected();
+
+  if (!success)
+    success = isConnected();
+
+  return (success);
 }
 
 //Sets the global size for I2C transactions
@@ -1401,7 +1419,14 @@ boolean SFE_UBLOX_GPS::isConnected(uint16_t maxWait)
   packetCfg.len = 0;
   packetCfg.startingSpot = 0;
 
-  return (sendCommand(&packetCfg, maxWait) == SFE_UBLOX_STATUS_DATA_RECEIVED); // We are polling the RATE so we expect data and an ACK
+  sfe_ublox_status_e result = sendCommand(&packetCfg, maxWait); // Poll the navigation rate
+
+  // In this case, we don't acutally care what the navigation rate is, we're just polling it to indicate a connection.
+  // So we return true if result is DATA_RECEIVED or DATA_OVERWRITTEN (just in case the RATE was overwritten by an auto packet).
+  if ((result == SFE_UBLOX_STATUS_DATA_RECEIVED) || (result == SFE_UBLOX_STATUS_DATA_OVERWRITTEN))
+    return (true);
+  else
+    return (false);
 }
 
 //Given a message, calc and store the two byte "8-Bit Fletcher" checksum over the entirety of the message
