@@ -1,6 +1,12 @@
 SparkFun u-blox Arduino Library
 ===========================================================
 
+**Please note: this library is now deprecated. Please migrate to the new [SparkFun u-blox GNSS Arduino Library](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library).**
+
+**You can find details on how to migrate to v2.0 [here](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library#migrating-to-v20).**
+
+You can install v2.0 via the Arduino Library Manager. Search for **SparkFun u-blox GNSS**.
+
 <table class="table table-hover table-striped table-bordered">
   <tr align="center">
    <td><a href="https://www.sparkfun.com/products/15136"><img src="https://cdn.sparkfun.com//assets/parts/1/3/5/1/4/15136-SparkFun_GPS-RTK2_Board_-_ZED-F9P__Qwiic_-03.jpg"></a></td>
@@ -59,6 +65,8 @@ Thanks to:
 Need a Python version for Raspberry Pi? Checkout the [Qwiic Ublox GPS Py module](https://github.com/sparkfun/Qwiic_Ublox_Gps_Py).
 
 Need a library for the u-blox and Particle? Checkout the [Particle library](https://github.com/aseelye/SparkFun_Ublox_Particle_Library) fork.
+
+Need a C++ version which runs on Linux? Checkout the [Ublox_Linux_Library](https://github.com/balamuruganky/Ublox_Linux_Library).
 
 Contributing
 --------------
