@@ -1,6 +1,12 @@
 SparkFun u-blox Arduino Library
 ===========================================================
 
+**Please note: this library is now deprecated. Please migrate to the new [SparkFun u-blox GNSS Arduino Library](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library).**
+
+**You can find details on how to migrate to v2.0 [here](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library#migrating-to-v20).**
+
+You can install v2.0 via the Arduino Library Manager. Search for **SparkFun u-blox GNSS**.
+
 <table class="table table-hover table-striped table-bordered">
   <tr align="center">
    <td><a href="https://www.sparkfun.com/products/15136"><img src="https://cdn.sparkfun.com//assets/parts/1/3/5/1/4/15136-SparkFun_GPS-RTK2_Board_-_ZED-F9P__Qwiic_-03.jpg"></a></td>
@@ -19,6 +25,8 @@ SparkFun u-blox Arduino Library
 </table>
 
 U-blox makes some incredible GPS receivers covering everything from low-cost, highly configurable modules such as the SAM-M8Q all the way up to the surveyor grade ZED-F9P with precision of the diameter of a dime. This library focuses on configuration and control of u-blox devices over I2C (called DDC by u-blox) and Serial. The UBX protocol is supported over both I2C and serial, and is a much easier and lighterweight interface to a GPS module. Stop parsing NMEA data! And simply ask for the datums you need.
+
+
 
 This library can be installed via the Arduino Library manager. Search for **SparkFun u-blox GNSS**.
 
